@@ -46,23 +46,27 @@ def list_document_folders(bucket):
     return folder_names
 
 
-def download_all_pdfs(bucket):
-    """Download all PDFs from GCS to a local directory, handling errors."""
-    os.makedirs(LOCAL_PDF_DIR, exist_ok=True)
-
-    try:
-        blobs = bucket.list_blobs(prefix=DOCUMENTS_FOLDER)
-        pdf_files = [blob for blob in blobs if blob.name.endswith('.pdf')]
-
-        for blob in pdf_files:
-            local_path = os.path.join(LOCAL_PDF_DIR, os.path.basename(blob.name))
-            try:
-                blob.download_to_filename(local_path)
-                #logger.info(f"Downloaded: {blob.name} -> {local_path}")
-            except Exception as e:
-                logger.error(f"Failed to download {blob.name}: {str(e)}")
-    except Exception as e:
-        logger.error(f"Failed to fetch PDF list from GCS: {str(e)}")
+def download_pdfs_by_folder(bucket, folder_name):
+    """Download PDFs from a specific folder in GCS."""
+    folder_path = os.path.join(LOCAL_PDF_DIR, folder_name)
+    os.makedirs(folder_path, exist_ok=True)
+    
+    prefix = f"{DOCUMENTS_FOLDER}{folder_name}/"
+    blobs = bucket.list_blobs(prefix=prefix)
+    pdf_files = [blob for blob in blobs if blob.name.endswith('.pdf')]
+    
+    logger.info(f"Downloading {len(pdf_files)} PDFs from folder: {folder_name}")
+    
+    for blob in pdf_files:
+        file_name = os.path.basename(blob.name)
+        local_path = os.path.join(folder_path, file_name)
+        try:
+            blob.download_to_filename(local_path)
+            logger.debug(f"Downloaded: {blob.name} -> {local_path}")
+        except Exception as e:
+            logger.error(f"Failed to download {blob.name}: {str(e)}")
+    
+    return folder_path
 
 def download_metadata(bucket):
     """Download meta.csv and access.csv from GCS, handling errors."""
@@ -134,7 +138,9 @@ def main():
         document_folders = list_document_folders(bucket)
 
         # Download PDFs
-        download_all_pdfs(bucket)
+        for folder_name in document_folders:
+            # Download PDFs for this folder
+            download_pdfs_by_folder(bucket, folder_name)
 
         # Download metadata
         meta_df, access_df = download_metadata(bucket)
