@@ -1,0 +1,17 @@
+networks:
+    smart-network:
+        external: true
+services:
+    smart_input:
+        image: ${IMAGE_NAME}
+        container_name: smart_input
+        volumes:
+            - ${SECRETS_DIR}:/secrets:ro
+            - ${BASE_DIR}:/app/work
+            - ${PERSISTENT_DIR}:/persistent:rw
+        environment:
+            GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS
+            GCP_PROJECT: $GCP_PROJECT
+        networks:
+        - smart-network
+        command: load_data.py
