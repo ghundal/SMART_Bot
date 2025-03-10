@@ -1,0 +1,531 @@
+import os
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+import logging
+from google.cloud import storage
+import pandas as pd
+from sqlalchemy import create_engine, text
+import io
+import tempfile
+from langchain_core.documents import Document
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+# Import the AdvancedSemanticChunker 
+from Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
+from sentence_transformers import SentenceTransformer
+
+# Set up environment
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "../secrets/smart-452816-101a65261db2.json"
+GCP_PROJECT = "SMART"
+BUCKET_NAME = 'smart_input_data'
+DOCUMENTS_FOLDER = 'documents/'
+METADATA_FOLDER = 'meta_data/'
+OUTPUT_DIR = "./data/chunks"
+
+# Database connection settings
+DB_NAME = "smart"
+DB_USER = "postgres"
+DB_PASSWORD = "postgres"
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_PORT = "5432"
+
+# Default chunking parameters
+DEFAULT_CHUNK_SIZE = 1000
+DEFAULT_CHUNK_OVERLAP = 200
+
+# Create output directories
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('data_pipeline')
+
+# Suppress PyPDF warnings about wrong pointing objects
+logging.getLogger('pypdf._reader').setLevel(logging.ERROR)
+
+def connect_to_bucket():
+    """Connect to the GCS bucket and return the bucket object."""
+    try:
+        client = storage.Client(project=os.environ.get('GCP_PROJECT'))
+        bucket = client.bucket(BUCKET_NAME)
+        logger.info(f"Successfully connected to bucket: {BUCKET_NAME}")
+        return bucket
+    except Exception as e:
+        logger.exception(f"Failed to connect to bucket {BUCKET_NAME}: {str(e)}")
+        raise RuntimeError(f"Critical failure: Unable to connect to GCS bucket: {str(e)}")
+
+def connect_to_postgres():
+    """Connect to the postgres and return the connection."""
+    try:
+        return create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+    except Exception as e:
+        logger.exception(f"Failed to connect to postgres!")
+        raise RuntimeError(f"Critical failure: Unable to connect to postgres!")
+
+def list_document_folders(bucket):
+    """Retrieve unique class folder names from GCS under 'documents/'."""
+    logger.info("Fetching document folder names from GCS...")
+    
+    blobs = bucket.list_blobs(prefix=DOCUMENTS_FOLDER) 
+    folder_names = set()
+
+    for blob in blobs:
+        parts = blob.name.split("/")
+        if len(parts) > 2:
+            folder_names.add(parts[1])
+
+    logger.info(f"Found {len(folder_names)} document folders: {folder_names}")
+    return folder_names
+
+def create_documents_dataframe(bucket):
+    """Create a dataframe with class ID and document GCP path."""
+    logger.info("Creating documents dataframe...")
+    
+    blobs = bucket.list_blobs(prefix=DOCUMENTS_FOLDER)
+    documents = []
+    
+    for blob in blobs:
+        if blob.name.endswith('.pdf'):
+            parts = blob.name.split("/")
+            if len(parts) > 2:
+                class_id = parts[1]
+                document_path = f"gs://{BUCKET_NAME}/{blob.name}"  # Full GCP path
+                documents.append({
+                    'document_id': document_path,  # Store GCP path
+                    'class_id': class_id
+                })
+    
+    docs_df = pd.DataFrame(documents)
+    logger.info(f"Created documents dataframe with {len(docs_df)} entries")
+    return docs_df
+
+def get_metadata(bucket):
+    """Download meta.csv and access.csv from GCS as dataframes."""
+    metadata_files = ["meta.csv", "access.csv"]
+    dataframes = {}
+
+    for file_name in metadata_files:
+        try:
+            blob = bucket.blob(f"{METADATA_FOLDER}{file_name}")
+            content = blob.download_as_string()
+            logger.info(f"Downloaded {file_name} content")
+
+            # Load into Pandas DataFrame directly from content
+            dataframes[file_name] = pd.read_csv(pd.io.common.BytesIO(content))
+        except Exception as e:
+            logger.exception(f"Failed to download or load {file_name}: {str(e)}")
+            dataframes[file_name] = pd.DataFrame() # Return empty
+
+    return dataframes.get("meta.csv"), dataframes.get("access.csv")
+
+def validate_data(document_folders, meta_df, access_df):
+    """Validate that all unique IDs in meta and access match document folder names."""
+    logger.info("Validating consistency between metadata and document folders...")
+
+    if meta_df is None or access_df is None:
+        error_msg = "Critical failure: One or more metadata files failed to load."
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
+
+    # Extract unique IDs from meta.csv and access.csv
+    meta_ids = set(meta_df['class_id'].astype(str).unique()) if 'class_id' in meta_df.columns else set()
+    access_ids = set(access_df['class_id'].astype(str).unique()) if 'class_id' in access_df.columns else set()
+
+    # Convert document folder names to strings for consistency
+    document_folders = set(str(folder) for folder in document_folders)
+
+    # Check if IDs match
+    if meta_ids == access_ids == document_folders:
+        logger.info("✅ Validation PASSED: IDs match across metadata and document folders.")
+        return True
+    else:
+        logger.warning("❌ Validation FAILED: Mismatches detected.")
+
+        if document_folders - meta_ids:
+            logger.warning(f" - In documents but missing in meta.csv: {document_folders - meta_ids}")
+        if meta_ids - document_folders:
+            logger.warning(f" - In meta.csv but missing in documents: {meta_ids - document_folders}")
+
+        if document_folders - access_ids:
+            logger.warning(f" - In documents but missing in access.csv: {document_folders - access_ids}")
+        if access_ids - document_folders:
+            logger.warning(f" - In access.csv but missing in documents: {access_ids - document_folders}")
+
+        if meta_ids - access_ids:
+            logger.warning(f" - In meta.csv but missing in access.csv: {meta_ids - access_ids}")
+        if access_ids - meta_ids:
+            logger.warning(f" - In access.csv but missing in meta.csv: {access_ids - meta_ids}")
+
+        return False
+    
+def load_pdf_from_gcs(bucket, gcs_path):
+    """Load a PDF document directly from GCS using a temporary file."""
+    try:
+        # Remove the gs://bucket-name/ prefix if present
+        if gcs_path.startswith(f"gs://{BUCKET_NAME}/"):
+            gcs_path = gcs_path[len(f"gs://{BUCKET_NAME}/"):]
+        
+        blob = bucket.blob(gcs_path)
+        
+        # Create a temporary file to store the PDF
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
+            temp_path = temp_file.name
+            blob.download_to_filename(temp_path)
+        
+        # Use PyPDFLoader to load the PDF
+        loader = PyPDFLoader(temp_path)
+        documents = loader.load()
+        
+        # Clean up the temporary file
+        os.unlink(temp_path)
+        
+        # Set the source in metadata to the GCS path including bucket name
+        gcs_full_path = f"gs://{BUCKET_NAME}/{gcs_path}"
+        for doc in documents:
+            doc.metadata['source'] = gcs_full_path
+        
+        if not documents:
+            raise ValueError(f"No content extracted from PDF: {gcs_path}")
+
+        return documents
+    
+    except Exception as e:
+        logger.exception(f"Error loading PDF from GCS {gcs_path}: {str(e)}")
+        raise RuntimeError(f"Critical failure: Unable to load PDF from {gcs_path}: {str(e)}")
+
+def recursive_chunking(documents, chunk_size=DEFAULT_CHUNK_SIZE, chunk_overlap=DEFAULT_CHUNK_OVERLAP):
+    """Split documents using recursive chunking method."""
+    logger.info(f"Chunking documents using recursive method with size={chunk_size}, overlap={chunk_overlap}")
+    
+    try:
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            separators=["\n\n", "\n", ". ", " ", ""]
+        )
+        
+        # Split documents into chunks
+        chunks = text_splitter.split_documents(documents)
+        logger.info(f"Created {len(chunks)} chunks using recursive method")
+        
+        return chunks
+    
+    except Exception as e:
+        logger.exception(f"Error with recursive chunking: {str(e)}")
+        raise RuntimeError(f"Critical failure: Unable to perform recursive chunking: {str(e)}")
+
+def semantic_chunking(documents, embedding_model='all-MiniLM-L6-v2', buffer_size=1, 
+                     breakpoint_type='percentile', breakpoint_amount=None, preloaded_model=None):
+    """Split documents using semantic chunking method."""
+    logger.info(f"Chunking documents using semantic method with model: {embedding_model}")
+    
+    try:
+        # Use the preloaded model if provided, otherwise load it
+        model = preloaded_model
+        if model is None:
+            logger.info(f"Loading embedding model: {embedding_model}")
+            model = get_embedding_model(embedding_model)
+        
+        text_splitter = AdvancedSemanticChunker(
+            embedding_model=embedding_model,
+            buffer_size=buffer_size,
+            breakpoint_threshold_type=breakpoint_type,
+            breakpoint_threshold_amount=breakpoint_amount,
+            embedding_function=None
+        )
+        
+        # Split documents into chunks
+        chunks = text_splitter.split_documents(documents)
+        logger.info(f"Created {len(chunks)} chunks using semantic method")
+        
+        return chunks
+    
+    except Exception as e:
+        logger.exception(f"Error with semantic chunking: {str(e)}")
+        raise RuntimeError(f"Critical failure: Unable to perform semantic chunking: {str(e)}")
+
+def clean_chunks(chunks):
+    """
+    Ultra-simple chunk cleaner that aggressively removes whitespace.
+    """
+    cleaned_chunks = []
+    
+    for chunk in chunks:
+        # Skip None chunks
+        if chunk is None:
+            continue
+        
+        # For LangChain Document objects
+        if hasattr(chunk, 'page_content'):
+            # Clean text and update the object
+            chunk.page_content = ' '.join(chunk.page_content.split()).strip()
+            if chunk.page_content:  # Only keep non-empty chunks
+                cleaned_chunks.append(chunk)
+        # For strings
+        elif isinstance(chunk, str):
+            clean_text = ' '.join(chunk.split()).strip()
+            if clean_text:  # Only keep non-empty chunks
+                cleaned_chunks.append(clean_text)
+        # For other objects
+        else:
+            clean_text = ' '.join(str(chunk).split()).strip()
+            if clean_text:  # Only keep non-empty chunks
+                cleaned_chunks.append(clean_text)
+    
+    return cleaned_chunks
+
+def chunk_documents_from_gcs(bucket, chunk_method='semantic'):
+    """
+    Load documents from GCS, chunk them, and return/save the chunks dataframe.
+    
+    Args:
+        bucket: GCS bucket object
+        chunk_method: 'recursive' or 'semantic'
+        
+    Returns:
+        pandas DataFrame with document_id, page, chunk_text, and embedding columns
+    """
+    # IMPORTANT: Convert to lowercase and add explicit logging
+    chunk_method = chunk_method.lower()
+    logger.info(f"Starting document chunking process using '{chunk_method}' method")
+    
+    # Get document dataframe with GCP paths
+    docs_df = create_documents_dataframe(bucket)
+    if docs_df.empty:
+        raise RuntimeError("Critical failure: No documents found in GCS bucket")
+    
+    all_chunks = []
+
+    # Load the embedding model once if using semantic chunking
+    embedding_model = None
+    if chunk_method == 'semantic':
+        logger.info("Loading embedding model for chunking")
+        embedding_model = get_embedding_model('all-MiniLM-L6-v2')
+    
+    # Process each document
+    for _, row in docs_df.iterrows():
+        gcs_path = row['document_id']
+        
+        # Extract just the filename part for logging
+        filename = gcs_path.split('/')[-1] if '/' in gcs_path else gcs_path
+        logger.info(f"Processing PDF: {filename}")
+        
+        # Load the PDF directly from GCS
+        documents = load_pdf_from_gcs(bucket, gcs_path)
+        
+        if not documents:
+            logger.warning(f"No documents loaded from {gcs_path}. Skipping.")
+            continue
+        
+        # Apply the appropriate chunking method
+        if chunk_method == 'semantic':
+            logger.info(f"Applying SEMANTIC chunking to {filename}")
+            chunks = semantic_chunking(
+                documents,
+                embedding_model='all-MiniLM-L6-v2',
+                buffer_size=2,
+                breakpoint_type='percentile',
+                breakpoint_amount=90,
+                preloaded_model=embedding_model
+            )
+        else:
+            logger.info(f"Applying RECURSIVE chunking to {filename}")
+            chunks = recursive_chunking(
+                documents,
+                chunk_size=DEFAULT_CHUNK_SIZE,
+                chunk_overlap=DEFAULT_CHUNK_OVERLAP
+            )
+        cleaned_chunks = clean_chunks(chunks)
+        all_chunks.extend(cleaned_chunks)
+
+    # Create DataFrame from all chunks
+    if not all_chunks:
+        raise RuntimeError("Critical failure: No chunks were created from any document")
+        
+    logger.info(f"Total chunks created before embedding: {len(all_chunks)}")
+        
+    return all_chunks
+
+def get_ch_embedding_model():
+    """Load and return the embedding model."""
+    try:
+        model_name = 'all-mpnet-base-v2'
+        # model_name = 'multi-qa-mpnet-base-dot-v1'
+        model = SentenceTransformer(model_name)
+        logger.info(f"Successfully loaded Embedding model: {model_name}")
+        return model
+    except Exception as e:
+        logger.exception(f"Error loading Embedding model: {model_name}")
+        raise
+
+def create_chunk_embeddings(chunk_texts, embedding_model, batch_size = 4):
+    """Create embeddings for a list of chunk texts."""
+    import torch
+    
+    try:
+        embeddings = embedding_model.encode(
+            chunk_texts,
+            device="cuda" if torch.cuda.is_available() else "cpu",
+            batch_size=batch_size
+        )
+        logger.info(f"Created {len(embeddings)} embeddings")
+        return embeddings
+    except Exception as e:
+        logger.exception(f"Error creating embeddings: {str(e)}")
+        raise RuntimeError(f"Critical failure: Unable to create embeddings: {str(e)}")
+
+def create_chunks_dataframe(all_chunks):
+    """Convert chunks to a pandas DataFrame with document_id, page, chunk_text, and SFR embeddings."""
+    data = []
+    
+    # Load the chunk embedding model
+    logger.info("Loading model for chunk embeddings")
+    embedding_model = get_ch_embedding_model()
+        
+    # Extract all chunk texts for batch processing
+    chunk_texts = [chunk.page_content for chunk in all_chunks]
+    
+    # Create embeddings for all chunks at once (batch processing)
+    logger.info(f"Creating embeddings for {len(chunk_texts)} chunks")
+    embeddings = create_chunk_embeddings(chunk_texts, embedding_model)
+    
+    for i, chunk in enumerate(all_chunks):
+        # Get the document_id (GCS path) from the metadata
+        document_id = chunk.metadata.get('source', 'unknown')
+        
+        # Extract page number
+        page = chunk.metadata.get('page', 0)
+        
+        # Get the embedding
+        embedding = embeddings[i] if i < len(embeddings) else None
+        
+        if embedding is None:
+            raise RuntimeError(f"Critical failure: Missing embedding for chunk {i}")
+        
+
+        # Add to data
+        data.append({
+            "document_id": document_id,
+            "page": page,
+            "chunk_text": chunk.page_content,
+            "embedding": embedding.tolist()
+        })
+    
+    # Create DataFrame
+    df = pd.DataFrame(data)
+
+    # Remove duplicates based on document_id and chunk_text
+    df_unique = df.drop_duplicates(subset=['document_id', 'chunk_text'])
+    
+    logger.info(f"Created chunks dataframe with {len(df_unique)} unique entries")
+    return df_unique
+
+def main(chunk_method='semantic'):
+    """
+    Main function to execute the chunking pipeline.
+    """
+    # IMPORTANT: Convert to lowercase and add explicit logging
+    chunk_method = chunk_method.lower()
+    logger.info(f"🚀 Starting data pipeline with '{chunk_method}' chunking method...")
+
+    try:
+        bucket = connect_to_bucket()
+        document_folders = list_document_folders(bucket)
+
+        # Get metadata as dataframes
+        meta_df, access_df = get_metadata(bucket)
+
+        # Create documents dataframe
+        docs_df = create_documents_dataframe(bucket)
+
+        # Display the dataframes
+        logger.info(f"Documents dataframe shape: {docs_df.shape}")
+        logger.info(f"Meta dataframe shape: {meta_df.shape}")
+        logger.info(f"Access dataframe shape: {access_df.shape}")
+    
+        # Run validation - will raise exception if validation fails
+        validate_data(document_folders, meta_df, access_df)
+        
+        # Process documents and get chunks
+        # IMPORTANT: Pass the chunk_method parameter explicitly
+        logger.info(f"Will use '{chunk_method}' method for chunking documents")
+        all_chunks = chunk_documents_from_gcs(bucket, chunk_method)
+        chunks_df = create_chunks_dataframe(all_chunks)
+
+        # Set connection to postgres
+        connection = connect_to_postgres()
+
+        # Delete all rows in tables before inserting new data
+        with connection.connect() as conn:
+            conn.execute(text("DELETE FROM access;"))
+            conn.execute(text("DELETE FROM document;"))
+            conn.execute(text("DELETE FROM chunk;"))
+            conn.execute(text("DELETE FROM class;"))
+            conn.commit()
+
+        # Insert data
+        meta_df.to_sql(
+            'class',
+            con=connection,
+            if_exists='append',
+            index=False
+        )
+        
+        access_df.to_sql(
+            'access',
+            con=connection,
+            if_exists='append',
+            index=False
+        )
+
+        docs_df.to_sql(
+            'document',
+            con=connection,
+            if_exists='append',
+            index=False
+        )
+
+        chunks_df.to_sql(
+            'chunk',
+            con=connection,
+            if_exists='append',
+            index=False
+        )
+        
+        logger.info("🎯 Data pipeline completed successfully!")
+        
+        return chunks_df
+        
+    except Exception as e:
+        logger.exception(f"Pipeline execution failed: {str(e)}")
+        raise
+
+# Update the CLI code
+if __name__ == "__main__":
+    import argparse
+    import sys
+    
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Run document processing pipeline with specified chunking method')
+    parser.add_argument('--chunk-method', type=str, default='semantic', 
+                        choices=['recursive', 'semantic'],
+                        help='Method to use for document chunking (recursive or semantic)')
+    
+    # Parse arguments
+    args = parser.parse_args()
+    
+    # Log the received arguments for debugging
+    logger.info(f"Command line arguments: {sys.argv}")
+    logger.info(f"Parsed chunk-method argument: '{args.chunk_method}'")
+    
+    try:
+        # Run main with specified method
+        chunks_df = main(chunk_method=args.chunk_method)
+        logger.info(f"Successfully processed {len(chunks_df)} unique chunks with embeddings")
+        sys.exit(0)
+    except Exception as e:
+        logger.exception("Pipeline failed with error")
+        sys.exit(1)

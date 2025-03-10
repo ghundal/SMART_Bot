@@ -2,7 +2,25 @@ networks:
     smart-network:
         external: true
 services:
+    postgres:
+        build:
+            context: .
+            dockerfile: Dockerfile.postgres
+        container_name: postgres
+        restart: unless-stopped
+        shm_size: 1g
+        volumes: 
+        - ${PERSISTENT_DIR}/postgres:/var/lib/postgresql/data
+        - ./init-scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+        environment:
+        - POSTGRES_PASSWORD=postgres
+        ports:
+        - "5432:5432"
+        networks:
+        - smart-network
     smart_input:
+        depends_on:
+            - postgres
         image: ${IMAGE_NAME}
         container_name: smart_input
         volumes:
@@ -12,6 +30,7 @@ services:
         environment:
             GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS
             GCP_PROJECT: $GCP_PROJECT
+            DB_HOST: postgres
         networks:
         - smart-network
-        command: load_data.py
+        command: cli.py
