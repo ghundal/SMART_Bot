@@ -1,22 +1,36 @@
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+import psycopg2
+import os
 import logging
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
-# Configure basic logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger()
+# Database connection settings
+DB_NAME = "smart"
+DB_USER = "postgres"
+DB_PASSWORD = "postgres"
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_PORT = "5432"
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('LLM')
 
 # Define generation config
 GENERATION_CONFIG = {
-    "max_length": 8192,  # Maximum number of tokens for output
-    "temperature": 0.25,  # Control randomness in output
-    "top_p": 0.95,  # Use nucleus sampling
-    "repetition_penalty": 1.2,  # Reduce repetition
-    "do_sample": True  # Enable sampling
+    "max_new_tokens": 8192,
+    "temperature": 0.1,
+    "top_p": 0.8,
+    "repetition_penalty": 2.0,
+    "do_sample": True
 }
+
+# Token limits
+MAX_INPUT_TOKENS = 20000 
+SYSTEM_PROMPT_TOKENS = 500
 
 # Define system instruction for ML/Data Science expertise
 SYSTEM_INSTRUCTION = """
@@ -24,7 +38,7 @@ You are an AI assistant specialized in machine learning, deep learning, and data
 When answering a query:
 1. Carefully read all the text chunks provided.
 2. Identify the most relevant information from these chunks to address the user's question.
-3. Formulate your response using only the information found in the given chunks.
+3. Formulate your response prioritizing the chunk information but enhnaced with outside knowledge.
 4. If the provided chunks do not contain sufficient information to answer the query, state that you don't have enough information to provide a complete answer.
 5. Always maintain a professional and knowledgeable tone, befitting a data science expert.
 6. If there are contradictions in the provided chunks, mention this in your response and explain the different viewpoints presented.
@@ -36,70 +50,179 @@ Remember:
 Your goal is to provide accurate, helpful information about machine learning, deep learning, and data science based solely on the content of the text chunks you receive with each query.
 """
 
-# Sample ML/Data Science context chunks
-ML_CHUNKS = [
-    """Convolutional Neural Networks (CNNs) are a specialized type of neural network for processing structured grid data such as images. CNNs use convolutional layers that apply sliding filters across the input, effectively learning spatial hierarchies of features. A typical CNN architecture consists of convolutional layers, pooling layers for downsampling, and fully connected layers for classification. Key components include convolutional filters that detect features like edges and textures, activation functions like ReLU, and pooling operations that reduce dimensionality while preserving important information.""",
+def get_ch_embedding_model():
+    """Load and return the embedding model."""
+    try:
+        model_name = 'all-mpnet-base-v2'
+        # model_name = 'multi-qa-mpnet-base-dot-v1'
+        model = SentenceTransformer(model_name).to("cuda" if torch.cuda.is_available() else "cpu")
+        logger.info(f"Successfully loaded Embedding model: {model_name}")
+        return model
+    except Exception as e:
+        logger.exception(f"Error loading Embedding model: {model_name}")
+        raise
+
+def connect_to_postgres():
+    """Connect to the postgres and return the connection."""
+    try:
+        return create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+    except Exception as e:
+        logger.exception(f"Failed to connect to postgres: {e}")
+        raise RuntimeError(f"Critical failure: Unable to connect to postgres!")
+
+def embed_query(query, model):
+    """Generate an embedding for the given query."""
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # Encode query and move to the same device as the model
+    embedding = model.encode(
+        query, 
+        show_progress_bar=False,
+        device=device  # Ensure embeddings are computed on GPU
+    )
+    return embedding.tolist()
+
+def bm25_search(session, query: str, limit: int = 25):
+    """
+    Perform a BM25 full-text search using PGroonga with SQLAlchemy.
+    """
+    try:
+        try:
+            # Construct the SQL query
+            sql = """
+            SELECT 
+                ch.document_id, 
+                ch.page_number,
+                ch.chunk_text,
+                pgroonga_score(ch.*) AS score
+            FROM chunk ch
+            JOIN document d ON ch.document_id = d.document_id
+            WHERE ch.chunk_text &@~ :query
+            ORDER BY score DESC
+            LIMIT :limit
+            """
+            
+            params = {"query": query, "limit": limit}
+            
+            # Execute the query
+            result = session.execute(text(sql), params)
+            rows = result.fetchall()
+            
+            # Process the results
+            search_results = []
+            for row in rows:
+                search_results.append({
+                    'document_id': row[0],
+                    'page_number': row[1],
+                    'chunk_text': row[2],
+                })
+                
+            return search_results
+            
+        finally:
+            session.close()
     
-    """Recurrent Neural Networks (RNNs) are neural networks designed to work with sequential data by maintaining an internal state (memory). Unlike feedforward networks, RNNs have connections that feed back into the network, allowing them to use their internal state to process sequences of inputs. However, basic RNNs suffer from vanishing/exploding gradient problems, making them difficult to train on long sequences. LSTM (Long Short-Term Memory) and GRU (Gated Recurrent Unit) architectures were developed to address these limitations by incorporating gating mechanisms that better control information flow through the network.""",
+    except Exception as e:
+        logger.exception(f"Error in BM25 search: {str(e)}")
+        raise
+
+def vector_search(session, embedding, limit: int = 25):
+    """
+    Perform vector similarity search on the chunk embeddings using SQLAlchemy.
+    """
+    try:
+        try:
+            # Construct the SQL query
+            sql = f"""
+            SELECT 
+                ch.document_id, 
+                ch.page_number,
+                ch.chunk_text,
+                1 - (embedding <=> '{str(embedding)}'::vector) AS similarity
+            FROM chunk ch
+            JOIN document d ON ch.document_id = d.document_id
+            ORDER BY similarity DESC
+            LIMIT :limit
+            """
+            
+            params = {"limit": limit}
+            
+            # Execute the query
+            result = session.execute(text(sql), params)
+            rows = result.fetchall()
+            
+            # Process the results
+            search_results = []
+            for row in rows:
+                search_results.append({
+                    'document_id': row[0],
+                    'page_number': row[1],
+                    'chunk_text': row[2],
+                })
+                
+            return search_results
+            
+        finally:
+            session.close()
     
-    """Random Forests are an ensemble learning method that operates by constructing multiple decision trees during training and outputting the class that is the mode of the classes (classification) or mean prediction (regression) of the individual trees. Random forests correct for decision trees' habit of overfitting to their training set by training each tree on a random subset of the data (bagging) and features. This approach creates diverse trees whose predictions have low correlation, making the ensemble more robust and accurate than individual trees. Random forests are known for their high accuracy, ability to handle large datasets with higher dimensionality, and resistance to overfitting.""",
-    
-    """Gradient Boosting is a machine learning technique that produces a strong predictive model by combining multiple weaker models, typically decision trees. Unlike random forests, which train trees independently, gradient boosting builds trees sequentially, with each new tree correcting errors made by the previous ones. The algorithm minimizes a loss function by adding models that follow the negative gradient of the loss. Popular implementations include XGBoost, LightGBM, and CatBoost, which offer various optimizations for speed and performance. Gradient boosting typically provides higher accuracy than random forests but may be more prone to overfitting without proper regularization.""",
-    
-    """Support Vector Machines (SVMs) are supervised learning models used for classification and regression tasks. The algorithm works by finding the hyperplane that best separates data points of different classes while maximizing the margin between the closest points (support vectors) from each class. SVMs can perform linear and non-linear classification by using the kernel trick, which implicitly maps inputs into high-dimensional feature spaces. Common kernels include linear, polynomial, and radial basis function (RBF). SVMs are effective in high-dimensional spaces, memory efficient, and versatile through different kernel functions.""",
-    
-    """Principal Component Analysis (PCA) is a dimensionality reduction technique that transforms high-dimensional data into a lower-dimensional space while preserving as much variance as possible. PCA works by identifying the principal components (eigenvectors) of the data's covariance matrix, which represent the directions of maximum variance. By projecting the data onto these principal components, PCA achieves dimensionality reduction while minimizing information loss. PCA is commonly used for data visualization, noise reduction, and as a preprocessing step for machine learning algorithms to mitigate the curse of dimensionality."""
-]
+    except Exception as e:
+        logger.exception(f"Error in Vector search: {str(e)}")
+        raise
+
+def load_phi_model():
+    """Load and return the Phi-4 model and tokenizer."""
+    try:
+        # Set device
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        logger.info(f"Using device: {device}")
+        
+        # Load model and tokenizer
+        model_name = "microsoft/Phi-4-mini-instruct"
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        
+        # Load model with optimizations for the device
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+            device_map=device,
+            trust_remote_code=True
+        )
+        
+        logger.info(f"Successfully loaded Phi-4 model: {model_name}")
+        return model, tokenizer, device
+    except Exception as e:
+        logger.exception(f"Error loading Phi-4 model: {e}")
+        raise
 
 def format_prompt_with_system_instruction(question, context=None):
     """Format prompt with system instruction for Phi-4"""
-    # For Phi-4, we'll integrate system instruction into the prompt
-    if context:
-        return f"<|system|>\n{SYSTEM_INSTRUCTION}\n<|user|>\nContext: {context}\n\nQuestion: {question}\n<|assistant|>"
-    else:
-        return f"<|system|>\n{SYSTEM_INSTRUCTION}\n<|user|>\n{question}\n<|assistant|>"
+    structured_question = question
+    
+    # For certain question types, add more structure
+    if any(keyword in question.lower() for keyword in ["what is", "explain", "describe", "define"]):
+        structured_question = f"""
+            Please provide a structured response with the following sections:
+            1. DEFINITION
+            2. COMPONENTS 
+            3. ARCHITECTURE
+            4. APPLICATIONS (if applicable)
+            5. CONCLUSION
 
-def main():
-    # Print startup message
-    print("\n===== Phi-4 ML/Data Science Expert (WITH CONTEXT) =====")
-    print("Loading model, please wait...\n")
+            Original question: {question}
+        """
     
-    # Set device
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    logger.info(f"Using device: {device}")
-    
-    # Load model and tokenizer
-    model_name = "microsoft/Phi-4-mini-instruct"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    
-    # Load model with optimizations for the device
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-        device_map="auto" if device == "cuda" else None,
-        trust_remote_code=True
-    )
-    
-    # Move model to device if not using device_map="auto"
-    if device == "cpu":
-        model = model.to(device)
-    
-    print("\nML/Data Science Expert Model loaded successfully!")
-    print("This version uses PROVIDED CONTEXT CHUNKS for answers.")
-    print("Type your machine learning and data science questions below.")
-    print("Type 'exit', 'quit', or 'q' to end the program.\n")
-    
-    # Join the chunks with a separator
-    context = "\n---\n".join(ML_CHUNKS)
-    
-    # Interactive loop
-    while True:
-        # Get user question
-        question = input("Question: ")
-        if question.lower() in ["exit", "quit", "q"]:
-            print("Goodbye!")
-            break
-            
+    if context:
+        return f"<|system|>\n{SYSTEM_INSTRUCTION}\n<|user|>\nContext: {context}\n\nQuestion: {structured_question}\n<|assistant|>"
+    else:
+        return f"<|system|>\n{SYSTEM_INSTRUCTION}\n<|user|>\n{structured_question}\n<|assistant|>"
+
+def count_tokens(text, tokenizer):
+    """Count the number of tokens in the given text."""
+    return len(tokenizer.encode(text))
+
+def get_model_response(model, tokenizer, device, question, context):
+    """Generate a response from the model based on the question and context."""
+    try:
         # Format the prompt with system instruction and context
         prompt = format_prompt_with_system_instruction(question, context)
         
@@ -107,9 +230,13 @@ def main():
         inputs = tokenizer(prompt, return_tensors="pt", padding=True)
         input_ids = inputs.input_ids.to(device)
         attention_mask = inputs.attention_mask.to(device)
+
+        # Log token count for transparency
+        token_count = input_ids.size(1)
+        logger.info(f"Input token count: {token_count}")
         
         # Generate answer
-        print("Generating answer...")
+        logger.info("Generating model response...")
         with torch.no_grad():
             outputs = model.generate(
                 input_ids,
@@ -122,9 +249,145 @@ def main():
         full_response = tokenizer.decode(outputs[0], skip_special_tokens=True)
         assistant_response = full_response.split("<|assistant|>")[-1].strip()
         
+        return assistant_response
+    except Exception as e:
+        logger.exception(f"Error generating model response: {e}")
+        return "An error occurred while generating the response."
+
+def limit_context_by_tokens(chunks, tokenizer, max_tokens):
+    """
+    Limit the context by using only as many chunks as will fit within the token limit.
+    Assumes chunks are already sorted by relevance (highest score first).
+    """
+    context_parts = []
+    current_tokens = 0
+    
+    # Sort chunks by score in descending order to prioritize most relevant chunks
+    sorted_chunks = sorted(chunks, key=lambda x: x.get('score', 0), reverse=True)
+    
+    used_chunk_count = 0
+    for chunk in sorted_chunks:
+        chunk_text = chunk['chunk_text']
+        chunk_tokens = count_tokens(chunk_text, tokenizer)
+        
+        # Check if adding this chunk would exceed the limit
+        if current_tokens + chunk_tokens + 2 <= max_tokens:  # +2 for separator tokens
+            context_parts.append(chunk_text)
+            current_tokens += chunk_tokens + 2  # Count separator tokens
+            used_chunk_count += 1
+        else:
+            # Stop adding chunks once we reach the token limit
+            break
+    
+    logger.info(f"Using {used_chunk_count} chunks out of {len(chunks)} (token limit: {max_tokens})")
+    return "\n---\n".join(context_parts)
+
+def hybrid_search(session, query, embedding, vector_k=25, bm25_k=25):
+    """
+    Perform a hybrid search using both vector similarity and BM25.
+    
+    Args:
+        session: Database session
+        query (str): The user's question
+        embedding: Query embedding vector
+        vector_k (int): Number of results to retrieve from vector search
+        bm25_k (int): Number of results to retrieve from BM25 search
+        
+    Returns:
+        list: Combined unique chunks from both search methods
+    """
+    try:
+        # Get results from vector search
+        vector_results = vector_search(session, embedding, vector_k)
+        logger.info(f"Retrieved {len(vector_results)} chunks using vector search")
+        
+        # Get results from BM25 search
+        bm25_results = bm25_search(session, query, bm25_k)
+        logger.info(f"Retrieved {len(bm25_results)} chunks using BM25 search")
+        
+        # Combine results, removing duplicates
+        # Create a dictionary with chunk_text as key to remove duplicates
+        combined_chunks = {}
+        
+        # Add vector search results
+        for chunk in vector_results:
+            combined_chunks[chunk['chunk_text']] = chunk
+            
+        # Add BM25 search results
+        for chunk in bm25_results:
+            combined_chunks[chunk['chunk_text']] = chunk
+            
+        # Convert back to list
+        unique_chunks = list(combined_chunks.values())
+        logger.info(f"Combined into {len(unique_chunks)} unique chunks")
+        
+        return unique_chunks
+    
+    except Exception as e:
+        logger.exception(f"Error in hybrid search: {str(e)}")
+        raise
+
+def retrieve_and_generate(query, embedding_model, phi_model, tokenizer, device, top_k=25):
+    """
+    Main function to retrieve relevant chunks and generate a response.
+    """
+    try:        
+        # Connect to database
+        engine = connect_to_postgres()
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        session = SessionLocal()
+        
+        # Generate embedding for query
+        query_embedding = embed_query(query, embedding_model)
+        
+        # Get relevant chunks
+        chunks = hybrid_search(session, query, query_embedding, top_k, top_k)
+        
+        # Calculate available token budget for context
+        # Subtract tokens needed for system prompt and user question from max input tokens
+        question_tokens = count_tokens(query, tokenizer)
+        available_context_tokens = MAX_INPUT_TOKENS - SYSTEM_PROMPT_TOKENS - question_tokens
+        
+        # Limit context to fit within token budget
+        context = limit_context_by_tokens(chunks, tokenizer, available_context_tokens)
+        
+        # Generate response
+        response = get_model_response(phi_model, tokenizer, device, query, context)
+        
+        return response
+    
+    except Exception as e:
+        logger.exception(f"Error in retrieve_and_generate: {e}")
+        return "An error occurred during the retrieve and generate process."
+
+def main():
+
+    # Load models
+    embedding_model = get_ch_embedding_model()
+    phi_model, tokenizer, device = load_phi_model()
+
+    print("\n===== Retrieval Augmented Generation (RAG) System =====")
+    print("Type your machine learning and data science questions below.")
+    print("Type 'exit', 'quit', or 'q' to end the program.")
+    print("Type 'vector', 'bm25', or 'hybrid' to switch search methods (default: hybrid).\n")
+    
+    search_method = "hybrid"
+    
+    while True:
+        # Get user question
+        user_input = input("Question: ")
+        
+        if user_input.lower() in ["exit", "quit", "q"]:
+            print("Goodbye!")
+            break
+        
+        # Processing the query and get response
+        print("Processing query using hybrid search method...")
+        response = retrieve_and_generate(user_input, embedding_model, phi_model, tokenizer, device,)
+        
         # Print the response
         print("\nAnswer:")
-        print(assistant_response)
+        print(response)
         print("\n" + "-"*50 + "\n")
 
 if __name__ == "__main__":
