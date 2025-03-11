@@ -9,6 +9,7 @@ import tempfile
 from langchain_core.documents import Document
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from sqlalchemy.orm import sessionmaker
 
 # Import the AdvancedSemanticChunker 
 from Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
@@ -32,9 +33,6 @@ DB_PORT = "5432"
 # Default chunking parameters
 DEFAULT_CHUNK_SIZE = 1000
 DEFAULT_CHUNK_OVERLAP = 200
-
-# Create output directories
-os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Configure logging
 logging.basicConfig(
@@ -249,7 +247,7 @@ def semantic_chunking(documents, embedding_model='all-MiniLM-L6-v2', buffer_size
 
 def clean_chunks(chunks):
     """
-    Ultra-simple chunk cleaner that aggressively removes whitespace.
+    Cleans chunks by aggressively removing whitespace and NUL (0x00) characters.
     """
     cleaned_chunks = []
     
@@ -258,24 +256,27 @@ def clean_chunks(chunks):
         if chunk is None:
             continue
         
+        # Convert chunk to string and remove NUL characters
+        chunk_text = str(chunk).replace("\x00", "")
+        
         # For LangChain Document objects
         if hasattr(chunk, 'page_content'):
-            # Clean text and update the object
-            chunk.page_content = ' '.join(chunk.page_content.split()).strip()
+            chunk.page_content = ' '.join(chunk_text.split()).strip()
             if chunk.page_content:  # Only keep non-empty chunks
                 cleaned_chunks.append(chunk)
         # For strings
         elif isinstance(chunk, str):
-            clean_text = ' '.join(chunk.split()).strip()
+            clean_text = ' '.join(chunk_text.split()).strip()
             if clean_text:  # Only keep non-empty chunks
                 cleaned_chunks.append(clean_text)
         # For other objects
         else:
-            clean_text = ' '.join(str(chunk).split()).strip()
+            clean_text = ' '.join(chunk_text.split()).strip()
             if clean_text:  # Only keep non-empty chunks
                 cleaned_chunks.append(clean_text)
     
     return cleaned_chunks
+
 
 def chunk_documents_from_gcs(bucket, chunk_method='semantic'):
     """
@@ -340,6 +341,7 @@ def chunk_documents_from_gcs(bucket, chunk_method='semantic'):
             )
         cleaned_chunks = clean_chunks(chunks)
         all_chunks.extend(cleaned_chunks)
+        break
 
     # Create DataFrame from all chunks
     if not all_chunks:
@@ -405,11 +407,10 @@ def create_chunks_dataframe(all_chunks):
         if embedding is None:
             raise RuntimeError(f"Critical failure: Missing embedding for chunk {i}")
         
-
         # Add to data
         data.append({
             "document_id": document_id,
-            "page": page,
+            "page_number": page,
             "chunk_text": chunk.page_content,
             "embedding": embedding.tolist()
         })
@@ -422,6 +423,97 @@ def create_chunks_dataframe(all_chunks):
     
     logger.info(f"Created chunks dataframe with {len(df_unique)} unique entries")
     return df_unique
+
+
+def create_and_insert_chunks(all_chunks):
+    """Process chunks and insert directly into the database with document_id, page, 
+    chunk_text, and vector embeddings."""
+
+    # Connect to the database
+    engine = connect_to_postgres()
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    # Keep track of processed chunks to avoid duplicates
+    processed_chunks = set()
+    inserted_count = 0
+
+    # Load the chunk embedding model
+    logger.info("Loading model for chunk embeddings")
+    embedding_model = get_ch_embedding_model()
+
+    # Load the chunk embedding model
+    logger.info("Loading model for chunk embeddings")
+    embedding_model = get_ch_embedding_model()
+        
+    # Extract all chunk texts for batch processing
+    chunk_texts = [chunk.page_content for chunk in all_chunks]
+    
+    # Create embeddings for all chunks at once (batch processing)
+    logger.info(f"Creating embeddings for {len(chunk_texts)} chunks")
+    embeddings = create_chunk_embeddings(chunk_texts, embedding_model)
+    
+    for i, chunk in enumerate(all_chunks):
+        # Get the document_id (GCS path) from the metadata
+        document_id = chunk.metadata.get('source', 'unknown')
+        
+        # Extract page number
+        page_number = chunk.metadata.get('page', 0)
+        
+        # Get the embedding
+        embedding = embeddings[i] if i < len(embeddings) else None
+        
+        if embedding is None:
+            raise RuntimeError(f"Critical failure: Missing embedding for chunk {i}")
+        
+        # Create a unique identifier to check for duplicates
+        unique_id = (document_id, chunk.page_content)
+
+        # Skip if we've already processed this chunk
+        if unique_id in processed_chunks:
+            continue
+        
+        # Add to processed set
+        processed_chunks.add(unique_id)
+
+        # Format the embedding for pgvector
+        # Convert numpy array to string format pgvector expects: '[0.1,0.2,...]'
+        embedding_str = str(embedding.tolist())
+
+        try:
+            # Insert directly into the database
+            sql = f"""
+            INSERT INTO chunk (document_id, page_number, chunk_text, embedding)
+            VALUES (:document_id, :page_number, :chunk_text, '{embedding_str}'::vector)
+            """
+
+            session.execute(
+                text(sql),
+                {
+                    "document_id": document_id,
+                    "page_number": page_number,
+                    "chunk_text": chunk.page_content
+                }
+            )
+            
+            inserted_count += 1
+            
+            # Commit every 100 inserts to avoid large transactions
+            if inserted_count % 100 == 0:
+                session.commit()
+                logger.info(f"Inserted {inserted_count} chunks so far")
+                
+        except Exception as e:
+            logger.error(f"Error inserting chunk {i}: {e}")
+            session.rollback()
+            break
+
+    # Final commit for any remaining inserts
+    if inserted_count % 100 != 0:
+        session.commit()
+        
+    logger.info(f"Successfully inserted {inserted_count} unique chunks into the database")
+    return inserted_count
 
 def main(chunk_method='semantic'):
     """
@@ -450,10 +542,8 @@ def main(chunk_method='semantic'):
         validate_data(document_folders, meta_df, access_df)
         
         # Process documents and get chunks
-        # IMPORTANT: Pass the chunk_method parameter explicitly
         logger.info(f"Will use '{chunk_method}' method for chunking documents")
         all_chunks = chunk_documents_from_gcs(bucket, chunk_method)
-        chunks_df = create_chunks_dataframe(all_chunks)
 
         # Set connection to postgres
         connection = connect_to_postgres()
@@ -465,7 +555,7 @@ def main(chunk_method='semantic'):
             conn.execute(text("DELETE FROM chunk;"))
             conn.execute(text("DELETE FROM class;"))
             conn.commit()
-
+        
         # Insert data
         meta_df.to_sql(
             'class',
@@ -488,16 +578,11 @@ def main(chunk_method='semantic'):
             index=False
         )
 
-        chunks_df.to_sql(
-            'chunk',
-            con=connection,
-            if_exists='append',
-            index=False
-        )
-        
+        inserted_count = create_and_insert_chunks(all_chunks)
+
         logger.info("🎯 Data pipeline completed successfully!")
         
-        return chunks_df
+        return inserted_count
         
     except Exception as e:
         logger.exception(f"Pipeline execution failed: {str(e)}")
@@ -523,8 +608,8 @@ if __name__ == "__main__":
     
     try:
         # Run main with specified method
-        chunks_df = main(chunk_method=args.chunk_method)
-        logger.info(f"Successfully processed {len(chunks_df)} unique chunks with embeddings")
+        inserted_count = main(chunk_method=args.chunk_method)
+        logger.info(f"Successfully processed {inserted_count} unique chunks with embeddings")
         sys.exit(0)
     except Exception as e:
         logger.exception("Pipeline failed with error")
