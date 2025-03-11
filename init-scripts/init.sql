@@ -1,8 +1,8 @@
-CREATE EXTENSION IF NOT EXISTS vectors;
-CREATE EXTENSION IF NOT EXISTS pgroonga;
-
 CREATE DATABASE smart;
 \connect smart;
+
+CREATE EXTENSION IF NOT EXISTS vectors;
+CREATE EXTENSION IF NOT EXISTS pgroonga;
 
 CREATE TABLE class(
     class_id TEXT primary key,
@@ -26,7 +26,7 @@ CREATE TABLE chunk (
     document_id TEXT NOT NULL REFERENCES document,
     page_number INT,
     chunk_text TEXT,
-    embedding VECTOR(768),
+    embedding VECTOR(768)
 );
 
-
+CREATE INDEX pgroonga_chunk_text_index ON chunk USING pgroonga (chunk_text);
