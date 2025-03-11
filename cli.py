@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sqlalchemy.orm import sessionmaker
+import torch
 
 # Import the AdvancedSemanticChunker 
 from Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
@@ -221,18 +222,25 @@ def semantic_chunking(documents, embedding_model='all-MiniLM-L6-v2', buffer_size
     logger.info(f"Chunking documents using semantic method with model: {embedding_model}")
     
     try:
-        # Use the preloaded model if provided, otherwise load it
+        # Use the preloaded model
         model = preloaded_model
         if model is None:
             logger.info(f"Loading embedding model: {embedding_model}")
             model = get_embedding_model(embedding_model)
+
+        # Move model to CUDA
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model.to(device)
+        logger.info(f"Using device: {device} for semantic chunking")
         
         text_splitter = AdvancedSemanticChunker(
             embedding_model=embedding_model,
             buffer_size=buffer_size,
             breakpoint_threshold_type=breakpoint_type,
             breakpoint_threshold_amount=breakpoint_amount,
-            embedding_function=None
+            embedding_function=lambda texts: model.encode(
+                texts, device=device, batch_size=4, show_progress_bar=False
+            )
         )
         
         # Split documents into chunks
@@ -277,7 +285,6 @@ def clean_chunks(chunks):
     
     return cleaned_chunks
 
-
 def chunk_documents_from_gcs(bucket, chunk_method='semantic'):
     """
     Load documents from GCS, chunk them, and return/save the chunks dataframe.
@@ -304,7 +311,7 @@ def chunk_documents_from_gcs(bucket, chunk_method='semantic'):
     embedding_model = None
     if chunk_method == 'semantic':
         logger.info("Loading embedding model for chunking")
-        embedding_model = get_embedding_model('all-MiniLM-L6-v2')
+        embedding_model = get_embedding_model('all-MiniLM-L6-v2').to("cuda" if torch.cuda.is_available() else "cpu")
     
     # Process each document
     for _, row in docs_df.iterrows():
@@ -341,7 +348,12 @@ def chunk_documents_from_gcs(bucket, chunk_method='semantic'):
             )
         cleaned_chunks = clean_chunks(chunks)
         all_chunks.extend(cleaned_chunks)
-        break
+
+    # Free the semantic chunking model after processing
+    if embedding_model:
+        del embedding_model
+        torch.cuda.empty_cache()
+        logger.info("Unloaded semantic chunking model and cleared GPU cache")
 
     # Create DataFrame from all chunks
     if not all_chunks:
@@ -356,7 +368,7 @@ def get_ch_embedding_model():
     try:
         model_name = 'all-mpnet-base-v2'
         # model_name = 'multi-qa-mpnet-base-dot-v1'
-        model = SentenceTransformer(model_name)
+        model = SentenceTransformer(model_name).to("cuda" if torch.cuda.is_available() else "cpu")
         logger.info(f"Successfully loaded Embedding model: {model_name}")
         return model
     except Exception as e:
@@ -379,52 +391,6 @@ def create_chunk_embeddings(chunk_texts, embedding_model, batch_size = 4):
         logger.exception(f"Error creating embeddings: {str(e)}")
         raise RuntimeError(f"Critical failure: Unable to create embeddings: {str(e)}")
 
-def create_chunks_dataframe(all_chunks):
-    """Convert chunks to a pandas DataFrame with document_id, page, chunk_text, and SFR embeddings."""
-    data = []
-    
-    # Load the chunk embedding model
-    logger.info("Loading model for chunk embeddings")
-    embedding_model = get_ch_embedding_model()
-        
-    # Extract all chunk texts for batch processing
-    chunk_texts = [chunk.page_content for chunk in all_chunks]
-    
-    # Create embeddings for all chunks at once (batch processing)
-    logger.info(f"Creating embeddings for {len(chunk_texts)} chunks")
-    embeddings = create_chunk_embeddings(chunk_texts, embedding_model)
-    
-    for i, chunk in enumerate(all_chunks):
-        # Get the document_id (GCS path) from the metadata
-        document_id = chunk.metadata.get('source', 'unknown')
-        
-        # Extract page number
-        page = chunk.metadata.get('page', 0)
-        
-        # Get the embedding
-        embedding = embeddings[i] if i < len(embeddings) else None
-        
-        if embedding is None:
-            raise RuntimeError(f"Critical failure: Missing embedding for chunk {i}")
-        
-        # Add to data
-        data.append({
-            "document_id": document_id,
-            "page_number": page,
-            "chunk_text": chunk.page_content,
-            "embedding": embedding.tolist()
-        })
-    
-    # Create DataFrame
-    df = pd.DataFrame(data)
-
-    # Remove duplicates based on document_id and chunk_text
-    df_unique = df.drop_duplicates(subset=['document_id', 'chunk_text'])
-    
-    logger.info(f"Created chunks dataframe with {len(df_unique)} unique entries")
-    return df_unique
-
-
 def create_and_insert_chunks(all_chunks):
     """Process chunks and insert directly into the database with document_id, page, 
     chunk_text, and vector embeddings."""
@@ -434,13 +400,7 @@ def create_and_insert_chunks(all_chunks):
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    # Keep track of processed chunks to avoid duplicates
-    processed_chunks = set()
     inserted_count = 0
-
-    # Load the chunk embedding model
-    logger.info("Loading model for chunk embeddings")
-    embedding_model = get_ch_embedding_model()
 
     # Load the chunk embedding model
     logger.info("Loading model for chunk embeddings")
@@ -465,16 +425,6 @@ def create_and_insert_chunks(all_chunks):
         
         if embedding is None:
             raise RuntimeError(f"Critical failure: Missing embedding for chunk {i}")
-        
-        # Create a unique identifier to check for duplicates
-        unique_id = (document_id, chunk.page_content)
-
-        # Skip if we've already processed this chunk
-        if unique_id in processed_chunks:
-            continue
-        
-        # Add to processed set
-        processed_chunks.add(unique_id)
 
         # Format the embedding for pgvector
         # Convert numpy array to string format pgvector expects: '[0.1,0.2,...]'
@@ -501,12 +451,11 @@ def create_and_insert_chunks(all_chunks):
             # Commit every 100 inserts to avoid large transactions
             if inserted_count % 100 == 0:
                 session.commit()
-                logger.info(f"Inserted {inserted_count} chunks so far")
+                #logger.info(f"Inserted {inserted_count} chunks so far")
                 
         except Exception as e:
             logger.error(f"Error inserting chunk {i}: {e}")
             session.rollback()
-            break
 
     # Final commit for any remaining inserts
     if inserted_count % 100 != 0:
@@ -551,8 +500,8 @@ def main(chunk_method='semantic'):
         # Delete all rows in tables before inserting new data
         with connection.connect() as conn:
             conn.execute(text("DELETE FROM access;"))
-            conn.execute(text("DELETE FROM document;"))
             conn.execute(text("DELETE FROM chunk;"))
+            conn.execute(text("DELETE FROM document;"))
             conn.execute(text("DELETE FROM class;"))
             conn.commit()
         
@@ -588,7 +537,6 @@ def main(chunk_method='semantic'):
         logger.exception(f"Pipeline execution failed: {str(e)}")
         raise
 
-# Update the CLI code
 if __name__ == "__main__":
     import argparse
     import sys
