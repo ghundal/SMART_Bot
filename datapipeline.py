@@ -17,7 +17,7 @@ from Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_mod
 from sentence_transformers import SentenceTransformer
 
 # Set up environment
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "../secrets/smart-452816-101a65261db2.json"
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "../secrets/smart_input_key.json"
 GCP_PROJECT = "SMART"
 BUCKET_NAME = 'smart_input_data'
 DOCUMENTS_FOLDER = 'documents/'

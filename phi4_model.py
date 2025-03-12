@@ -16,12 +16,15 @@ DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = "5432"
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('LLM')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('phi4_model')
 
 # Define generation config with improved parameters
 GENERATION_CONFIG = {
-    "max_length": 1024,
+    "max_length": 512,
     "temperature": 0.25,  # Lower temperature for more focused output
     "top_p": 0.9,
     "repetition_penalty": 1.3,
@@ -244,14 +247,13 @@ def format_prompt_with_chat_markers(system_instruction, context, question):
     prompt = f"<|system|>\n{system_instruction}\n<|user|>\nHere is some context to help answer my question:\n\n{context}\n\nMy question is: {question}\n<|assistant|>"
     return prompt
 
-def query_phi_with_hybrid_search(question, system_prompt=None, vector_k=5, bm25_k=5):
+def query_phi_with_hybrid_search(question, model, tokenizer, embedding_model,
+                                vector_k, bm25_k):
     """
     Query the Phi-4 model using hybrid search to retrieve relevant context.
     Uses proper chat format and more selective context retrieval.
     """
     try:
-        # Load embedding model
-        embedding_model = get_ch_embedding_model()
         
         # Connect to database
         connection = connect_to_postgres()
@@ -270,18 +272,21 @@ def query_phi_with_hybrid_search(question, system_prompt=None, vector_k=5, bm25_
         context = "\n\n".join(contexts)
         
         # Use simplified system prompt if none provided
-        if system_prompt is None:
-            system_prompt = """
-            You are an AI assistant that answers questions based on the provided context.
-            1. Only use information from the provided context.
-            2. Keep your answers concise and to the point.
-            3. If you don't know the answer, say so.
-            4. Do not include unnecessary information or repetitive explanations.
-            5. Format your response clearly and directly address the question.
-            """
-        
-        # Load Phi model
-        model, tokenizer = load_phi_model()
+        system_prompt = """
+        You are an AI assistant specialized in machine learning, deep learning, and data science. You provide helpful, accurate, and educational responses to questions about these topics.
+
+        When answering a query:
+        1. Provide clear explanations with appropriate technical detail for the complexity of the question.
+        2. When explaining concepts, include practical examples to illustrate how they work.
+        3. If relevant, mention advantages, limitations, and common use cases.
+        4. For complex topics, break down your explanation into understandable components.
+        5. Maintain a professional and educational tone throughout your responses.
+        6. Only use information from the provided context.
+        7. Keep your answers concise and to the point.
+        8. If you don't know the answer, say so.
+        9. Do not include unnecessary information or repetitive explanations.
+        10. Format your response clearly and directly address the question.
+        """
         
         # Format the prompt with chat markers
         prompt = format_prompt_with_chat_markers(system_prompt, context, question)
@@ -330,11 +335,20 @@ def query_phi_with_hybrid_search(question, system_prompt=None, vector_k=5, bm25_
 def main():
     """Main function to run an interactive Phi-4 query system with hybrid search."""
     try:
+        print("\n===== Improved Phi-4 RAG Question Answering System =====")
+        print("Loading models... This may take a moment.")
+
+        # Load Phi model
+        phi_model, tokenizer = load_phi_model()
+        
+        # Load embedding model
+        embedding_model = get_ch_embedding_model()
+
         # Load tokenizer once to avoid reloading it for each question
         model_name = "microsoft/Phi-4-mini-instruct"
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         
-        print("\n===== Improved Phi-4 RAG Question Answering System =====")
+        print("Models loaded successfully!")
         print("Type 'quit', 'exit', or 'q' to end the session.")
         print("-" * 60)
         
@@ -358,6 +372,9 @@ def main():
             # Use the improved query function with reduced context size
             result = query_phi_with_hybrid_search(
                 question=question,
+                model=phi_model,
+                tokenizer=tokenizer,
+                embedding_model=embedding_model,
                 vector_k=5,
                 bm25_k=5
             )

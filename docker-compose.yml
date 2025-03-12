@@ -41,7 +41,7 @@ services:
                           capabilities: [gpu]
         networks:
         - smart-network
-        command: cli.py
+        command: datapipeline.py
     smart_model:
         depends_on:
             - postgres
@@ -62,5 +62,5 @@ services:
                           capabilities: [gpu]
         networks:
         - smart-network
-        command: phi4_chunks.py
+        command: phi4_model.py
         tty: true

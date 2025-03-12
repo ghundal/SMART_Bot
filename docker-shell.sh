@@ -8,7 +8,7 @@ export BASE_DIR=$(pwd)
 export PERSISTENT_DIR=$(pwd)/../persistent-folder/
 export SECRETS_DIR=$(pwd)/../secrets/
 export GCP_PROJECT="SMART"
-export GOOGLE_APPLICATION_CREDENTIALS="/secrets/smart-452816-101a65261db2.json"
+export GOOGLE_APPLICATION_CREDENTIALS="/secrets/smart_input_key.json"
 export IMAGE_NAME="smart_input"
 
 # Create the network if we don't have it yet
