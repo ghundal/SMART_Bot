@@ -24,15 +24,15 @@ logger = logging.getLogger('phi4_model')
 
 # Define generation config with improved parameters
 GENERATION_CONFIG = {
-    "max_length": 512,
-    "temperature": 0.25,  # Lower temperature for more focused output
+    "max_length": 256,
+    "temperature": 0.1, 
     "top_p": 0.9,
     "repetition_penalty": 1.3,
     "do_sample": True
 }
 
 # Token limits
-MAX_INPUT_TOKENS = 4000  # Reduced to prevent context overload
+MAX_INPUT_TOKENS = 4000
 
 def get_ch_embedding_model():
     """Load and return the embedding model."""
@@ -62,11 +62,11 @@ def embed_query(query, model):
     embedding = model.encode(
         query, 
         show_progress_bar=False,
-        device=device  # Ensure embeddings are computed on GPU
+        device=device 
     )
     return embedding.tolist()
 
-def bm25_search(session, query: str, limit: int = 5):  # Reduced from 25 to 5
+def bm25_search(session, query: str, limit):
     """
     Perform a BM25 full-text search using PGroonga with SQLAlchemy.
     """
@@ -111,7 +111,7 @@ def bm25_search(session, query: str, limit: int = 5):  # Reduced from 25 to 5
         logger.exception(f"Error in BM25 search: {str(e)}")
         raise
 
-def vector_search(session, embedding, limit: int = 5):  # Reduced from 25 to 5
+def vector_search(session, embedding, limit, threshold: float = 0.5):
     """
     Perform vector similarity search on the chunk embeddings using SQLAlchemy.
     """
@@ -126,11 +126,12 @@ def vector_search(session, embedding, limit: int = 5):  # Reduced from 25 to 5
                 1 - (embedding <=> '{str(embedding)}'::vector) AS similarity
             FROM chunk ch
             JOIN document d ON ch.document_id = d.document_id
+            WHERE 1 - (embedding <=> '{str(embedding)}'::vector) >= :threshold
             ORDER BY similarity DESC
             LIMIT :limit
             """
             
-            params = {"limit": limit}
+            params = {"limit": limit, "threshold": threshold}
             
             # Execute the query
             result = session.execute(text(sql), params)
@@ -155,7 +156,7 @@ def vector_search(session, embedding, limit: int = 5):  # Reduced from 25 to 5
         logger.exception(f"Error in Vector search: {str(e)}")
         raise
 
-def hybrid_search(session, query, embedding, vector_k=5, bm25_k=5):  # Reduced from 25 to 5
+def hybrid_search(session, query, embedding, vector_k=10, bm25_k=10):
     """
     Perform a hybrid search using both vector similarity and BM25.
     """
@@ -279,9 +280,9 @@ def query_phi_with_hybrid_search(question, model, tokenizer, embedding_model,
         1. Provide clear explanations with appropriate technical detail for the complexity of the question.
         2. When explaining concepts, include practical examples to illustrate how they work.
         3. If relevant, mention advantages, limitations, and common use cases.
-        4. For complex topics, break down your explanation into understandable components.
+        4. Break down your explanation into understandable components.
         5. Maintain a professional and educational tone throughout your responses.
-        6. Only use information from the provided context.
+        6. Prioritize information from the chunks and enhance/format with your knowledge.
         7. Keep your answers concise and to the point.
         8. If you don't know the answer, say so.
         9. Do not include unnecessary information or repetitive explanations.
