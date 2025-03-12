@@ -32,7 +32,7 @@ DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = "5432"
 
 # Default chunking parameters
-DEFAULT_CHUNK_SIZE = 1000
+DEFAULT_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_OVERLAP = 200
 
 # Configure logging
@@ -285,7 +285,48 @@ def clean_chunks(chunks):
     
     return cleaned_chunks
 
-def chunk_documents_from_gcs(bucket, chunk_method='semantic'):
+def clean_document_text(documents):
+    """
+    Cleans document text before chunking by removing various types of problematic 
+    characters and normalizing whitespace.
+    
+    Args:
+        documents: List of Document objects from PyPDFLoader
+        
+    Returns:
+        List of Document objects with cleaned page_content
+    """
+    import re
+    cleaned_documents = []
+    
+    for doc in documents:
+        if doc is None or not hasattr(doc, 'page_content'):
+            continue
+            
+        # Get the current text
+        text = doc.page_content
+        
+        # Remove NUL characters and other control characters
+        text = text.replace("\x00", "")
+        
+        # Remove non-printable and control characters except normal whitespace
+        text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]', '', text)
+        
+        # Normalize whitespace (combine multiple spaces, tabs, newlines to single space)
+        text = re.sub(r'\s+', ' ', text)
+        
+        # Strip leading/trailing whitespace
+        text = text.strip()
+        
+        # Only include document if it still has content after cleaning
+        if text:
+            # Create a new document with the same metadata but cleaned text
+            doc.page_content = text
+            cleaned_documents.append(doc)
+    
+    return cleaned_documents
+
+def chunk_documents_from_gcs(bucket, chunk_method):
     """
     Load documents from GCS, chunk them, and return/save the chunks dataframe.
     
@@ -326,6 +367,14 @@ def chunk_documents_from_gcs(bucket, chunk_method='semantic'):
         
         if not documents:
             logger.warning(f"No documents loaded from {gcs_path}. Skipping.")
+            continue
+
+        # Clean the documents before chunking
+        logger.info(f"Cleaning text for {filename} before chunking")
+        cleaned_documents = clean_document_text(documents)
+        
+        if not cleaned_documents:
+            logger.warning(f"No documents remained after cleaning for {filename}. Skipping.")
             continue
         
         # Apply the appropriate chunking method
@@ -464,7 +513,7 @@ def create_and_insert_chunks(all_chunks):
     logger.info(f"Successfully inserted {inserted_count} unique chunks into the database")
     return inserted_count
 
-def main(chunk_method='semantic'):
+def main(chunk_method='recursive'):
     """
     Main function to execute the chunking pipeline.
     """
