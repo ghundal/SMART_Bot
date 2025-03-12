@@ -1,0 +1,11 @@
+class_id,class_name,authors,term
+CSCI_89,Deep Learning,"Zoran Djordjevic, Rahul Joglekar",Fall 2024
+CSCI_109A,Introduction to Data Science,"Pavlos Protopapas, Christopher Gumb, Natesh Pilai",Fall 2024
+CSCI_89B,Intro to Natural Language Processing,Dmitry Kurochkin,Fall 2024
+CSCI_25,Computer Vision,Stephen Elston,Spring 2024
+ISMT_161,Computational Bayesian Inference,Dmitry Kurochkin,Spring 2024
+STAT_109,Introduction to Statistical Modeling,Bharatendra Rai,Spring 2024
+CSCI_80,Introduction to Artificial Intelligence with Python,Brian Paul Yu,Fall 2023
+CSCI_83,Fundamentals of Data Science,Stephen Elston,Fall 2023
+ISMT_136,Time Series Analysis with Python,Dmitry Kurochkin,Fall 2023
+CSCI_101,Foundations of Data Science and Engineering,Bruce Huang,Fall 2024
