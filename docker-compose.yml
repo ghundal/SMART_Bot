@@ -26,7 +26,6 @@ services:
         volumes:
             - ${SECRETS_DIR}:/secrets:ro
             - ${BASE_DIR}:/app/work
-            - ${PERSISTENT_DIR}:/persistent:rw
         environment:
             GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS
             GCP_PROJECT: $GCP_PROJECT
@@ -40,8 +39,28 @@ services:
                         - driver: nvidia
                           count: all
                           capabilities: [gpu]
-
         networks:
         - smart-network
         command: cli.py
-        
+    smart_model:
+        depends_on:
+            - postgres
+        image: ${IMAGE_NAME}
+        container_name: smart_model
+        volumes:
+            - ${BASE_DIR}:/app/work
+        environment:
+            DB_HOST: postgres
+            NVIDIA_VISIBLE_DEVICES: all
+            NVIDIA_DRIVER_CAPABILITIES: compute,utility
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: all
+                          capabilities: [gpu]
+        networks:
+        - smart-network
+        command: phi4_chunks.py
+        tty: true
