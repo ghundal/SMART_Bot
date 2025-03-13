@@ -55,7 +55,7 @@ Go to Google console and ensure that you have access to smart_input_data bucket.
 ### **1. Run the image smart_input to prepare the input data**
 - **Loads** documents from GCP
 - **Validates** to ensure that data is complete
-- **Chunks** text documents using semantic chunking (~12000)
+- **Chunks** text documents using semantic chunking. Change default to recursive/semantic in main to change the chunking method. Current default = recursive. 
 - **Embeds** the text into a vector space
 - **Stores** embeddings in a **PostgreSQL + pgvector database**
 ```bash
