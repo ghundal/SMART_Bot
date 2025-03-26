@@ -426,7 +426,6 @@ def get_ch_embedding_model():
 
 def create_chunk_embeddings(chunk_texts, embedding_model, batch_size = 4):
     """Create embeddings for a list of chunk texts."""
-    import torch
     
     try:
         embeddings = embedding_model.encode(

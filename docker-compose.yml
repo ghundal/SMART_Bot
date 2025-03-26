@@ -62,5 +62,5 @@ services:
                           capabilities: [gpu]
         networks:
         - smart-network
-        command: phi4_model.py
+        command: llama_model.py
         tty: true

@@ -5,6 +5,12 @@ This repository contains a **Retrieval-Augmented Generation (RAG)** system that 
 - **Stores** embeddings in a **PostgreSQL + pgvector database**
 - **Retrieves** relevant information using **BM25 + Vector Search**
 - **Enhances** LLM responses with retrieved context
+
+Enhancements:
+- **Audit** Audit table
+- **BM25** Cleaned query for better search results
+- **Reranker** Added a model for reranked to give top documents
+
 ---
 ## **Details**
 - **Data**: The data is stored in Google cloud storage bucket. The input data includes 155 pdf documents from 10 Harvard Data Science classes. Additionally, it includes 2 csv files
