@@ -122,23 +122,15 @@ and speed by estimating the cost to reach the goal from the current node. These 
 
 The code used for data generation is contained in the notebook fine_tuning/data_generation_openai.ipynb
 
-Data generation is done with the help of an LLM through a prompt that is sent to the OpenAI API. The prompt used to that end informs the LLM<br>
-about the aim of the data generation (i.e. fine-tuning) and provides several instructions related to the questions to generate, the quality and<br>
-length of the answers, as well as the tone to use. 
+Data generation is done with the help of an LLM through a prompt that is sent to the OpenAI API. The prompt used to that end informs the LLM about the aim of the data generation (i.e. fine-tuning) and provides several instructions related to the questions to generate, the quality and length of the answers, as well as the tone to use. 
 
-Five course-specific Q/A pairs are generated per call to the API. This limit ensures that maximum token counts are not exceeded, when experimenting<br>
-with different models. So to generate a more comprehensive set of Q/A pairs, prompts have to be repeatedly sent to the API and the generated questions<br>
-and answers have then to be locally accumalted in lists. Also, to avoid that the LLM generates duplicate quesions, in each iteration of a prompt sent to<br>
-OpenAI for a given course, the questions that had already been generated for the course are sent along with the prompt. The prompt is then instructed to<br>
-avoid generating the same questions again.<br>
+Five course-specific Q/A pairs are generated per call to the API. This limit ensures that maximum token counts are not exceeded, when experimenting with different models. So to generate a more comprehensive set of Q/A pairs, prompts have to be repeatedly sent to the API and the generated questions and answers have then to be locally accumalted in lists. Also, to avoid that the LLM generates duplicate quesions, in each iteration of a prompt sent to OpenAI for a given course, the questions that had already been generated for the course are sent along with the prompt. The prompt is then instructed to avoid generating the same questions again.<br>
 
-Experiments have been conducted with different models. It has been found that "gpt-4o" yields the best results in terms of quality, speed and max tokens<br>
-count. 
+Experiments have been conducted with different models. It has been found that "gpt-4o" yields the best results in terms of quality, speed and max tokens count.<br>
 
-Once the target number of Q/A pairs has been generated, the notebook stores the data locally in various json and csv files. It also splits the dataset into<br>
-train and test datasets (the split ratio is 80%/20%).
+Once the target number of Q/A pairs has been generated, the notebook stores the data locally in various json and csv files. It also splits the dataset into train and test datasets (the split ratio is 80%/20%).
 
-Lastly, here is the final version of the prompt that has been used for generating the Q/A pairs:
+Lastly, here is the final version of the prompt that has been used for generating the Q/A pairs:<br>
 
 You are an expert data scientist and educator for the course "{course}" at the Harvard Extension School, which is part of the 
 Data Science curriculum. Here is a description of the course:
