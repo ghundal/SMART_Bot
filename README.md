@@ -1,4 +1,4 @@
-# E115_SMART Milestone 2
+# E115_SMART Milestone 3
 This repository contains a **Retrieval-Augmented Generation (RAG)** system that integrates a **vector database** with a **Large Language Model (LLM)**. The system:
 - **Chunks** text documents
 - **Embeds** the text into a vector space
