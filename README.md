@@ -182,4 +182,6 @@ Please begin generating the Q/A pairs now...!
 
 ### **2. Training**
 
+The Gemma 3-1b-it model was used as the base model for fine-tuning on a question & answer dataset generated from course material in 16 different Harvard Extension School data science classes. The Hugging Face TRL SFTTrainer was used to supervise fine-tune the model along with Parameter-efficient fine-tuning (PEFT) support including QLoRA. A link to the Weights & Biases report for the various experiments is included below:
 
+https://api.wandb.ai/links/tvaldeca-harvard-university/1lg297fj
