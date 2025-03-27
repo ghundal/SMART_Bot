@@ -108,17 +108,12 @@ What are graph search algorithms, and how are they applied in artificial intelli
 
 Answer:
 
-Graph search algorithms are fundamental tools in artificial intelligence used to navigate through and analyze graph structures,<br> 
-which consist of nodes representing states or configurations and edges representing possible transitions between these states.<br>
-These algorithms are crucial for solving problems that can be modeled as a network of interconnected nodes, such as pathfinding,<br>
-puzzle solving, and game playing. Key algorithms include Breadth-First Search (BFS), Depth-First Search (DFS), Dijkstra's Algorithm, and A* Search.<br>
+Graph search algorithms are fundamental tools in artificial intelligence used to navigate through and analyze graph structures, which consist of nodes representing states or configurations and edges representing possible transitions between these states.
+These algorithms are crucial for solving problems that can be modeled as a network of interconnected nodes, such as pathfinding, puzzle solving, and game playing. Key algorithms include Breadth-First Search (BFS), Depth-First Search (DFS), Dijkstra's Algorithm, and A* Search.
 
-Breadth-First Search is an uninformed search strategy that explores the neighbor nodes at the present depth before moving on to nodes at the<br>
-next depth level, making it ideal for finding the shortest path in an unweighted graph. Depth-First Search, on the other hand, explores as<br> 
-far as possible along each branch before backtracking, which can be more memory efficient. Dijkstra's Algorithm is a weighted graph search<br> 
-algorithm used to find the shortest path between nodes, while A* Search enhances Dijkstra's by incorporating heuristics to improve efficiency<br> 
-and speed by estimating the cost to reach the goal from the current node. These algorithms are extensively used in various AI applications,<br> 
-including robotics, network routing, and game development.
+Breadth-First Search is an uninformed search strategy that explores the neighbor nodes at the present depth before moving on to nodes at the next depth level, making it ideal for finding the shortest path in an unweighted graph. Depth-First Search, on the other hand, explores as 
+far as possible along each branch before backtracking, which can be more memory efficient. Dijkstra's Algorithm is a weighted graph search algorithm used to find the shortest path between nodes, while A* Search enhances Dijkstra's by incorporating heuristics to improve efficiency
+and speed by estimating the cost to reach the goal from the current node. These algorithms are extensively used in various AI applications, including robotics, network routing, and game development.
 
 2.) In a second step, these question/answer pairs are then used as an input to fine-tune an LLM. 
 
