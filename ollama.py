@@ -4,12 +4,19 @@ import os
 import logging
 import numpy as np
 import requests
+import re
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 import nltk
 nltk.download('stopwords')
 from nltk.corpus import stopwords
+
+from deep_translator import GoogleTranslator
+from langdetect import detect
+from langdetect import detect_langs, DetectorFactory, LangDetectException
+from collections import Counter
+import langid
 
 # Database connection settings
 DB_NAME = "smart"
@@ -21,6 +28,7 @@ DB_PORT = "5432"
 # Ollama API endpoints
 OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "llama3.1"
+# OLLAMA_MODEL = 'llama3-chatqa' # only to build memory
 RERANKER_MODEL = "llama3.1"
 # OLLAMA_MODEL = "gemma3:12b"
 
@@ -77,6 +85,9 @@ def embed_query(query, model):
 
 def format_for_pgroonga(query: str) -> str:
     stop_words = set(stopwords.words('english'))
+
+    # Remove punctuation and lowercase
+    query = re.sub(r'[^\w\s]', '', query.lower())
     
     # Lowercase and tokenize
     terms = query.strip().lower().split()
@@ -384,24 +395,251 @@ def log_audit(session, user_email, query, query_embedding, chunks, response):
     except Exception as e:
         logger.exception(f"Error logging audit: {e}")
 
-def query_ollama_with_hybrid_search(question, embedding_model, 
-                                   vector_k, bm25_k, user_email = 'Anonymous',
-                                   model_name=OLLAMA_MODEL):
+def robust_language_detection(text: str, min_words=3) -> str:
+
+    DetectorFactory.seed = 0
+
+    text = text.strip()
+    if not text:
+        return 'en'
+
+    # Short command heuristic
+    if len(text.split()) < min_words:
+        common_en = {
+            'ok', 'yes', 'no', 'quit', 'exit', 'help', 'thanks',
+            'hi', 'hello', 'start', 'stop', 'please'
+        }
+        if text.lower() in common_en:
+            logger.info(f"Detected '{text}' as common English command")
+            return 'en'
+
+    langs = []
+
+    # langdetect vote-based
+    try:
+        segment_len = max(len(text) // 5, 20)
+        segments = [text[i:i+segment_len] for i in range(0, len(text), segment_len)]
+        langs += [detect(s) for s in segments if len(s.strip()) >= 10]
+        logger.info(f"langdetect votes: {langs}")
+    except LangDetectException:
+        pass
+
+    # langid fallback
+    try:
+        import langid
+        langid_result, confidence = langid.classify(text)
+        langs.append(langid_result)
+        logger.info(f"langid detection: {langid_result} (confidence={confidence:.2f})")
+    except ImportError:
+        logger.warning("langid not installed")
+
+    # polyglot (optional)
+    try:
+        from polyglot.detect import Detector
+        lang_poly = Detector(text).language.code
+        langs.append(lang_poly)
+        logger.info(f"polyglot detection: {lang_poly}")
+    except Exception:
+        logger.debug("Polyglot not available or failed.")
+
+    # Majority vote
+    if langs:
+        vote = Counter(langs).most_common(1)[0][0]
+        logger.info(f"Final language: {vote} (votes={Counter(langs)})")
+
+        # Extra caution for short inputs
+        if len(text.split()) < min_words and vote != 'en' and Counter(langs)[vote] < 2:
+            logger.info(f"Low vote count for short input, defaulting to 'en'")
+            return 'en'
+
+        return vote
+
+    logger.warning("All detection methods failed. Defaulting to English.")
+    return 'en'
+
+def simplified_language_detection(text):
     """
-    Query the Ollama model using hybrid search to retrieve relevant context.
+    A simplified language detection function with fewer dependencies.
+    Falls back to simple heuristics for short texts.
+    
+    Args:
+        text (str): Input text to detect language
+        
+    Returns:
+        str: Language code (e.g., 'en', 'es', 'fr')
+    """
+    # For very short queries, default to English to avoid misclassification
+    if len(text.split()) < 3:
+        logger.info(f"Text '{text}' is too short for reliable detection, defaulting to English")
+        return 'en'
+    
+    # Common English command check
+    common_english = {
+        'quit', 'exit', 'help', 'stop', 'hi', 'hello', 'thanks', 'yes', 'no',
+        'please', 'show', 'find', 'search', 'get', 'list'
+    }
+    if text.lower() in common_english:
+        return 'en'
+    
+    # Try langdetect as primary method
+    try:
+        from langdetect import detect
+        return detect(text)
+    except Exception as e:
+        logger.warning(f"Language detection error: {e}. Defaulting to English.")
+        return 'en'
+
+def detect_language(text: str) -> str:
+    try:
+        return robust_language_detection(text)
+    except Exception as e:
+        logger.warning(f"Robust detection failed: {e}, falling back...")
+        return simplified_language_detection(text)
+
+def translate_text(text, target_lang='en', source_lang=None):
+    """
+    Translate text using deep-translator.
     """
     try:
+        if not text:
+            return text
+        
+        source = source_lang if source_lang else 'auto'
+        translator = GoogleTranslator(source=source, target=target_lang)
+        result = translator.translate(text)
+        return result
+    except Exception as e:
+        logger.warning(f"Translation error: {e}. Returning original text.")
+        return text
+
+def check_query_safety_with_llama_guard(query):
+    """
+    Check if a query is safe using Ollama's llama-guard3 model.
+    Returns (is_safe, reason)
+    """
+    model_name = "llama-guard3:8b" 
+    
+    try:
+        # Create a safety prompt for Llama Guard 3
+        safety_prompt = f"""
+        <safety_prompt>
+        Please evaluate the safety of this request by determining whether it violates safety guidelines. Consider if it attempts to extract harmful content, elicit harmful capabilities, contains explicit, violent, hateful, or illegal content, or tries to manipulate you into breaking your guidelines.
+
+        Request: "{query}"
+
+        Provide your evaluation as a single word: "SAFE" or "UNSAFE".
+        If unsafe, briefly explain why in one short sentence after the word.
+        </safety_prompt>
+        """
+        
+        # Prepare the request payload for Ollama with llama-guard3
+        payload = {
+            "model": model_name,
+            "prompt": safety_prompt,
+            "temperature": 0.0,
+            "max_tokens": 100,
+            "stream": False  # Ensure we get a complete response
+        }
+        
+        # Call Ollama API
+        logger.info("Sending safety check request to llama-guard3")
+        response = requests.post(OLLAMA_URL, json=payload)
+        
+        if response.status_code == 200:
+            try:
+                result = response.json()
+                moderation_result = result.get("response", "").strip()
+                
+                logger.info(f"Llama Guard 3 result: {moderation_result}")
+                
+                # Check if the response indicates the query is safe
+                is_safe = moderation_result.upper().startswith("SAFE")
+                
+                # Extract reason if unsafe
+                if not is_safe:
+                    parts = moderation_result.split(" ", 1)
+                    reason = parts[1] if len(parts) > 1 else "Content may violate safety guidelines"
+                else:
+                    reason = "Content is safe"
+                
+                return is_safe, reason
+            except ValueError as json_err:
+                # Handle JSON parsing errors by examining the raw text
+                logger.warning(f"JSON decode error: {json_err}. Response: {response.text[:200]}...")
+                
+                # Extract result directly from text response
+                text_response = response.text.strip()
+                is_safe = "SAFE" in text_response.upper() and not "UNSAFE" in text_response.upper()
+                
+                logger.info(f"Extracted safety result from text: {is_safe}")
+                return is_safe, "Content evaluation based on text parsing"
+        else:
+            logger.error(f"Error from Ollama API: {response.status_code} - {response.text[:200]}")
+            return True, "Safety check failed, defaulting to allow"
+    
+    except Exception as e:
+        logger.exception(f"Error in Llama Guard 3 safety check: {e}")
+        return True, f"Safety check error: {str(e)}"
+
+def query_ollama_with_hybrid_search_multilingual(question, embedding_model, 
+                                   vector_k, bm25_k, user_email='Anonymous',
+                                   model_name=OLLAMA_MODEL):
+    """
+    Query the Ollama model using hybrid search with multilingual support.
+    """
+    try:
+        # First safety check on original query (any language)
+        is_safe_original, reason_original = check_query_safety_with_llama_guard(question)
+        if not is_safe_original:
+            logger.warning(f"Original query failed safety check: {reason_original}")
+            return {
+                "original_question": question,
+                "safety_issue": True,
+                "response": f"I cannot process this request: {reason_original}",
+                "context_count": 0
+            }
+            
+        # Detect original language
+        original_language = detect_language(question)
+        logger.info(f"Detected language: {original_language}")
+        
+        # Translate question to English if not already English
+        if original_language != 'en':
+            english_question = translate_text(question, target_lang='en', source_lang=original_language)
+            logger.info(f"Translated question to English: {english_question}")
+            
+            # Second safety check on translated English question
+            is_safe_translated, reason_translated = check_query_safety_with_llama_guard(english_question)
+            if not is_safe_translated:
+                logger.warning(f"Translated query failed safety check: {reason_translated}")
+                # Translate the rejection reason back to the original language
+                rejection_message = f"I cannot process this request: {reason_translated}"
+                localized_rejection = translate_text(
+                    rejection_message, 
+                    target_lang=original_language, 
+                    source_lang='en'
+                )
+                return {
+                    "original_question": question,
+                    "english_question": english_question,
+                    "safety_issue": True,
+                    "response": localized_rejection,
+                    "context_count": 0
+                }
+        else:
+            english_question = question
+        
         # Connect to database
         connection = connect_to_postgres()
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=connection)
         session = SessionLocal()
         
-        # Embed the query
-        query_embedding = embed_query(question, embedding_model)
+        # Embed the English query
+        query_embedding = embed_query(english_question, embedding_model)
         logger.info(f"Generated query embedding with {len(query_embedding)} dimensions")
         
         # Perform hybrid search with reduced chunk count
-        context_chunks, reranked_chunks = hybrid_search(session, question, query_embedding, vector_k, bm25_k)
+        context_chunks, reranked_chunks = hybrid_search(session, english_question, query_embedding, vector_k, bm25_k)
 
         # Get top 3 unique document IDs from reranked chunks
         top_document_ids = []
@@ -417,11 +655,11 @@ def query_ollama_with_hybrid_search(question, embedding_model,
         # Get document metadata
         document_metadata = retrieve_document_metadata(session, top_document_ids)
         
-        # Format context chunks for the prompt - more concisely
+        # Format context chunks for the prompt
         contexts = [f"DOCUMENT {i+1}:\n{chunk['chunk_text']}" for i, chunk in enumerate(context_chunks)]
         context = "\n\n".join(contexts)
         
-        # Use simplified system prompt if none provided
+        # System prompt - add multilingual instruction if needed
         system_prompt = """
         You are an AI assistant specialized in machine learning, deep learning, and data science. You provide helpful, accurate, and educational responses to questions about these topics.
 
@@ -438,8 +676,12 @@ def query_ollama_with_hybrid_search(question, embedding_model,
         10. Format your response clearly and directly address the question.
         """
         
-        # Format the prompt
-        prompt = format_prompt(system_prompt, context, question)
+        # For non-English queries, specify that response should be in English first (we'll translate after)
+        if original_language != 'en':
+            system_prompt += "\n\nPlease respond in English. The response will be translated later."
+        
+        # Format the prompt with English question
+        prompt = format_prompt(system_prompt, context, english_question)
         
         # Prepare the request payload for Ollama
         payload = {
@@ -457,27 +699,38 @@ def query_ollama_with_hybrid_search(question, embedding_model,
         # Check for successful response
         if response.status_code == 200:
             result = response.json()
-            assistant_response = result.get("response", "")
-            logger.info("Successfully generated response")
+            english_response = result.get("response", "")
+            logger.info("Successfully generated English response")
+            
+            # Translate response back to original language if not English
+            if original_language != 'en':
+                final_response = translate_text(english_response, target_lang=original_language, source_lang='en')
+                logger.info(f"Translated response to {original_language}")
+            else:
+                final_response = english_response
         else:
             logger.error(f"Error from Ollama API: {response.status_code} - {response.text}")
-            assistant_response = "Sorry, I encountered an error while processing your question."
+            english_response = "Sorry, I encountered an error while processing your question."
+            final_response = translate_text(english_response, target_lang=original_language, source_lang='en') if original_language != 'en' else english_response
         
+        # Log the original question, English translation, and English response
         log_audit(
             session=session,
             user_email=user_email,
-            query=question,
+            query=question,  # Log original question
             query_embedding=query_embedding,
             chunks=context_chunks,
-            response=assistant_response
+            response=english_response  # Log English response for consistency
         )
 
         session.close()
 
         return {
-            "question": question,
+            "original_question": question,
+            "detected_language": original_language,
+            "english_question": english_question if original_language != 'en' else None,
             "context_count": len(context_chunks),
-            "response": assistant_response,
+            "response": final_response,  # Return response in original language
             "top_documents": [
                 {
                     "document_id": doc_id,
@@ -491,27 +744,37 @@ def query_ollama_with_hybrid_search(question, embedding_model,
         }
     
     except Exception as e:
-        logger.exception(f"Error in query_ollama_with_hybrid_search: {str(e)}")
+        logger.exception(f"Error in query_ollama_with_hybrid_search_multilingual: {str(e)}")
+        # Try to translate error message
+        error_response = "Sorry, I encountered an error while processing your question."
+        if 'original_language' in locals() and original_language != 'en':
+            try:
+                error_response = translate_text(error_response, target_lang=original_language, source_lang='en')
+            except:
+                pass  # If translation fails, use English error
+                
         return {
             "question": question,
             "error": str(e),
-            "response": "Sorry, I encountered an error while processing your question."
+            "response": error_response
         }
 
 def main():
-    """Main function to run an interactive Ollama query system with hybrid search."""
+    """Main function to run an interactive Ollama RAG system with Llama Guard 3 safety."""
     try:
-        print("\n===== Improved Ollama RAG Question Answering System =====")
+        print("\n===== Secure Multilingual Ollama RAG Question Answering System =====")
         print("Loading models... This may take a moment.")
         
         # Load embedding model
         embedding_model = get_ch_embedding_model()
         
         print("Models loaded successfully!")
+        print("Content safety monitoring enabled with Llama Guard 3")
         print("Type 'quit', 'exit', or 'q' to end the session.")
+        print("You can ask questions in any language - the system will detect and respond accordingly.")
         print("-" * 60)
         
-        # Default model name for Ollama - using Llama 3.1 as specified
+        # Default model name for Ollama
         model_name = OLLAMA_MODEL
         
         while True:
@@ -520,7 +783,7 @@ def main():
             
             # Check if user wants to quit
             if question.lower() in ['quit', 'exit', 'q']:
-                print("\nThank you for using the Ollama Question Answering System. Goodbye!")
+                print("\nThank you for using the Multilingual Ollama System. Goodbye!")
                 break
             
             # Skip empty questions
@@ -529,16 +792,30 @@ def main():
                 continue
             
             print(f"\nProcessing question: {question}")
-            print("Searching for relevant context...")
             
-            # Use the improved query function with reduced context size
-            result = query_ollama_with_hybrid_search(
+            # Note: We no longer do safety check here - it's now handled inside the query function
+            # both before and after translation
+            
+            # Process the query
+            result = query_ollama_with_hybrid_search_multilingual(
                 question=question,
                 embedding_model=embedding_model,
-                vector_k = 10,
-                bm25_k = 10,
+                vector_k=10,
+                bm25_k=10,
                 model_name=model_name
             )
+            
+            # Check if query was rejected for safety reasons
+            if result.get('safety_issue', False):
+                print("\n--- Safety Alert ---")
+                print(result['response'])
+                print("-" * 60)
+                continue
+            
+            # Display language information if non-English was detected
+            if result.get('detected_language') != 'en':
+                print(f"\nDetected language: {result.get('detected_language')}")
+                print(f"Translated question: {result.get('english_question')}")
             
             print(f"\n--- Response (from {result.get('context_count', 'unknown')} context chunks) ---")
             print(result['response'])
