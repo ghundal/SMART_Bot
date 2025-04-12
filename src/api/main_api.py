@@ -1,46 +1,26 @@
-from typing import List, Optional
-
 from fastapi import FastAPI
-
-from pydantic import BaseModel
-
- 
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+from auth_google import router as google_router
+import os
 
 app = FastAPI()
 
- 
+# Required middleware for OAuth to use session storage
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET_KEY", "super-secret-dev-key")
+)
 
-# Define a Pydantic model for request/response body
+# Add CORS middleware to allow frontend to make requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:9000")],
+    allow_credentials=True,  # Important for cookies to work across domains
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-class ChatMessage(BaseModel):
-    content: str
 
- 
-
-# Path operation with type hints
-
-@app.post("/chat/{chat_id}")
-
-async def send_chat_message(chat_id: str, message: ChatMessage):
-
-    return message.content
-
- 
-
-# Path parameter with type hint
-
-@app.get("/items/{item_id}")
-
-async def read_item(item_id: int):
-
-    return {"item_id": item_id}
-
- 
-
-# Query parameter with type hint and default value
-
-@app.get("/search/")
-
-async def search_item(query: str, limit: int = 10):
-
-    return {"query": query, "limit": limit}
+# Include the Google OAuth router under `/auth`
+app.include_router(google_router, prefix="/auth")

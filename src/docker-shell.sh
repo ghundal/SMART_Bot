@@ -11,6 +11,7 @@ export GCP_PROJECT="SMART"
 export GOOGLE_APPLICATION_CREDENTIALS="/secrets/smart_input_key.json"
 export DP_IMAGE_NAME="datapipeline"
 export API_IMAGE_NAME="api"
+export GOOGLE_CREDENTIALS_FILE="/secrets/client_secrets.json"
 
 # Create the network if we don't have it yet
 docker network inspect smart-network >/dev/null 2>&1 || docker network create smart-network

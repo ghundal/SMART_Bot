@@ -41,3 +41,13 @@ CREATE TABLE audit (
 );
 
 CREATE INDEX pgroonga_chunk_text_index ON chunk USING pgroonga (chunk_text);
+
+-- Table for storing user tokens
+CREATE TABLE IF NOT EXISTS user_tokens (
+    id SERIAL PRIMARY KEY,
+    user_email VARCHAR(255) NOT NULL,
+    token TEXT NOT NULL,
+    expires_at BIGINT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_email)
+);

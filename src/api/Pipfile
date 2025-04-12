@@ -23,6 +23,11 @@ fastapi = "*"
 uvicorn = "*"
 deep_translator = "*"
 langid = "*"
+authlib = "*"
+httpx = "*"
+python-dotenv = "*"
+itsdangerous = "*"
+
 [dev-packages]
 
 [requires]
