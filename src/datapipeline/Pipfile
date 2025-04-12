@@ -18,7 +18,6 @@ numpy = "*"
 psycopg2-binary = "*"
 pypdfium2 = "*"
 accelerate = "*"
-langchain-ollama = "*"
 
 [dev-packages]
 

@@ -1,0 +1,29 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+google-cloud-storage = "*"
+unstructured = {extras = ["pdf"], version = "*"}
+sentence-transformers = "*"
+google-api-core = "*"
+google-auth = "*"
+langchain-community = "*"
+sqlalchemy = "*"
+pandas = "*"
+scipy = "*"
+torch = "*"
+numpy = "*"
+psycopg2-binary = "*"
+pypdfium2 = "*"
+accelerate = "*"
+langchain-ollama = "*"
+fastapi = "*"
+uvicorn = "*"
+deep_translator = "*"
+langid = "*"
+[dev-packages]
+
+[requires]
+python_version = "3.12"

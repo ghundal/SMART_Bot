@@ -11,18 +11,18 @@ services:
         shm_size: 1g
         volumes: 
         - ${PERSISTENT_DIR}/postgres:/var/lib/postgresql/data
-        - ./init-scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+        - ../sql/init.sql:/docker-entrypoint-initdb.d/init.sql
         environment:
         - POSTGRES_PASSWORD=postgres
         ports:
         - "5432:5432"
         networks:
         - smart-network
-    smart_input:
+    datapipeline:
         depends_on:
             - postgres
-        image: ${IMAGE_NAME}
-        container_name: smart_input
+        image: ${DP_IMAGE_NAME}
+        container_name: datapipeline
         volumes:
             - ${SECRETS_DIR}:/secrets:ro
             - ${BASE_DIR}:/app/work
@@ -42,11 +42,11 @@ services:
         networks:
         - smart-network
         command: datapipeline.py
-    smart_model:
+    api:
         depends_on:
             - postgres
-        image: ${IMAGE_NAME}
-        container_name: smart_model
+        image: ${API_IMAGE_NAME}
+        container_name: api
         volumes:
             - ${BASE_DIR}:/app/work
         environment:
@@ -62,5 +62,5 @@ services:
                           capabilities: [gpu]
         networks:
         - smart-network
-        command: llama_model.py
+        command: ollama.py
         tty: true
