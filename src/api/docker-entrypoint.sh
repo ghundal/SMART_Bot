@@ -4,7 +4,7 @@ echo "Container is running!!!"
 
 # this will run the api/service.py file with the instantiated app FastAPI
 uvicorn_server() {
-    uvicorn main_api:app --host 0.0.0.0 --port 9000 --log-level debug --reload --reload-dir api/ "$@"
+    uvicorn main_api:app --host 0.0.0.0 --port 9000 --log-level debug --reload --reload-dir ./ "$@"
 }
 
 uvicorn_server_production() {
@@ -21,8 +21,14 @@ The following commands are available:
 \033[0m
 "
 
+ollama serve & 
+echo "Waiting for Ollama server to start..."
+until curl -s http://localhost:11434/api/tags > /dev/null 2>&1; do
+  sleep 1
+done
+
 if [ "${DEV}" = 1 ]; then
-  pipenv run python ollama.py
+  pipenv shell
 else
   uvicorn_server_production
 fi

@@ -51,3 +51,23 @@ CREATE TABLE IF NOT EXISTS user_tokens (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (user_email)
 );
+
+-- Add chat_history table to store chat conversations
+CREATE TABLE IF NOT EXISTS chat_history (
+    id SERIAL PRIMARY KEY,
+    chat_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    model TEXT NOT NULL,
+    title TEXT DEFAULT 'Untitled Chat',
+    messages JSONB NOT NULL,
+    dts BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (chat_id, session_id, model)
+);
+
+-- Create indexes for faster queries
+CREATE INDEX idx_chat_history_chat_id ON chat_history(chat_id);
+CREATE INDEX idx_chat_history_session_id ON chat_history(session_id);
+CREATE INDEX idx_chat_history_model ON chat_history(model);
+CREATE INDEX idx_chat_history_dts ON chat_history(dts DESC);

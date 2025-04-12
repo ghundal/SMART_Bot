@@ -1,7 +1,7 @@
 # Use the official Debian-hosted Python image
 FROM python:3.12-slim-bookworm
 
-ARG DEBIAN_PACKAGES="build-essential git screen vim libgl1-mesa-glx libglib2.0-0"
+ARG DEBIAN_PACKAGES="build-essential git screen vim libgl1-mesa-glx libglib2.0-0 curl"
 
 # Prevent apt from showing prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -34,9 +34,19 @@ RUN set -ex; \
     chown app:app /app && \
     chown app:app /secrets
 
+# Install Ollama
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
 # Switch to the new user
 USER app
 WORKDIR /app
+
+# Pull all required models during build time
+RUN ollama serve & \
+    sleep 5 && \
+    ollama pull llama-guard3:8b && \
+    ollama pull llama3:8b && \
+    ollama pull gemma3:12b
 
 # Install python packages
 ADD --chown=app:app Pipfile Pipfile.lock /app/

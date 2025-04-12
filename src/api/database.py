@@ -1,5 +1,7 @@
 import os
 from sqlalchemy import create_engine
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 def connect_to_postgres():
     """
@@ -16,3 +18,6 @@ def connect_to_postgres():
     
     # Create and return engine
     return create_engine(connection_string)
+
+# Get the engine and SessionLocal from the database connection
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=connect_to_postgres())

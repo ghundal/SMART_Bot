@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from auth_google import router as google_router
+from chat_api import router as query_router
 import os
 
 app = FastAPI()
@@ -21,6 +22,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # Include the Google OAuth router under `/auth`
 app.include_router(google_router, prefix="/auth")
+app.include_router(query_router, prefix="/api")
