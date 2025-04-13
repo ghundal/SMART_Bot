@@ -11,7 +11,7 @@ from starlette.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
-from api.utils.database import connect_to_postgres
+from utils.database import connect_to_postgres
 
 router = APIRouter()
 

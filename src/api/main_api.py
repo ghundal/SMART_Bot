@@ -7,9 +7,9 @@ under their respective URL prefixes.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from api.routers.auth_google import router as google_router
-from api.routers.chat_api import router as query_router
-from api.routers.reports import router as reports_router
+from routers.auth_google import router as google_router
+from routers.chat_api import router as query_router
+from routers.reports import router as reports_router
 import os
 
 app = FastAPI()

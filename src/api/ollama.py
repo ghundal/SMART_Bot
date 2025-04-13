@@ -7,7 +7,7 @@ from rag_pipeline.search import hybrid_search, retrieve_document_metadata
 from rag_pipeline.language import detect_language, translate_text
 from rag_pipeline.safety import check_query_safety_with_llama_guard
 from rag_pipeline.ollama_api import format_prompt, query_llm, rerank_with_llm
-from api.utils.database import log_audit, SessionLocal
+from utils.database import log_audit, SessionLocal
 
 def query_ollama_with_hybrid_search_multilingual(
     session, 
@@ -16,10 +16,12 @@ def query_ollama_with_hybrid_search_multilingual(
     vector_k=DEFAULT_VECTOR_K, 
     bm25_k=DEFAULT_BM25_K, 
     user_email="Anonymous",
-    model_name=OLLAMA_MODEL
+    model_name=OLLAMA_MODEL,
+    chat_history=None
 ):
     """
     Query the Ollama model using hybrid search with multilingual support.
+    Now includes chat history for conversational memory.
     """
     try:
         # First safety check on original query (any language)
@@ -63,7 +65,6 @@ def query_ollama_with_hybrid_search_multilingual(
         else:
             english_question = question
         
-        
         # Embed the English query
         query_embedding = embed_query(english_question, embedding_model)
         logger.info(f"Generated query embedding with {len(query_embedding)} dimensions")
@@ -103,6 +104,18 @@ def query_ollama_with_hybrid_search_multilingual(
         contexts = [f"DOCUMENT {i+1}:\n{chunk['chunk_text']}" for i, chunk in enumerate(context_chunks)]
         context = "\n\n".join(contexts)
         
+        conversation_context = ""
+        if chat_history and len(chat_history) > 0:
+            # Format the last few interactions (limiting to prevent context window issues)
+            recent_history = chat_history[-6:]  # Last 3 user/assistant pairs
+            
+            conversation_context = "PREVIOUS CONVERSATION:\n"
+            for msg in recent_history:
+                role = "User" if msg["role"] == "user" else "Assistant"
+                conversation_context += f"{role}: {msg['content']}\n\n"
+            
+            conversation_context += "CURRENT QUESTION:\n"
+
         # System prompt - add multilingual instruction if needed
         system_prompt = """
         You are an AI assistant specialized in machine learning, deep learning, and data science. You provide helpful, accurate, and educational responses to questions about these topics.
@@ -110,14 +123,20 @@ def query_ollama_with_hybrid_search_multilingual(
         When answering a query:
         1. Provide clear explanations with appropriate technical detail for the complexity of the question.
         2. When explaining concepts, include practical examples to illustrate how they work.
-        3. If relevant, mention advantages, limitations, and common use cases.
+        3. When relevant, mention advantages, limitations, and common use cases.
         4. Break down your explanation into understandable components.
         5. Maintain a professional and educational tone throughout your responses.
-        6. Prioritize information from the chunks and enhance/format with your knowledge.
+        6. Prioritize information from the context chunks and enhance/format with your knowledge.
         7. Keep your answers concise and to the point.
         8. If you don't know the answer, say so.
         9. Do not include unnecessary information or repetitive explanations.
         10. Format your response clearly and directly address the question.
+
+        IMPORTANT CONVERSATIONAL GUIDELINES:
+        - When the user refers to previous questions or answers, use the provided conversation history to maintain context.
+        - Use pronouns like "it", "they", "that approach" appropriately when referencing previously discussed concepts.
+        - If the user asks a follow-up question about something previously discussed, reference that information in your response.
+        - Remember details the user has shared about their project or needs throughout the conversation.
         """
         
         # For non-English queries, specify that response should be in English first (we'll translate after)
@@ -125,7 +144,7 @@ def query_ollama_with_hybrid_search_multilingual(
             system_prompt += "\n\nPlease respond in English. The response will be translated later."
         
         # Format the prompt with English question
-        prompt = format_prompt(system_prompt, context, english_question)
+        prompt = format_prompt(system_prompt, context, english_question, conversation_context)
         
         # Query the LLM
         english_response = query_llm(prompt, model_name)

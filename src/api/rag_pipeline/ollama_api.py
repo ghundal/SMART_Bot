@@ -66,18 +66,23 @@ def rerank_with_llm(chunks, query, model_name):
         # Return original chunks if reranking fails
         return chunks
 
-def format_prompt(system_instruction, context, question):
-    """Format the prompt for Ollama."""
-    prompt = f"""
-{system_instruction}
+def format_prompt(system_prompt, context, question, conversation_history=""):
+    """
+    Format a prompt for the Ollama model, now including conversation history.
+    """
+    return f"""
+{system_prompt}
 
-Here is some context to help answer my question:
+{conversation_history}
 
+CONTEXT:
 {context}
 
-My question is: {question}
+USER QUERY:
+{question}
+
+RESPONSE:
 """
-    return prompt
 
 def query_llm(prompt, model_name):
     """

@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 from sqlalchemy import text
-from api.routers.auth_middleware import verify_token
-from api.utils.database import SessionLocal
+from routers.auth_middleware import verify_token
+from utils.database import SessionLocal
 
 # Define a router for reports
 router = APIRouter()

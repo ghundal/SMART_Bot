@@ -10,7 +10,7 @@ from datetime import datetime
 import traceback
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from api.utils.database import SessionLocal
+from utils.database import SessionLocal
         
 class ChatHistoryManager:
     def __init__(self, model):

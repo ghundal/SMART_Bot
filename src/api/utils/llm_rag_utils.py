@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Optional
 from fastapi import HTTPException
 import traceback
 import logging
-from api.utils.database import connect_to_postgres, SessionLocal
+from utils.database import connect_to_postgres, SessionLocal
 from sqlalchemy import text
 
 # Setup

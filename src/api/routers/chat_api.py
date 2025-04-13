@@ -164,7 +164,8 @@ async def continue_chat_with_llm(
         vector_k=10,
         bm25_k=10,
         model_name=message.get("model", OLLAMA_MODEL),
-        user_email=user_email
+        user_email=user_email,
+        chat_history=chat["messages"][:-1]
     )
     
     # Create assistant message with response
@@ -269,7 +270,8 @@ async def process_query(
             vector_k=10,
             bm25_k=10,
             model_name=model_name,
-            user_email=user_email
+            user_email=user_email,
+            chat_history=chat["messages"][:-1]
         )
         
         # Create assistant message with response
