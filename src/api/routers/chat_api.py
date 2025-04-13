@@ -1,14 +1,20 @@
+'''
+Implements a FastAPI router for an Ollama-based RAG chatbot with 
+endpoints for creating, updating, retrieving, and deleting chat sessions,
+including hybrid vector search functionality.
+'''
+
 import os
 from fastapi import APIRouter, Header, Query, Body, HTTPException, Request, Depends
 from typing import Dict, Any, List, Optional
 import uuid
 import time
 from datetime import datetime
-from auth_middleware import verify_token
+from api.routers.auth_middleware import verify_token
 from ollama import get_ch_embedding_model, OLLAMA_MODEL, query_ollama_with_hybrid_search_multilingual
-from database import SessionLocal
-from llm_rag_utils import chat_sessions, create_chat_session, rebuild_chat_session
-from chat_history import ChatHistoryManager
+from api.utils.database import SessionLocal
+from api.utils.llm_rag_utils import chat_sessions, create_chat_session, rebuild_chat_session
+from api.utils.chat_history import ChatHistoryManager
 from pydantic import BaseModel
 
 class Query(BaseModel):

@@ -1,3 +1,9 @@
+'''
+Implements a FastAPI router for Google OAuth authentication
+Verifies user access permissions in a database before setting secure cookies
+with authentication tokens.
+'''
+
 import os
 import json
 from fastapi import APIRouter, Request, HTTPException
@@ -5,7 +11,7 @@ from starlette.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
-from database import connect_to_postgres
+from api.utils.database import connect_to_postgres
 
 router = APIRouter()
 
@@ -83,7 +89,7 @@ async def auth_callback(request: Request):
         db.commit()
         
         # Create response with redirect to frontend
-        frontend_url = os.getenv("FRONTEND_URL", "/")
+        frontend_url = os.getenv("FRONTEND_URL", "/docs")
         response = RedirectResponse(url=frontend_url)
         
         # Set secure HTTP-only cookie with the token

@@ -1,8 +1,15 @@
+'''
+Initializes the FastAPI application, sets up CORS and session middleware
+for authentication, and includes both authentication and chat API routers
+under their respective URL prefixes.
+'''
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from auth_google import router as google_router
-from chat_api import router as query_router
+from api.routers.auth_google import router as google_router
+from api.routers.chat_api import router as query_router
+from api.routers.reports import router as reports_router
 import os
 
 app = FastAPI()
@@ -24,4 +31,13 @@ app.add_middleware(
 
 # Include the Google OAuth router under `/auth`
 app.include_router(google_router, prefix="/auth")
+
+# Include the chat/query router under `/api`
 app.include_router(query_router, prefix="/api")
+
+# Add the reports router under `/api`
+app.include_router(
+    reports_router,
+    prefix="/api",
+    tags=["reports"]
+)

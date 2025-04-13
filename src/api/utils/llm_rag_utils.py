@@ -1,9 +1,15 @@
+'''
+Provides utility functions for creating and managing chat sessions,
+including functions for generating responses through the Ollama RAG system
+and rebuilding chat context from history.
+'''
+
 import os
 from typing import Dict, Any, List, Optional
 from fastapi import HTTPException
 import traceback
 import logging
-from database import connect_to_postgres, SessionLocal
+from api.utils.database import connect_to_postgres, SessionLocal
 from sqlalchemy import text
 
 # Setup
@@ -26,7 +32,7 @@ def create_chat_session():
         }
     }
 
-def generate_chat_response(chat_session, message: Dict) -> str:
+def generate_chat_response(chat_session, message: Dict, user_email: str) -> str:
     """
     Generate a response using Ollama models via the hybrid search approach.
     
@@ -62,7 +68,7 @@ def generate_chat_response(chat_session, message: Dict) -> str:
             embedding_model=embedding_model,
             vector_k=10,
             bm25_k=10,
-            user_email="Anonymous"  # This will be overridden in the actual API call
+            user_email=user_email
         )
         
         # Extract response from result

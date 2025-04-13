@@ -1,3 +1,8 @@
+'''
+Implements a ChatHistoryManager class that handles saving, retrieving, and 
+deleting chat records in a PostgreSQL database.
+'''
+
 import json
 import os
 from typing import Dict, List, Optional
@@ -5,7 +10,7 @@ from datetime import datetime
 import traceback
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from database import SessionLocal
+from api.utils.database import SessionLocal
         
 class ChatHistoryManager:
     def __init__(self, model):

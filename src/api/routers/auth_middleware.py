@@ -1,9 +1,14 @@
+'''
+Implements FastAPI dependency functions to verify authentication tokens
+from either cookies or headers(docs) by checking them against a database.
+'''
+
 from fastapi import Depends, HTTPException, status, Request, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
-from database import SessionLocal
+from api.utils.database import SessionLocal
 
 # Optional OAuth2 scheme for token extraction from Authorization header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)

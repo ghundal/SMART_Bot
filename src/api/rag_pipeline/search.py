@@ -1,23 +1,14 @@
-import logging
+"""
+Search functionality for the Ollama RAG system.
+"""
 import re
-import requests
 import nltk
 from nltk.corpus import stopwords
 from sqlalchemy import text
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger('search')
-
-# Ollama API endpoints - needed for reranking
-OLLAMA_URL = "http://localhost:11434/api/generate"
-RERANKER_MODEL = "llama3.1"
+from rag_pipeline.config import logger, VECTOR_SIMILARITY_THRESHOLD
 
 def format_for_pgroonga(query: str) -> str:
-    """Format query for PGroonga search by removing punctuation and stopwords."""
+    """Format a query string for pgroonga search."""
     stop_words = set(stopwords.words('english'))
 
     # Remove punctuation and lowercase
@@ -34,12 +25,16 @@ def format_for_pgroonga(query: str) -> str:
     
     return " AND ".join(keywords)
 
-def bm25_search(session, query: str, limit):
+def bm25_search(session, query: str, limit, user_email):
     """
     Perform a BM25 full-text search using PGroonga with SQLAlchemy.
     """
     try:
         try:
+            # Require user email
+            if not user_email:
+                raise ValueError("User email is required for document access control")
+
             # Construct the SQL query
             sql = """
             SELECT 
@@ -49,12 +44,19 @@ def bm25_search(session, query: str, limit):
                 pgroonga_score(ch.*) AS score
             FROM chunk ch
             JOIN document d ON ch.document_id = d.document_id
-            WHERE ch.chunk_text &@~ :query
+            JOIN class c ON d.class_id = c.class_id
+            JOIN access a ON c.class_id = a.class_id
+            WHERE a.user_email = :user_email
+            AND ch.chunk_text &@~ :query
             ORDER BY score DESC
             LIMIT :limit
             """
             query = format_for_pgroonga(query)
-            params = {"query": query, "limit": limit}
+            params = {
+                "query": query,
+                "limit": limit,
+                "user_email": user_email
+            }
             
             # Execute the query
             result = session.execute(text(sql), params)
@@ -79,12 +81,16 @@ def bm25_search(session, query: str, limit):
         logger.exception(f"Error in BM25 search: {str(e)}")
         raise
 
-def vector_search(session, embedding, limit, threshold: float = 0.3):
+def vector_search(session, embedding, limit, user_email, threshold=VECTOR_SIMILARITY_THRESHOLD):
     """
     Perform vector similarity search on the chunk embeddings using SQLAlchemy.
     """
     try:
         try:
+            # Require user email
+            if not user_email:
+                raise ValueError("User email is required for document access control")
+
             # Construct the SQL query
             sql = f"""
             SELECT 
@@ -94,12 +100,15 @@ def vector_search(session, embedding, limit, threshold: float = 0.3):
                 1 - (embedding <=> '{str(embedding)}'::vector) AS similarity
             FROM chunk ch
             JOIN document d ON ch.document_id = d.document_id
-            WHERE 1 - (embedding <=> '{str(embedding)}'::vector) >= :threshold
+            JOIN class c ON d.class_id = c.class_id
+            JOIN access a ON c.class_id = a.class_id
+            WHERE a.user_email = :user_email
+            AND 1 - (embedding <=> '{str(embedding)}'::vector) >= :threshold
             ORDER BY similarity DESC
             LIMIT :limit
             """
             
-            params = {"limit": limit, "threshold": threshold}
+            params = {"limit": limit, "threshold": threshold, "user_email": user_email}
             
             # Execute the query
             result = session.execute(text(sql), params)
@@ -124,79 +133,17 @@ def vector_search(session, embedding, limit, threshold: float = 0.3):
         logger.exception(f"Error in Vector search: {str(e)}")
         raise
 
-def rerank_with_llm(chunks, query, model_name=RERANKER_MODEL):
-    """
-    Use an LLM to rerank chunks based on relevance to the query.
-    """
-    try:
-        reranking_results = []
-        
-        # Create a scoring prompt for each chunk
-        for chunk in chunks:
-            prompt = f"""
-            Task: Evaluate the relevance of the following text to the query.
-            Query: {query}
-            
-            Text: {chunk['chunk_text']}
-            
-            On a scale of 0 to 10, how relevant is the text to the query?
-            Respond with only a number from 0 to 10.
-            """
-            
-            # Prepare the request payload for the reranker
-            payload = {
-                "model": model_name,
-                "prompt": prompt,
-                "stream": False,
-                "temperature": 0.1,  # Low temperature for consistent scoring
-            }
-            
-            # Call Ollama API for reranking
-            response = requests.post(OLLAMA_URL, json=payload)
-            
-            if response.status_code == 200:
-                result = response.json()
-                # Extract the numerical score
-                score_text = result.get("response", "0").strip()
-                # Try to get a numerical score, default to 0 if parsing fails
-                try:
-                    relevance_score = float(score_text.split()[0])
-                    # Ensure score is in valid range
-                    relevance_score = max(0, min(10, relevance_score))
-                except (ValueError, IndexError):
-                    relevance_score = 0
-                
-                # Add to results with the LLM-assigned score
-                chunk_with_score = chunk.copy()
-                chunk_with_score['llm_score'] = relevance_score
-                reranking_results.append(chunk_with_score)
-            else:
-                logger.warning(f"Error in reranking chunk: {response.status_code}")
-                chunk['llm_score'] = 0
-                reranking_results.append(chunk)
-        
-        # Sort by LLM score in descending order
-        reranked_chunks = sorted(reranking_results, key=lambda x: x['llm_score'], reverse=True)
-        logger.info(f"Reranked {len(reranked_chunks)} chunks using LLM")
-        
-        return reranked_chunks
-    
-    except Exception as e:
-        logger.exception(f"Error in LLM reranking: {str(e)}")
-        # Return original chunks if reranking fails
-        return chunks
-
-def hybrid_search(session, query, embedding, vector_k, bm25_k):
+def hybrid_search(session, query, embedding, vector_k, bm25_k, user_email):
     """
     Perform a hybrid search using both vector similarity and BM25.
     """
     try:
         # Get results from vector search
-        vector_results = vector_search(session, embedding, vector_k)
+        vector_results = vector_search(session, embedding, vector_k, user_email)
         logger.info(f"Retrieved {len(vector_results)} chunks using vector search")
         
         # Get results from BM25 search
-        bm25_results = bm25_search(session, query, bm25_k)
+        bm25_results = bm25_search(session, query, bm25_k, user_email)
         logger.info(f"Retrieved {len(bm25_results)} chunks using BM25 search")
         
         # Combine results with more robust deduplication and selection
@@ -233,15 +180,12 @@ def hybrid_search(session, query, embedding, vector_k, bm25_k):
             reverse=True
         )
         
-        # Apply LLM reranking to combined results
-        reranked_chunks = rerank_with_llm([item['chunk'] for item in sorted_results[:15]], query)
-        
         # Take only the top chunks overall to keep context size reasonable
         top_results = [item['chunk'] for item in sorted_results[:7]]
         
         logger.info(f"Selected {len(top_results)} top chunks for context")
         
-        return top_results, reranked_chunks
+        return top_results, sorted_results
     
     except Exception as e:
         logger.exception(f"Error in hybrid search: {str(e)}")
