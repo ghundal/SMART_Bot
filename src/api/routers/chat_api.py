@@ -10,11 +10,12 @@ from typing import Dict, Any, List, Optional
 import uuid
 import time
 from datetime import datetime
-from api.routers.auth_middleware import verify_token
-from ollama import get_ch_embedding_model, OLLAMA_MODEL, query_ollama_with_hybrid_search_multilingual
-from api.utils.database import SessionLocal
-from api.utils.llm_rag_utils import chat_sessions, create_chat_session, rebuild_chat_session
-from api.utils.chat_history import ChatHistoryManager
+from routers.auth_middleware import verify_token
+from rag_pipeline.embedding import get_ch_embedding_model
+from ollama import OLLAMA_MODEL, query_ollama_with_hybrid_search_multilingual
+from utils.database import SessionLocal
+from utils.llm_rag_utils import chat_sessions, create_chat_session, rebuild_chat_session
+from utils.chat_history import ChatHistoryManager
 from pydantic import BaseModel
 
 class Query(BaseModel):

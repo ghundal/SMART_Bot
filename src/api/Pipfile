@@ -27,6 +27,7 @@ authlib = "*"
 httpx = "*"
 python-dotenv = "*"
 itsdangerous = "*"
+hf_xet = "*"
 
 [dev-packages]
 

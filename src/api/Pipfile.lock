@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ed825bf75d2a5ccab0bbcdda123375616610dce4a82e22ba6cd2584964a466b1"
+            "sha256": "f68bba06f5aafebd09f71486511f1459721cabb7cd20cc1dbae18294ca6fc13a"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -847,11 +847,11 @@
         },
         "googleapis-common-protos": {
             "hashes": [
-                "sha256:0b30452ff9c7a27d80bfc5718954063e8ab53dd3697093d3bc99581f5fd24212",
-                "sha256:3e1b904a27a33c821b4b749fd31d334c0c9c30e6113023d495e48979a3dc9c5f"
+                "sha256:0e1b44e0ea153e6594f9f394fef15193a68aaaea2d843f83e2742717ca753257",
+                "sha256:b8bfcca8c25a2bb253e0e0b0adaf8c00773e5e6af6fd92397576680b807e0fd8"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==1.69.2"
+            "version": "==1.70.0"
         },
         "greenlet": {
             "hashes": [
@@ -1002,6 +1002,21 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==0.14.0"
+        },
+        "hf-xet": {
+            "hashes": [
+                "sha256:014b5a40e62ad334f21513e5ba39b419117396031e9264dfc15dd598a1595029",
+                "sha256:0705e5db0da5794ab048a8662a7b3aba220f963270b26abc92e8d05abca22451",
+                "sha256:09a9565ca84049d48c99c83a82d08fbc21d63c04811fd2f7dd088292c1185bc5",
+                "sha256:1b71118b8f7e9edf1ae56282388794f351163c7de5c22ea3737dffa9313f500e",
+                "sha256:5927d1986f87b7b80616eb6353a1402be1d72c46b6b0709b01ffc7623a159563",
+                "sha256:70e18534d46ab92bbc3125addaebc145f9b27e06eecd67b40c4342f4b92b677f",
+                "sha256:a6d16861a06dd4b8f7229c16b392c5fb8b9588ced89a6ee9bc3e66227f794353",
+                "sha256:da28fd32213ad5b8f60771aba44ac032ba19d752928cfd95914f09146b3f51ec"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==1.0.3"
         },
         "html5lib": {
             "hashes": [
@@ -3371,11 +3386,11 @@
         },
         "transformers": {
             "hashes": [
-                "sha256:5cb8259098b75ff4b5dd04533a318f7c4750d5307d9617e6d0593526432c404d",
-                "sha256:ed221c31581e97127cff5de775b05f05d19698b439d7d638ff445502a7f37331"
+                "sha256:e292fcab3990c6defe6328f0f7d2004283ca81a7a07b2de9a46d67fd81ea1409",
+                "sha256:fd3279633ceb2b777013234bbf0b4f5c2d23c4626b05497691f00cfda55e8a83"
             ],
             "markers": "python_full_version >= '3.9.0'",
-            "version": "==4.51.2"
+            "version": "==4.51.3"
         },
         "triton": {
             "hashes": [
