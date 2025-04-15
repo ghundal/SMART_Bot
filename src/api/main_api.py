@@ -23,7 +23,10 @@ app.add_middleware(
 # Add CORS middleware to allow frontend to make requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:9000")],
+    allow_origins=[
+        os.getenv("FRONTEND_URL", "http://localhost:9000"),
+        os.getenv("FRONTEND_URL", "http://localhost:3000")
+    ],
     allow_credentials=True,  # Important for cookies to work across domains
     allow_methods=["*"],
     allow_headers=["*"],
