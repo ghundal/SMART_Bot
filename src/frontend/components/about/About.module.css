@@ -1,0 +1,112 @@
+.about {
+    padding: 60px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.logoContainer {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.logo {
+    height: auto;
+    width: auto;
+    max-width: 150px;
+}
+
+.title {
+    text-align: center;
+    margin-bottom: 5px;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 36px;
+    color: #333;
+    font-weight: 700;
+}
+
+.highlight {
+    color: #2563eb; /* Blue color matching your brand */
+}
+
+.underline {
+    width: 80px;
+    height: 2px;
+    background-color: #2563eb;
+    margin: 15px auto 25px;
+}
+
+.tagline {
+    text-align: center;
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 40px;
+    font-family: 'Source Sans Pro', sans-serif;
+}
+
+.content {
+    margin-bottom: 40px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.contentBox {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 30px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+.content p {
+    font-family: 'Source Sans Pro', sans-serif;
+    line-height: 1.6;
+    color: #4b5563;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.content p:last-child {
+    margin-bottom: 0;
+}
+
+.content strong {
+    color: #111827;
+    font-weight: 600;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 30px;
+    font-family: 'Source Sans Pro', sans-serif;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.heart {
+    color: #ef4444;
+}
+
+.copyright {
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .about {
+        padding: 40px 20px;
+    }
+    .title {
+        font-size: 28px;
+    }
+    .tagline {
+        font-size: 16px;
+    }
+    .contentBox {
+        padding: 20px;
+    }
+}

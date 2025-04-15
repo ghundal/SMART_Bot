@@ -89,7 +89,7 @@ async def auth_callback(request: Request):
         db.commit()
         
         # Create response with redirect to frontend
-        frontend_url = os.getenv("FRONTEND_URL", "/docs")
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000/about")
         response = RedirectResponse(url=frontend_url)
         
         # Set secure HTTP-only cookie with the token
