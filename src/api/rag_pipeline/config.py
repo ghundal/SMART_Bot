@@ -6,8 +6,10 @@ import os
 
 # Ollama API endpoints
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3.1"
-RERANKER_MODEL = "llama3.1"
+# OLLAMA_MODEL = "llama3:8b"
+OLLAMA_MODEL = "gemma3:12b"
+
+RERANKER_MODEL = "llama3:8b"
 SAFETY_MODEL = "llama-guard3:8b"
 
 # Configure logging

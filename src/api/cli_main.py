@@ -19,7 +19,7 @@ def main():
         embedding_model = get_ch_embedding_model()
         
         # Initialize chat history manager
-        chat_manager = ChatHistoryManager(model="ollama-rag")
+        chat_manager = ChatHistoryManager(model=OLLAMA_MODEL)
         
         print("Models loaded successfully!")
         print("Content safety monitoring enabled with Llama Guard 3")

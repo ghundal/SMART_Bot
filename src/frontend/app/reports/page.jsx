@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
@@ -14,6 +14,7 @@ function ReportsContent() {
   const [timeRange, setTimeRange] = useState(30);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const reportContentRef = useRef(null);
   
   // States for different report data
   const [stats, setStats] = useState(null);
@@ -170,225 +171,228 @@ function ReportsContent() {
         </button>
       </div>
 
-      {/* Overview Report */}
-      {activeReport === 'overview' && stats && (
-        <div className={styles.reportSection}>
-          <h2>System Overview</h2>
-          <div className={styles.statsGrid}>
-            <div className={styles.statCard}>
-              <h3>Total Users</h3>
-              <p className={styles.statNumber}>{formatNumber(stats.total_users)}</p>
+      {/* Report Content - Wrapped with a ref for PDF export */}
+      <div ref={reportContentRef} className={styles.reportContent} id="reportContent">
+        {/* Overview Report */}
+        {activeReport === 'overview' && stats && (
+          <div className={styles.reportSection}>
+            <h2>System Overview</h2>
+            <div className={styles.statsGrid}>
+              <div className={styles.statCard}>
+                <h3>Total Users</h3>
+                <p className={styles.statNumber}>{formatNumber(stats.total_users)}</p>
+              </div>
+              <div className={styles.statCard}>
+                <h3>Total Queries</h3>
+                <p className={styles.statNumber}>{formatNumber(stats.total_queries)}</p>
+              </div>
+              <div className={styles.statCard}>
+                <h3>Documents Indexed</h3>
+                <p className={styles.statNumber}>{formatNumber(stats.total_documents)}</p>
+              </div>
+              <div className={styles.statCard}>
+                <h3>Active Classes</h3>
+                <p className={styles.statNumber}>{formatNumber(stats.total_classes)}</p>
+              </div>
+              <div className={styles.statCard}>
+                <h3>Queries (Last 24h)</h3>
+                <p className={styles.statNumber}>{formatNumber(stats.queries_last_24h)}</p>
+              </div>
+              <div className={styles.statCard}>
+                <h3>Active Users (Last 24h)</h3>
+                <p className={styles.statNumber}>{formatNumber(stats.active_users_last_24h)}</p>
+              </div>
             </div>
-            <div className={styles.statCard}>
-              <h3>Total Queries</h3>
-              <p className={styles.statNumber}>{formatNumber(stats.total_queries)}</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>Documents Indexed</h3>
-              <p className={styles.statNumber}>{formatNumber(stats.total_documents)}</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>Active Classes</h3>
-              <p className={styles.statNumber}>{formatNumber(stats.total_classes)}</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>Queries (Last 24h)</h3>
-              <p className={styles.statNumber}>{formatNumber(stats.queries_last_24h)}</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>Active Users (Last 24h)</h3>
-              <p className={styles.statNumber}>{formatNumber(stats.active_users_last_24h)}</p>
+
+            <div className={styles.chartSection}>
+              <h3>Query Activity (Last {timeRange} Days)</h3>
+              <div className={styles.activityChart}>
+                {queryActivity.map((day, index) => (
+                  <div key={index} className={styles.barContainer}>
+                    <div 
+                      className={styles.bar} 
+                      style={{ 
+                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map(d => d.query_count))) * 100)}%` 
+                      }}
+                    >
+                    </div>
+                    <span className={styles.barLabel}>
+                      {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+        )}
 
-          <div className={styles.chartSection}>
-            <h3>Query Activity (Last {timeRange} Days)</h3>
-            <div className={styles.activityChart}>
-              {queryActivity.map((day, index) => (
-                <div key={index} className={styles.barContainer}>
+        {/* Documents Report */}
+        {activeReport === 'documents' && (
+          <div className={styles.reportSection}>
+            <h2>Document Analytics</h2>
+            <div className={styles.documentStats}>
+              <h3>Top Referenced Documents</h3>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Class ID</th>
+                    <th>Class Name</th>
+                    <th>Authors</th>
+                    <th>Reference Count</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topDocuments.map((doc, index) => (
+                    <tr key={index}>
+                      <td>{doc.class_id}</td>
+                      <td>{doc.class_name}</td>
+                      <td>{doc.authors}</td>
+                      <td>{doc.reference_count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Queries Report */}
+        {activeReport === 'queries' && (
+          <div className={styles.reportSection}>
+            <h2>Query Analytics</h2>
+            <div className={styles.querySummary}>
+              <div className={styles.statCard}>
+                <h3>Total Queries (Last {timeRange} Days)</h3>
+                <p className={styles.statNumber}>{formatNumber(queryCount)}</p>
+              </div>
+              <div className={styles.statCard}>
+                <h3>Avg. Queries Per Day</h3>
+                <p className={styles.statNumber}>{formatNumber(Math.round(stats.avg_queries_per_day))}</p>
+              </div>
+            </div>
+
+            <div className={styles.keywordSection}>
+              <h3>Top Search Keywords</h3>
+              <div className={styles.keywordCloud}>
+                {topKeywords.map((keyword, index) => (
                   <div 
-                    className={styles.bar} 
+                    key={index} 
+                    className={styles.keywordTag}
                     style={{ 
-                      height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map(d => d.query_count))) * 100)}%` 
+                      fontSize: `${Math.max(100, (keyword.count / Math.max(...topKeywords.map(k => k.count))) * 150)}%`
                     }}
                   >
+                    {keyword.keyword}
                   </div>
-                  <span className={styles.barLabel}>
-                    {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Documents Report */}
-      {activeReport === 'documents' && (
-        <div className={styles.reportSection}>
-          <h2>Document Analytics</h2>
-          <div className={styles.documentStats}>
-            <h3>Top Referenced Documents</h3>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Class ID</th>
-                  <th>Class Name</th>
-                  <th>Authors</th>
-                  <th>Reference Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topDocuments.map((doc, index) => (
-                  <tr key={index}>
-                    <td>{doc.class_id}</td>
-                    <td>{doc.class_name}</td>
-                    <td>{doc.authors}</td>
-                    <td>{doc.reference_count}</td>
-                  </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Queries Report */}
-      {activeReport === 'queries' && (
-        <div className={styles.reportSection}>
-          <h2>Query Analytics</h2>
-          <div className={styles.querySummary}>
-            <div className={styles.statCard}>
-              <h3>Total Queries (Last {timeRange} Days)</h3>
-              <p className={styles.statNumber}>{formatNumber(queryCount)}</p>
+              </div>
             </div>
-            <div className={styles.statCard}>
-              <h3>Avg. Queries Per Day</h3>
-              <p className={styles.statNumber}>{formatNumber(Math.round(stats.avg_queries_per_day))}</p>
-            </div>
-          </div>
 
-          <div className={styles.keywordSection}>
-            <h3>Top Search Keywords</h3>
-            <div className={styles.keywordCloud}>
-              {topKeywords.map((keyword, index) => (
-                <div 
-                  key={index} 
-                  className={styles.keywordTag}
-                  style={{ 
-                    fontSize: `${Math.max(100, (keyword.count / Math.max(...topKeywords.map(k => k.count))) * 150)}%`
-                  }}
-                >
-                  {keyword.keyword}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.phraseSection}>
-            <h3>Top Search Phrases</h3>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Phrase</th>
-                  <th>Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topPhrases.map((phrase, index) => (
-                  <tr key={index}>
-                    <td>{phrase.phrase}</td>
-                    <td>{phrase.count}</td>
+            <div className={styles.phraseSection}>
+              <h3>Top Search Phrases</h3>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Phrase</th>
+                    <th>Count</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {topPhrases.map((phrase, index) => (
+                    <tr key={index}>
+                      <td>{phrase.phrase}</td>
+                      <td>{phrase.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          <div className={styles.chartSection}>
-            <h3>Daily Query Activity</h3>
-            <div className={styles.activityChart}>
-              {queryActivity.map((day, index) => (
-                <div key={index} className={styles.barContainer}>
-                  <div 
-                    className={styles.bar} 
-                    style={{ 
-                      height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map(d => d.query_count))) * 100)}%` 
-                    }}
-                  >
+            <div className={styles.chartSection}>
+              <h3>Daily Query Activity</h3>
+              <div className={styles.activityChart}>
+                {queryActivity.map((day, index) => (
+                  <div key={index} className={styles.barContainer}>
+                    <div 
+                      className={styles.bar} 
+                      style={{ 
+                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map(d => d.query_count))) * 100)}%` 
+                      }}
+                    >
+                    </div>
+                    <span className={styles.barLabel}>
+                      {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
                   </div>
-                  <span className={styles.barLabel}>
-                    {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Users Report */}
-      {activeReport === 'users' && (
-        <div className={styles.reportSection}>
-          <h2>User Analytics</h2>
-          <div className={styles.userSummary}>
-            <div className={styles.statCard}>
-              <h3>Total Users</h3>
-              <p className={styles.statNumber}>{formatNumber(userCount)}</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>Active Users (Last 24h)</h3>
-              <p className={styles.statNumber}>{formatNumber(stats.active_users_last_24h)}</p>
-            </div>
-          </div>
-
-          <div className={styles.userActivitySection}>
-            <h3>Most Active Users</h3>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>User Email</th>
-                  <th>Query Count</th>
-                  <th>First Query</th>
-                  <th>Last Query</th>
-                  <th>Active Days</th>
-                </tr>
-              </thead>
-              <tbody>
-                {userActivity.map((user, index) => (
-                  <tr key={index}>
-                    <td>{user.user_email}</td>
-                    <td>{user.query_count}</td>
-                    <td>{new Date(user.first_query).toLocaleDateString()}</td>
-                    <td>{new Date(user.last_query).toLocaleDateString()}</td>
-                    <td>{user.active_days}</td>
-                  </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className={styles.chartSection}>
-            <h3>Daily Active Users</h3>
-            <div className={styles.activityChart}>
-              {dailyActiveUsers.map((day, index) => (
-                <div key={index} className={styles.barContainer}>
-                  <div 
-                    className={styles.bar} 
-                    style={{ 
-                      height: `${Math.min(100, (day.user_count / Math.max(...dailyActiveUsers.map(d => d.user_count))) * 100)}%` 
-                    }}
-                  >
-                  </div>
-                  <span className={styles.barLabel}>
-                    {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </span>
-                </div>
-              ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Users Report */}
+        {activeReport === 'users' && (
+          <div className={styles.reportSection}>
+            <h2>User Analytics</h2>
+            <div className={styles.userSummary}>
+              <div className={styles.statCard}>
+                <h3>Total Users</h3>
+                <p className={styles.statNumber}>{formatNumber(userCount)}</p>
+              </div>
+              <div className={styles.statCard}>
+                <h3>Active Users (Last 24h)</h3>
+                <p className={styles.statNumber}>{formatNumber(stats.active_users_last_24h)}</p>
+              </div>
+            </div>
+
+            <div className={styles.userActivitySection}>
+              <h3>Most Active Users</h3>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>User Email</th>
+                    <th>Query Count</th>
+                    <th>First Query</th>
+                    <th>Last Query</th>
+                    <th>Active Days</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userActivity.map((user, index) => (
+                    <tr key={index}>
+                      <td>{user.user_email}</td>
+                      <td>{user.query_count}</td>
+                      <td>{new Date(user.first_query).toLocaleDateString()}</td>
+                      <td>{new Date(user.last_query).toLocaleDateString()}</td>
+                      <td>{user.active_days}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className={styles.chartSection}>
+              <h3>Daily Active Users</h3>
+              <div className={styles.activityChart}>
+                {dailyActiveUsers.map((day, index) => (
+                  <div key={index} className={styles.barContainer}>
+                    <div 
+                      className={styles.bar} 
+                      style={{ 
+                        height: `${Math.min(100, (day.user_count / Math.max(...dailyActiveUsers.map(d => d.user_count))) * 100)}%` 
+                      }}
+                    >
+                    </div>
+                    <span className={styles.barLabel}>
+                      {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className={styles.exportSection}>
         <button 
@@ -439,48 +443,12 @@ function ReportsContent() {
         <button 
           className={styles.exportButton}
           onClick={() => {
-            // Define the elementId for the section you want to capture
-            const elementId = 'reportContent';
-
-            // Similar logic for PDF export
-            let data;
-            let reportType;
-            
-            switch (activeReport) {
-              case 'overview':
-                data = stats;
-                reportType = 'system-overview';
-                break;
-              case 'documents':
-                data = topDocuments;
-                reportType = 'documents';
-                break;
-              case 'queries':
-                data = {
-                  queryCount,
-                  avgQueriesPerDay: stats?.avg_queries_per_day,
-                  queryActivity,
-                  topKeywords,
-                  topPhrases
-                };
-                reportType = 'queries';
-                break;
-              case 'users':
-                data = {
-                  userCount,
-                  activeUsers24h: stats?.active_users_last_24h,
-                  userActivity,
-                  dailyActiveUsers
-                };
-                reportType = 'users';
-                break;
-              default:
-                data = stats;
-                reportType = 'system';
+            // For PDF export, we'll use the element reference
+            if (reportContentRef.current) {
+              exportToPDF('reportContent', `smart-${activeReport}-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+            } else {
+              alert('Unable to find report content for PDF export');
             }
-            
-            // exportReport(reportType, data, 'pdf');
-            exportToPDF(elementId, 'smart-report.pdf');
           }}
         >
           Generate PDF Report
@@ -489,8 +457,6 @@ function ReportsContent() {
     </div>
   );
 }
-
-
 
 export default function ReportsPage() {
   return (

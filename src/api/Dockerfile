@@ -48,6 +48,11 @@ RUN ollama serve & \
     ollama pull llama3:8b && \
     ollama pull gemma3:12b
 
+# Install NLTK and download stopwords
+RUN python -m pip install --upgrade pip && \
+pip install nltk && \
+python -c "import nltk; nltk.download('stopwords')"
+
 # Install python packages
 ADD --chown=app:app Pipfile Pipfile.lock /app/
 

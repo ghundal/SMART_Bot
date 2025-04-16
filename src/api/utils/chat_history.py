@@ -117,7 +117,7 @@ class ChatHistoryManager:
                     "session_id": result[1],
                     "model": result[2],
                     "title": result[3],
-                    "messages": json.loads(result[4]),
+                    "messages": result[4] if isinstance(result[4], list) else json.loads(result[4]),
                     "dts": result[5],
                     "created_at": result[6].isoformat() if result[6] else None,
                     "updated_at": result[7].isoformat() if result[7] else None
@@ -166,7 +166,7 @@ class ChatHistoryManager:
                     "session_id": result[1],
                     "model": result[2],
                     "title": result[3],
-                    "messages": json.loads(result[4]),
+                    "messages": result[4] if isinstance(result[4], list) else json.loads(result[4]),
                     "dts": result[5],
                     "created_at": result[6].isoformat() if result[6] else None,
                     "updated_at": result[7].isoformat() if result[7] else None
