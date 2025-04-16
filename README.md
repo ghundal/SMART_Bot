@@ -1,60 +1,148 @@
-# E115_SMART Milestone 2
-This repository contains a **Retrieval-Augmented Generation (RAG)** system that integrates a **vector database** with a **Large Language Model (LLM)**. The system:
+# E115_SMART Milestone 4
+
+This repository contains a **Retrieval-Augmented Generation (RAG)** system that integrates a **vector database** with a **Large Language Model (LLM)**. 
+The system:
 - **Chunks** text documents
 - **Embeds** the text into a vector space
 - **Stores** embeddings in a **PostgreSQL + pgvector database**
 - **Retrieves** relevant information using **BM25 + Vector Search**
 - **Enhances** LLM responses with retrieved context
 
-Enhancements:
-- **Audit** Audit table
-- **BM25** Cleaned query for better search results
-- **Reranker** Added a model for reranked to give top documents
+Team Members: Gurpreet K Hundal · gurpreet@sklose.com | Tiffany Valdecantos · tiv001@g.harvard.edu | Hellen Momoh · hem299@g.harvard.edu | Spiro Habasch · sph083@g.harvard.edu
+
+## Milestone 4 Organization
+
+```
+├── Readme.md
+├── reports
+|      |── MS3_SMART.pdf
+|      |── Design_Document.pdf
+|      └── Milestone1_SMART.pdf
+├── sql
+│   └── init.sql
+|
+└── src
+    ├── api
+    │   ├── rag_pipeline
+    |   |       |── config.py
+    |   |       |── embedding.py
+    |   |       |── language.py
+    |   |       |── ollama_api.py
+    |   |       |── safety.py
+    |   |       └── search.py
+    │   ├── routers
+    |   |       |── auth_google.py
+    |   |       |── auth_middleware.py
+    |   |       |── chat_api.py
+    |   |       └── reports.py    
+    |   ├── utils
+    |   |       |── chat_history.py
+    |   |       |── database.py
+    |   |       └── llm_rag_utils.py   
+    |   ├── cli_main.py
+    |   ├── docker_entrypoint.sh
+    │   ├── Dockerfile
+    │   ├── main_api.py
+    │   ├── ollama.py
+    │   ├── Pipfile
+    │   └── Pipfile.lock
+    ├── datapipeline
+    │   ├── Advanced_semantic_chunker.py
+    │   ├── datapipeline.py
+    │   ├── docker_entrypoint.sh
+    │   ├── Dockerfile
+    │   ├── Pipfile
+    │   └── Pipfile.lock
+    ├── frontend
+    │   ├── app
+    |   |       |── about
+    |   |       |  └── page.jsx   
+    |   |       |── chat  
+    |   |       |  └── page.jsx
+    |   |       |── login
+    |   |       |  └── page.jsx  
+    |   |       |── reports
+    |   |       |      └── page.jsx
+    |   |       |── global.css
+    |   |       |── layout.jsx
+    |   |       |── not_found.jsx
+    |   |       |── page.jsx
+    |   |       └── page.module.css  
+    │   ├── components
+    |   |       |── about
+    |   |       |  └── About.module.css     
+    |   |       |── auth  
+    |   |       |  |── LoginButton.jsx
+    |   |       |  └── ProtectedRoute.jsx
+    |   |       |── chat
+    |   |       |  └── chat.module.css    
+    |   |       |── layout
+    |   |       |      |── Footer.jsx
+    |   |       |      |── Footer.module.css
+    |   |       |      |── Header.jsx
+    |   |       |      └── Header.module.css
+    |   |       └── reports 
+    |   |             |── ChartCpomponent.jsx
+    |   |             |── charts.module.css
+    |   |             |── exportUtils.js
+    |   |             └── reports.module.css  
+    |   ├── context
+    |   |       └── AuthContext.jsx  
+    |   ├── public
+    |   |       └── logo.png
+    |   ├── services
+    |   |       |── DataService.js
+    |   |       └── ReportService.js
+    │   ├── .env.local   
+    │   ├── Dockerfile
+    │   ├── jsconfig.json
+    │   ├── package-lock.json
+    │   ├── package.json
+    │   └── tailwind.config.js
+    ├── docker-compose.yml
+    ├── docker-shell.sh
+    └── Dockerfile.postgres
+```
+
+## Milestone 4 Enhancements:
+- **Guardrail** Enabled guardrail to detect jailbreaking and inappropriate content
+- **Multilingual** Added models to detect language and translate
+- **Memory** Enabled memory for the model to continue previous chat
+- **API** Added endpoints for frontend
+- **Frontend** Built frontenc
+- **Auth and access** Enabled GOAuth and access level prefiltering
 
 ---
-## **Details**
-- **Data**: The data is stored in Google cloud storage bucket. The input data includes 155 pdf documents from 10 Harvard Data Science classes. Additionally, it includes 2 csv files
-  access.csv: store access level at class name with email and name
-  meta.csv: metadata with class name, authors, term
-- **Semantic Chunking Model**: all-MiniLM-L6-v2
-- **Embedding model**: all-mpnet-base-v2
-- **LLM Model**: microsoft/Phi-4-mini-instruct
+## Application Design
 
-## **Prerequisites**
+### **Artifacts for MS4**
+<img src="images/image.png"  width="800">
 
-### **1. Install Docker**
-Make sure Docker is installed on your machine. You can follow [this guide](https://docs.docker.com/get-docker/) to install Docker.
+### **Solution Architecture**
+<img src="images/image-1.png"  width="800">
 
-### 2. Enable GPU on docker
-```
-curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-sudo apt update
-sudo apt-get install -y nvidia-container-toolkit
-sudo systemctl restart docker.service
-docker run --rm --gpus all ubuntu nvidia-smi
-```
+### **Technical Architecture**
+<img src="images/image-2.png"  width="800">
 
-### 3. Docker login
-```
-docker login
-``` 
+### **Backend API**
+<img src="images/image-3.png"  width="800">
 
-### **4. Clone this repository**
-```bash
-git clone https://github.com/ghundal/E115_SMART.git
-cd E115_SMART
-```
-### **5. Setup GCP Account**
-Go to Google console and ensure that you have access to smart_input_data bucket. Download the key as JSON file and rename it ```smart_input_key.json```. Your folder structure should look like:
+### **Frontend**
 
-```
-|-E115_SMART
-|-secrets
-  |-smart_input_key.json
-```
+### **1. Landing Page**
+<img src="images/image-4.png"  width="800">
+
+### **2. Login**
+<img src="images/image-5.png"  width="800">
+
+### **3. Second Landing page**
+<img src="images/image-6.png"  width="800">
+
+### **4. Chat**
+<img src="images/image-7.png"  width="800">
+
+### **5. Various Reports**
+<img src="images/image-8.png"  width="800">
 
 ## **Running the system**
 
@@ -65,35 +153,17 @@ Go to Google console and ensure that you have access to smart_input_data bucket.
 - **Embeds** the text into a vector space
 - **Stores** embeddings in a **PostgreSQL + pgvector database**
 ```bash
-sh docker-shell.sh smart_input
+sh docker-shell.sh datapipeline
 ```
 
-### **2. Run the image smart_model for RAG system**
-- **Query**: embed the query using embedding model
-- **Hybrid Search**: performs hybrid search with BM25 and vector
-- **Chunks**: retrieves the most relevant chunks
-- **LLM**: sends the query + context + system instruction to the model
+### **2. Run the image api for api**
 
 ```bash
-sh docker-shell.sh smart_model
+sh docker-shell.sh api
 ```
 
-## To access the database container
-### Ubuntu
-```
-sudo apt update && sudo apt install -y postgresql-client
-psql -U postgres -h localhost
-```
-### OS independent
-```
-docker exec -it postgres /bin/bash
-psql -U postgres
-\c smart
-```
+### **3. Run the image frontend for api**
 
-## For clean reruns
-```
-docker-compose stop
-docker system prune
-sudo rm -rf ../persistent-folder/
+```bash
+sh docker-shell.sh frontend
 ```

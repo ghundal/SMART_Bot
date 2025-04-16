@@ -192,6 +192,7 @@ function ChatContent() {
   };
   
   return (
+
     <div className={styles.chatContainer}>
       {/* Sidebar */}
       <div className={`${styles.sidebar} ${showSidebar ? '' : styles.hidden}`}>
@@ -209,7 +210,30 @@ function ChatContent() {
             + New Chat
           </button>
         </div>
-        
+
+        <div className={styles.chatHeader}>
+          <button 
+            className={styles.toggleSidebarButton}
+            onClick={() => setShowSidebar(!showSidebar)}
+          >
+            {showSidebar ? '<<' : '>>'}
+          </button>
+          
+          {/* Ensure this is visible and not conditionally rendered */}
+          <div className={styles.modelSelector}>
+            <label htmlFor="model-select">Model:</label>
+            <select 
+              id="model-select" 
+              value={model} 
+              onChange={handleModelChange}
+              className={styles.modelSelect}
+            >
+              <option value="llama3:8b">Llama 3 (8B)</option>
+              <option value="gemma3:12b">Gemma 3 (12B)</option>
+            </select>
+          </div>
+        </div>
+
         <div className={styles.chatList}>
           {recentChats.length > 0 ? (
             recentChats.map((item) => (
@@ -258,7 +282,7 @@ function ChatContent() {
               className={styles.modelSelect}
             >
               <option value="llama3:8b">Llama 3</option>
-              <option value="gemma3">Gemma</option>
+              <option value="gemma3:12b">Gemma</option>
             </select>
           </div>
         </div>
@@ -298,7 +322,7 @@ function ChatContent() {
               <div className={styles.exampleQueries}>
                 <h3>Example queries:</h3>
                 <ul>
-                  <li onClick={() => startNewChat("What topics are covered in CS89?")}>What topics are covered in CS89?</li>
+                  <li onClick={() => startNewChat("Was ist ein zufälliger Wald?")}>Was ist ein zufälliger Wald?</li>
                   <li onClick={() => startNewChat("What is a random forest?")}>What is a random forest?</li>
                   <li onClick={() => startNewChat("Summarize the key concepts from lecture on CNNs")}>Summarize the key concepts from lecture on CNNs</li>
                 </ul>

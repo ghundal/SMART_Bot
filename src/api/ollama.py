@@ -13,10 +13,10 @@ def query_ollama_with_hybrid_search_multilingual(
     session, 
     question, 
     embedding_model, 
+    user_email,
+    model_name,
     vector_k=DEFAULT_VECTOR_K, 
     bm25_k=DEFAULT_BM25_K, 
-    user_email="Anonymous",
-    model_name=OLLAMA_MODEL,
     chat_history=None
 ):
     """
