@@ -28,7 +28,6 @@ class MockSentenceTransformer:
 def mock_mimetypes():
     """Mock the mimetypes module to avoid looking for mime.types file."""
     with patch("mimetypes.init") as mock_init, patch("mimetypes.guess_type") as mock_guess_type:
-
         # Just return a reasonable mimetype for PDFs
         mock_guess_type.return_value = ("application/pdf", None)
 
@@ -112,7 +111,6 @@ def mock_datapipeline_dependencies():
     ), patch(
         "src.datapipeline.datapipeline.text", MagicMock()
     ):
-
         # Configure torch.cuda
         torch_mock = MagicMock()
         torch_mock.cuda.is_available.return_value = False
@@ -130,7 +128,6 @@ def mock_semantic_chunker_dependencies():
     with patch("Advanced_semantic_chunker.SentenceTransformer", MockSentenceTransformer), patch(
         "Advanced_semantic_chunker.np", np
     ):
-
         yield
 
 

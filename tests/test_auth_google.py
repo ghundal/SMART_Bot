@@ -99,7 +99,6 @@ class TestAuthGoogle:
         ), patch("src.api.routers.auth_google.RedirectResponse", return_value=mock_redirect), patch(
             "src.api.routers.auth_google.os.getenv", return_value="http://frontend.url"
         ):
-
             response = await auth_func(self.mock_request)
 
         # Verify that the necessary methods were called
@@ -131,7 +130,6 @@ class TestAuthGoogle:
         with patch("src.api.routers.auth_google.oauth", oauth), patch(
             "src.api.routers.auth_google.SessionLocal", return_value=self.mock_db
         ), pytest.raises(HTTPException) as excinfo:
-
             await auth_func(self.mock_request)
 
         # Verify the 403 error was raised
@@ -157,7 +155,6 @@ class TestAuthGoogle:
         with patch("src.api.routers.auth_google.oauth", oauth), patch(
             "src.api.routers.auth_google.SessionLocal", return_value=self.mock_db
         ), pytest.raises(Exception) as excinfo:
-
             await auth_func(self.mock_request)
 
         # Verify the error was propagated

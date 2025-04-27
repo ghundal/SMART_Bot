@@ -142,7 +142,6 @@ class TestChatAPI:
         ), patch(
             "src.api.routers.chat_api.SessionLocal", MagicMock()
         ):
-
             result = await start_chat_with_llm(
                 message={"content": "Test question", "model": "test-model"},
                 x_session_id="test-session",
@@ -200,7 +199,6 @@ class TestChatAPI:
         ), patch(
             "src.api.routers.chat_api.SessionLocal", MagicMock()
         ):
-
             result = await continue_chat_with_llm(
                 chat_id=mock_chat_data["chat_id"],
                 message={"content": "Follow-up question", "model": "test-model"},
@@ -272,7 +270,6 @@ class TestChatAPI:
         ), patch(
             "src.api.routers.chat_api.SessionLocal", MagicMock()
         ):
-
             await continue_chat_with_llm(
                 chat_id=mock_chat_data["chat_id"],
                 message={"content": "Follow-up question", "model": "test-model"},
@@ -294,7 +291,6 @@ class TestChatAPI:
         with patch("src.api.routers.chat_api.chat_manager", mock_chat_manager), patch(
             "src.api.routers.chat_api.chat_sessions", {chat_id: {"messages": []}}
         ):
-
             result = await delete_chat(
                 chat_id=chat_id, x_session_id="test-session", user_email="test@example.com"
             )
@@ -348,7 +344,6 @@ class TestChatAPI:
         ), patch(
             "src.api.routers.chat_api.create_chat_session", MagicMock(return_value={"messages": []})
         ):
-
             result = await process_query(request=request, user_email="test@example.com")
 
         # Verify result is a new chat
@@ -390,7 +385,6 @@ class TestChatAPI:
         ), patch(
             "src.api.routers.chat_api.SessionLocal", MagicMock()
         ):
-
             result = await process_query(request=request, user_email="test@example.com")
 
         # Verify result is the continued chat

@@ -190,7 +190,6 @@ class TestLanguageDetector(unittest.TestCase):
         with patch.object(detector, "detect_language", return_value="en"), patch.object(
             detector.translator, "translate"
         ) as mock_translate:
-
             result = detector.translate_text("Hello world", target_lang="en")
 
             # Should return original text without translation
@@ -254,7 +253,6 @@ class TestLanguageDetector(unittest.TestCase):
         with patch("src.api.rag_pipeline.language.get_detector") as mock_get_detector, patch(
             "src.api.rag_pipeline.language.GoogleTranslator"
         ) as mock_translator_class:
-
             # Configure detector mock
             mock_detector_instance = MagicMock()
             mock_detector_instance.detect_language.return_value = "es"
@@ -281,7 +279,6 @@ class TestLanguageDetector(unittest.TestCase):
         with patch("src.api.rag_pipeline.language.get_detector") as mock_get_detector, patch(
             "src.api.rag_pipeline.language.GoogleTranslator"
         ) as mock_translator_class:
-
             # Configure mocks
             mock_detector = MagicMock()
             mock_get_detector.return_value = mock_detector

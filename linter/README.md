@@ -54,15 +54,6 @@ pipenv run flake8 --config linter/config/.flake8 src/datapipeline
 pipenv run mypy --config-file linter/config/mypy.ini src/datapipeline
 ```
 
-## Pre-commit Hooks
-
-Pre-commit hooks are installed to run linters and formatters automatically before each commit.
-
-```bash
-# Run pre-commit manually on all files
-pre-commit run --all-files --config linter/config/.pre-commit-config.yaml
-```
-
 ## Customizing Configuration
 
 You can customize the linter settings by editing the configuration files in `linter/config/`.

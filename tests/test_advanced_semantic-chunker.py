@@ -20,7 +20,6 @@ from src.datapipeline.Advanced_semantic_chunker import (
 
 
 class TestAdvancedSemanticChunker(unittest.TestCase):
-
     def setUp(self):
         # Create a mock embedding function that returns deterministic embeddings
         self.mock_embedding_function = lambda texts: [
@@ -378,10 +377,8 @@ class TestAdvancedSemanticChunker(unittest.TestCase):
             "_calculate_sentence_distances",
             return_value=([0.1, 0.9, 0.2, 0.8] + [0.3] * 15, []),
         ):
-
             # Use a simple version of split_text for testing
             with patch.object(chunker, "split_text", return_value=["Chunk 1", "Chunk 2"]):
-
                 # Test creating documents with number_of_chunks
                 docs = chunker.create_documents([long_text], metadatas=[{"source": "test"}])
 

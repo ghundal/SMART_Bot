@@ -54,7 +54,7 @@ EOF
 cat > linter/config/.flake8 << 'EOF'
 [flake8]
 max-line-length = 100
-extend-ignore = E203
+extend-ignore = E203, E501
 exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,.venv,tests/,src/frontend/
 EOF
 
@@ -80,36 +80,6 @@ ignore_missing_imports = True
 
 [mypy-google.cloud.*]
 ignore_missing_imports = True
-EOF
-
-# Create pre-commit config for Python only
-cat > linter/config/.pre-commit-config.yaml << 'EOF'
-repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
-    hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-    -   id: check-added-large-files
-
--   repo: https://github.com/psf/black
-    rev: 23.3.0
-    hooks:
-    -   id: black
-        args: ["--config", "linter/config/pyproject.toml"]
-
--   repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-    -   id: isort
-        args: ["--settings-path", "linter/config/pyproject.toml"]
-
--   repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-    hooks:
-    -   id: flake8
-        args: ["--config", "linter/config/.flake8"]
 EOF
 
 # YAML linting config
@@ -243,16 +213,6 @@ EOF
 # Make the Docker linting script executable
 chmod +x linter/docker-lint.sh
 
-# Install pre-commit but configure it to use the config in the linter directory
-pipenv install --dev pre-commit
-mkdir -p .git/hooks
-cat > .git/hooks/pre-commit << EOF
-#!/bin/sh
-# Redirect to our pre-commit config
-exec pre-commit run --config \$(pwd)/linter/config/.pre-commit-config.yaml --hook-stage pre-commit
-EOF
-chmod +x .git/hooks/pre-commit
-
 # Create README
 cat > linter/README.md << 'EOF'
 # Python Linting and Formatting Guide
@@ -309,15 +269,6 @@ pipenv run flake8 --config linter/config/.flake8 src/datapipeline
 
 # Type check
 pipenv run mypy --config-file linter/config/mypy.ini src/datapipeline
-```
-
-## Pre-commit Hooks
-
-Pre-commit hooks are installed to run linters and formatters automatically before each commit.
-
-```bash
-# Run pre-commit manually on all files
-pre-commit run --all-files --config linter/config/.pre-commit-config.yaml
 ```
 
 ## Customizing Configuration

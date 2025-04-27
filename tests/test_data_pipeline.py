@@ -33,7 +33,6 @@ from src.datapipeline.datapipeline import (
 
 
 class TestDataPipeline(unittest.TestCase):
-
     def setUp(self):
         # Setup common mocks
         self.mock_bucket = MagicMock()
@@ -315,7 +314,6 @@ class TestDataPipeline(unittest.TestCase):
         ) as mock_chunker_class, patch(
             "src.datapipeline.datapipeline.get_embedding_model"
         ) as mock_get_model:
-
             # Configure mocks
             mock_model = MagicMock()
             mock_model.to.return_value = mock_model
@@ -459,7 +457,6 @@ class TestDataPipeline(unittest.TestCase):
         with patch("src.datapipeline.datapipeline.SentenceTransformer") as mock_transformer, patch(
             "src.datapipeline.datapipeline.torch.cuda.is_available", return_value=False
         ):
-
             # Configure mocks
             mock_model = MagicMock()
             mock_model.to.return_value = mock_model
@@ -510,7 +507,6 @@ class TestDataPipeline(unittest.TestCase):
         ) as mock_get_model, patch(
             "src.datapipeline.datapipeline.create_chunk_embeddings"
         ) as mock_create_embeddings:
-
             # Configure mocks
             mock_engine = MagicMock()
             mock_connect.return_value = mock_engine
@@ -574,7 +570,6 @@ class TestDataPipeline(unittest.TestCase):
         ) as mock_insert_chunks, patch(
             "src.datapipeline.datapipeline.text"
         ) as mock_text:
-
             # Configure mocks
             mock_bucket = MagicMock()
             mock_connect_bucket.return_value = mock_bucket

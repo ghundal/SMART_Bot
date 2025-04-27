@@ -24,8 +24,8 @@ self = <tests.test_llm_rag_utils.TestLlmRagUtils object at 0x753a864a40e0>
         # Patch the import within the generate_chat_response function
 >       with patch('rag_pipeline.ollama.query_ollama_with_hybrid_search_multilingual') as mock:
 
-tests/test_llm_rag_utils.py:23: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_llm_rag_utils.py:23:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 /usr/lib/python3.12/unittest/mock.py:1442: in __enter__
     self.target = self.getter()
 /usr/lib/python3.12/pkgutil.py:513: in resolve_name
@@ -36,7 +36,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     ???
 <frozen importlib._bootstrap>:1360: in _find_and_load
     ???
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 name = 'rag_pipeline', import_ = <function _gcd_import at 0x753c0330c0e0>
 
@@ -54,8 +54,8 @@ self = <tests.test_llm_rag_utils.TestLlmRagUtils object at 0x753a864a41d0>
         # Patch the import within the generate_chat_response function
 >       with patch('rag_pipeline.ollama.query_ollama_with_hybrid_search_multilingual') as mock:
 
-tests/test_llm_rag_utils.py:23: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_llm_rag_utils.py:23:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 /usr/lib/python3.12/unittest/mock.py:1442: in __enter__
     self.target = self.getter()
 /usr/lib/python3.12/pkgutil.py:513: in resolve_name
@@ -66,7 +66,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     ???
 <frozen importlib._bootstrap>:1360: in _find_and_load
     ???
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 name = 'rag_pipeline', import_ = <function _gcd_import at 0x753c0330c0e0>
 

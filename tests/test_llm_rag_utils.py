@@ -157,7 +157,6 @@ class TestLlmRagUtils:
         with patch("src.api.utils.llm_rag_utils.logger"), patch(
             "src.api.utils.llm_rag_utils.traceback.print_exc"
         ):
-
             # Call the function and expect an exception
             with pytest.raises(HTTPException) as excinfo:
                 generate_chat_response(sample_chat_session, sample_message, "user@example.com")
