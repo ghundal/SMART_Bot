@@ -17,15 +17,15 @@ function ChatContent() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [model, setModel] = useState('llama3:8b');
   const messagesEndRef = useRef(null);
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Extract chat_id and model from URL parameters
   useEffect(() => {
     const id = searchParams.get('id');
     const modelParam = searchParams.get('model') || 'llama3:8b';
-    
+
     if (id) {
       setChatId(id);
       setHasActiveChat(true);
@@ -35,24 +35,24 @@ function ChatContent() {
       setHasActiveChat(false);
       setChat(null);
     }
-    
+
     setModel(modelParam);
   }, [searchParams]);
-  
+
   // Fetch recent chat history on component mount
   useEffect(() => {
     fetchRecentChats();
   }, []);
-  
+
   // Scroll to bottom whenever messages change
   useEffect(() => {
     scrollToBottom();
   }, [chat]);
-  
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-  
+
   // Fetch functions using DataService
   const fetchRecentChats = async () => {
     try {
@@ -62,7 +62,7 @@ function ChatContent() {
       console.error('Error fetching recent chats:', error);
     }
   };
-  
+
   const fetchChat = async (id) => {
     try {
       setChat(null);
@@ -74,34 +74,34 @@ function ChatContent() {
       setHasActiveChat(false);
     }
   };
-  
+
   const startNewChat = async (message) => {
     try {
       setIsTyping(true);
       setHasActiveChat(true);
-      
+
       // Show temporary user message while waiting for response
       setChat({
         messages: [
           {
             message_id: DataService.uuid(),
             role: 'user',
-            content: message
-          }
-        ]
+            content: message,
+          },
+        ],
       });
-      
+
       console.log(`Starting new chat with message: "${message}" using model: ${model}`);
-      
+
       // Make a POST request to create a new chat
       const response = await DataService.StartChatWithLLM(model, { content: message });
-      
+
       if (!response || !response.data) {
-        throw new Error("Failed to create new chat - no response data");
+        throw new Error('Failed to create new chat - no response data');
       }
-      
-      console.log("New chat created:", response.data);
-      
+
+      console.log('New chat created:', response.data);
+
       setChat(response.data);
       setChatId(response.data.chat_id);
       router.push(`/chat?model=${model}&id=${response.data.chat_id}`);
@@ -116,22 +116,22 @@ function ChatContent() {
       setIsTyping(false);
     }
   };
-  
+
   const continueChat = async (message) => {
     if (!chatId) return;
-    
+
     try {
       setIsTyping(true);
-      
+
       // Add temporary user message
       const updatedChat = { ...chat };
       updatedChat.messages.push({
         message_id: DataService.uuid(),
         role: 'user',
-        content: message
+        content: message,
       });
       setChat(updatedChat);
-      
+
       const response = await DataService.ContinueChatWithLLM(model, chatId, { content: message });
       setChat(response.data);
       fetchRecentChats(); // Refresh the sidebar
@@ -141,7 +141,7 @@ function ChatContent() {
       setIsTyping(false);
     }
   };
-  
+
   const deleteChat = async (id) => {
     try {
       await DataService.DeleteChat(id);
@@ -156,28 +156,28 @@ function ChatContent() {
       console.error('Error deleting chat:', error);
     }
   };
-  
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
-    
+
     if (hasActiveChat && chatId) {
       continueChat(inputMessage);
     } else {
       startNewChat(inputMessage);
     }
-    
+
     setInputMessage('');
   };
-  
+
   const handleSelectChat = (id) => {
     router.push(`/chat?model=${model}&id=${id}`);
   };
-  
+
   const handleModelChange = (e) => {
     const newModel = e.target.value;
     setModel(newModel);
-    
+
     // Update URL with new model
     if (chatId) {
       router.push(`/chat?model=${newModel}&id=${chatId}`);
@@ -185,19 +185,19 @@ function ChatContent() {
       router.push(`/chat?model=${newModel}`);
     }
   };
-  
+
   const formatDate = (timestamp) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
-  
+
   return (
     <div className={styles.chatContainer}>
       {/* Sidebar */}
       <div className={`${styles.sidebar} ${showSidebar ? '' : styles.hidden}`}>
         <div className={styles.sidebarHeader}>
           <h2>Recent Chats</h2>
-          <button 
+          <button
             className={styles.newChatButton}
             onClick={() => {
               setChat(null);
@@ -209,12 +209,12 @@ function ChatContent() {
             + New Chat
           </button>
         </div>
-        
+
         <div className={styles.chatList}>
           {recentChats.length > 0 ? (
             recentChats.map((item) => (
-              <div 
-                key={item.chat_id} 
+              <div
+                key={item.chat_id}
                 className={`${styles.chatItem} ${item.chat_id === chatId ? styles.active : ''}`}
                 onClick={() => handleSelectChat(item.chat_id)}
               >
@@ -222,7 +222,7 @@ function ChatContent() {
                   <div className={styles.chatItemTitle}>{item.title}</div>
                   <div className={styles.chatItemDate}>{formatDate(item.dts)}</div>
                 </div>
-                <button 
+                <button
                   className={styles.deleteButton}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -238,22 +238,22 @@ function ChatContent() {
           )}
         </div>
       </div>
-      
+
       {/* Main Chat Area */}
       <div className={styles.mainContent}>
         <div className={styles.chatHeader}>
-          <button 
+          <button
             className={styles.toggleSidebarButton}
             onClick={() => setShowSidebar(!showSidebar)}
           >
             {showSidebar ? '<<' : '>>'}
           </button>
-          
+
           <div className={styles.modelSelector}>
             <label htmlFor="model-select">Model:</label>
-            <select 
-              id="model-select" 
-              value={model} 
+            <select
+              id="model-select"
+              value={model}
               onChange={handleModelChange}
               className={styles.modelSelect}
             >
@@ -262,13 +262,13 @@ function ChatContent() {
             </select>
           </div>
         </div>
-        
+
         <div className={styles.messagesContainer}>
           {hasActiveChat && chat?.messages ? (
             <div className={styles.messages}>
               {chat.messages.map((message) => (
-                <div 
-                  key={message.message_id} 
+                <div
+                  key={message.message_id}
                   className={`${styles.message} ${message.role === 'assistant' ? styles.assistant : styles.user}`}
                 >
                   <div className={styles.messageContent}>
@@ -294,13 +294,24 @@ function ChatContent() {
           ) : !hasActiveChat ? (
             <div className={styles.welcomeContainer}>
               <h1 className={styles.welcomeTitle}>SMART Chat Assistant</h1>
-              <p className={styles.welcomeText}>Ask me any questions about your documents, and I'll help you find the information you need.</p>
+              <p className={styles.welcomeText}>
+                Ask me any questions about your documents, and I'll help you find the information
+                you need.
+              </p>
               <div className={styles.exampleQueries}>
                 <h3>Example queries:</h3>
                 <ul>
-                  <li onClick={() => startNewChat("What topics are covered in CS89?")}>What topics are covered in CS89?</li>
-                  <li onClick={() => startNewChat("What is a random forest?")}>What is a random forest?</li>
-                  <li onClick={() => startNewChat("Summarize the key concepts from lecture on CNNs")}>Summarize the key concepts from lecture on CNNs</li>
+                  <li onClick={() => startNewChat('What topics are covered in CS89?')}>
+                    What topics are covered in CS89?
+                  </li>
+                  <li onClick={() => startNewChat('What is a random forest?')}>
+                    What is a random forest?
+                  </li>
+                  <li
+                    onClick={() => startNewChat('Summarize the key concepts from lecture on CNNs')}
+                  >
+                    Summarize the key concepts from lecture on CNNs
+                  </li>
                 </ul>
               </div>
             </div>
@@ -308,7 +319,7 @@ function ChatContent() {
             <div className={styles.loading}>Loading chat...</div>
           )}
         </div>
-        
+
         <div className={styles.inputContainer}>
           <form onSubmit={handleSubmit}>
             <div className={styles.inputWrapper}>
@@ -330,22 +341,37 @@ function ChatContent() {
                   e.target.style.height = Math.min(200, e.target.scrollHeight) + 'px';
                 }}
               />
-              <button type="submit" className={styles.sendButton} disabled={isTyping || !inputMessage.trim()}>
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <button
+                type="submit"
+                className={styles.sendButton}
+                disabled={isTyping || !inputMessage.trim()}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <line x1="22" y1="2" x2="11" y2="13"></line>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
               </button>
             </div>
           </form>
-          
+
           {chat?.top_documents && (
             <div className={styles.sourcesContainer}>
               <div className={styles.sourcesHeader}>Sources:</div>
               <div className={styles.sourcesList}>
                 {chat.top_documents.map((doc, index) => (
                   <div key={index} className={styles.sourceItem}>
-                    <span className={styles.sourceTitle}>{doc.title || doc.class_name || "Document"}</span>
+                    <span className={styles.sourceTitle}>
+                      {doc.title || doc.class_name || 'Document'}
+                    </span>
                     {doc.authors && <span className={styles.sourceAuthor}>by {doc.authors}</span>}
                   </div>
                 ))}

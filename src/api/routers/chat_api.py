@@ -10,13 +10,14 @@ from typing import Dict, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
-from rag_pipeline.config import DEFAULT_BM25_K, DEFAULT_VECTOR_K, OLLAMA_MODEL
-from rag_pipeline.embedding import get_ch_embedding_model
-from rag_pipeline.ollama import query_ollama_with_hybrid_search_multilingual
-from routers.auth_middleware import verify_token
-from utils.chat_history import ChatHistoryManager
-from utils.database import SessionLocal
-from utils.llm_rag_utils import chat_sessions, create_chat_session, rebuild_chat_session
+
+from ..rag_pipeline.config import DEFAULT_BM25_K, DEFAULT_VECTOR_K, OLLAMA_MODEL
+from ..rag_pipeline.embedding import get_ch_embedding_model
+from ..rag_pipeline.ollama import query_ollama_with_hybrid_search_multilingual
+from ..utils.chat_history import ChatHistoryManager
+from ..utils.database import SessionLocal
+from ..utils.llm_rag_utils import chat_sessions, create_chat_session, rebuild_chat_session
+from .auth_middleware import verify_token
 
 
 class QueryRequest(BaseModel):

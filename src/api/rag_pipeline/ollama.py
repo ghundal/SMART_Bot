@@ -2,18 +2,19 @@
 Main RAG functionality for the Ollama system.
 """
 
-from rag_pipeline.config import (
+from api.utils.database import log_audit
+
+from .config import (
     DEFAULT_BM25_K,
     DEFAULT_VECTOR_K,
     RERANKER_MODEL,
     logger,
 )
-from rag_pipeline.embedding import embed_query
-from rag_pipeline.language import detect_language, translate_text
-from rag_pipeline.ollama_api import format_prompt, query_llm, rerank_with_llm
-from rag_pipeline.safety import check_query_safety_with_llama_guard
-from rag_pipeline.search import hybrid_search, retrieve_document_metadata
-from utils.database import log_audit
+from .embedding import embed_query
+from .language import detect_language, translate_text
+from .ollama_api import format_prompt, query_llm, rerank_with_llm
+from .safety import check_query_safety_with_llama_guard
+from .search import hybrid_search, retrieve_document_metadata
 
 
 def query_ollama_with_hybrid_search_multilingual(

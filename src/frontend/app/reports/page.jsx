@@ -84,7 +84,7 @@ function ReportsContent() {
 
   // Helper to format numbers with commas
   const formatNumber = (num) => {
-    return num?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "0";
+    return num?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') || '0';
   };
 
   if (loading) {
@@ -100,10 +100,7 @@ function ReportsContent() {
     return (
       <div className={styles.errorContainer}>
         <p className={styles.errorMessage}>{error}</p>
-        <button
-          className={styles.retryButton}
-          onClick={() => window.location.reload()}
-        >
+        <button className={styles.retryButton} onClick={() => window.location.reload()}>
           Retry
         </button>
       </div>
@@ -212,12 +209,14 @@ function ReportsContent() {
                     <div
                       className={styles.bar}
                       style={{
-                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map(d => d.query_count))) * 100)}%`
+                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map((d) => d.query_count))) * 100)}%`,
                       }}
-                    >
-                    </div>
+                    ></div>
                     <span className={styles.barLabel}>
-                      {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      {new Date(day.date).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                     </span>
                   </div>
                 ))}
@@ -267,7 +266,9 @@ function ReportsContent() {
               </div>
               <div className={styles.statCard}>
                 <h3>Avg. Queries Per Day</h3>
-                <p className={styles.statNumber}>{formatNumber(Math.round(stats.avg_queries_per_day))}</p>
+                <p className={styles.statNumber}>
+                  {formatNumber(Math.round(stats.avg_queries_per_day))}
+                </p>
               </div>
             </div>
 
@@ -279,7 +280,7 @@ function ReportsContent() {
                     key={index}
                     className={styles.keywordTag}
                     style={{
-                      fontSize: `${Math.max(100, (keyword.count / Math.max(...topKeywords.map(k => k.count))) * 150)}%`
+                      fontSize: `${Math.max(100, (keyword.count / Math.max(...topKeywords.map((k) => k.count))) * 150)}%`,
                     }}
                   >
                     {keyword.keyword}
@@ -316,12 +317,14 @@ function ReportsContent() {
                     <div
                       className={styles.bar}
                       style={{
-                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map(d => d.query_count))) * 100)}%`
+                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map((d) => d.query_count))) * 100)}%`,
                       }}
-                    >
-                    </div>
+                    ></div>
                     <span className={styles.barLabel}>
-                      {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      {new Date(day.date).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                     </span>
                   </div>
                 ))}
@@ -379,12 +382,14 @@ function ReportsContent() {
                     <div
                       className={styles.bar}
                       style={{
-                        height: `${Math.min(100, (day.user_count / Math.max(...dailyActiveUsers.map(d => d.user_count))) * 100)}%`
+                        height: `${Math.min(100, (day.user_count / Math.max(...dailyActiveUsers.map((d) => d.user_count))) * 100)}%`,
                       }}
-                    >
-                    </div>
+                    ></div>
                     <span className={styles.barLabel}>
-                      {new Date(day.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      {new Date(day.date).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                     </span>
                   </div>
                 ))}
@@ -417,7 +422,7 @@ function ReportsContent() {
                   avgQueriesPerDay: stats?.avg_queries_per_day,
                   queryActivity,
                   topKeywords,
-                  topPhrases
+                  topPhrases,
                 };
                 reportType = 'queries';
                 break;
@@ -426,7 +431,7 @@ function ReportsContent() {
                   userCount,
                   activeUsers24h: stats?.active_users_last_24h,
                   userActivity,
-                  dailyActiveUsers
+                  dailyActiveUsers,
                 };
                 reportType = 'users';
                 break;
@@ -445,7 +450,10 @@ function ReportsContent() {
           onClick={() => {
             // For PDF export, we'll use the element reference
             if (reportContentRef.current) {
-              exportToPDF('reportContent', `smart-${activeReport}-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+              exportToPDF(
+                'reportContent',
+                `smart-${activeReport}-report-${new Date().toISOString().slice(0, 10)}.pdf`
+              );
             } else {
               alert('Unable to find report content for PDF export');
             }

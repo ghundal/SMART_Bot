@@ -15,18 +15,23 @@ html {
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 @layer base {
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-bold text-gray-900;
   }
-  
+
   p {
     @apply text-gray-700 leading-relaxed;
   }
-  
+
   a {
     @apply outline-none ring-blue-500 focus-visible:ring-2;
   }

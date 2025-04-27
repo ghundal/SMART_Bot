@@ -9,7 +9,8 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 from sqlalchemy import text
-from utils.database import SessionLocal
+
+from .database import SessionLocal
 
 
 class ChatHistoryManager:

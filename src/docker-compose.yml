@@ -69,8 +69,6 @@ services:
             - smart-network
         tty: true
     frontend:
-        #depends_on:
-        #   - api
         image: ${FRONTEND_IMAGE_NAME}
         container_name: frontend
         ports:

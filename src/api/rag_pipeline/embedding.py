@@ -3,8 +3,9 @@ Embedding model functionality for the Ollama RAG system.
 """
 
 import torch
-from rag_pipeline.config import EMBEDDING_MODEL, logger
 from sentence_transformers import SentenceTransformer
+
+from .config import EMBEDDING_MODEL, logger
 
 
 def get_ch_embedding_model():

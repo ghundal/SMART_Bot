@@ -5,7 +5,8 @@ Content safety checks for the Ollama RAG system.
 from typing import Tuple
 
 import requests  # type: ignore
-from rag_pipeline.config import OLLAMA_URL, SAFETY_MODEL, logger
+
+from .config import OLLAMA_URL, SAFETY_MODEL, logger
 
 
 def check_query_safety_with_llama_guard(query: str) -> Tuple[bool, str]:

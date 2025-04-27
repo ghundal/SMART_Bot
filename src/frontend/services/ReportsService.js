@@ -104,13 +104,16 @@ export async function getQueryActivity(days = 30) {
  * Get top keywords used in queries
  */
 export async function getTopKeywords(limit = 20, minLength = 4) {
-  const response = await fetch(`${API_URL}/api/reports/top_keywords?limit=${limit}&min_length=${minLength}`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(
+    `${API_URL}/api/reports/top_keywords?limit=${limit}&min_length=${minLength}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`Error fetching top keywords: ${response.statusText}`);
@@ -185,7 +188,7 @@ const ReportsService = {
   getTopKeywords,
   getTopPhrases,
   getUserActivity,
-  getDailyActiveUsers
+  getDailyActiveUsers,
 };
 
 export default ReportsService;

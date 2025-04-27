@@ -1,6 +1,6 @@
-# Linting and Formatting Guide
+# Python Linting and Formatting Guide
 
-This guide covers how to set up and use linters and formatters to maintain code quality in this project.
+This guide covers how to set up and use linters and formatters to maintain Python code quality in this project.
 
 ## Setup
 
@@ -18,10 +18,6 @@ chmod +x linter/setup.sh
 - **isort**: Import statement formatter
 - **Flake8**: Style guide enforcer
 - **MyPy**: Type checker
-
-### JavaScript/TypeScript (if frontend exists)
-- **ESLint**: Linter
-- **Prettier**: Code formatter
 
 ### Docker and YAML
 - **hadolint**: Dockerfile linter

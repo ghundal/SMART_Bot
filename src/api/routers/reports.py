@@ -6,9 +6,10 @@ This module provides endpoints for retrieving usage statistics and analytics.
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from routers.auth_middleware import verify_token
 from sqlalchemy import text
-from utils.database import SessionLocal
+
+from ..utils.database import SessionLocal
+from .auth_middleware import verify_token
 
 # Define a router for reports
 router = APIRouter()

@@ -11,10 +11,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000';
  */
 const getSessionId = () => {
   if (typeof window === 'undefined') return null;
-  
+
   let sessionId = localStorage.getItem('session_id');
   if (!sessionId) {
-    sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    sessionId =
+      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     localStorage.setItem('session_id', sessionId);
   }
   return sessionId;
@@ -32,26 +33,26 @@ export const uuid = () => {
  */
 const fetchWithAuth = async (endpoint, options = {}) => {
   const sessionId = getSessionId();
-  
+
   const defaultOptions = {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'X-Session-ID': sessionId,
-      ...options.headers
-    }
+      ...options.headers,
+    },
   };
-  
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...defaultOptions,
-    ...options
+    ...options,
   });
-  
+
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'Unknown error');
     throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorText}`);
   }
-  
+
   return response.json();
 };
 
@@ -63,7 +64,7 @@ export const GetChats = async (limit = null) => {
   if (limit) {
     endpoint += `?limit=${limit}`;
   }
-  
+
   const data = await fetchWithAuth(endpoint);
   return { data };
 };
@@ -84,10 +85,10 @@ export const StartChatWithLLM = async (model, message) => {
     method: 'POST',
     body: JSON.stringify({
       content: message.content,
-      model: model
-    })
+      model: model,
+    }),
   });
-  
+
   return { data };
 };
 
@@ -99,10 +100,10 @@ export const ContinueChatWithLLM = async (model, chatId, message) => {
     method: 'POST',
     body: JSON.stringify({
       content: message.content,
-      model: model
-    })
+      model: model,
+    }),
   });
-  
+
   return { data };
 };
 
@@ -111,9 +112,9 @@ export const ContinueChatWithLLM = async (model, chatId, message) => {
  */
 export const DeleteChat = async (chatId) => {
   const data = await fetchWithAuth(`/api/chats/${chatId}`, {
-    method: 'DELETE'
+    method: 'DELETE',
   });
-  
+
   return { data };
 };
 
@@ -127,10 +128,10 @@ export const SubmitQuery = async (model, chatId, question, sessionId) => {
       chat_id: chatId,
       question: question,
       model_name: model,
-      session_id: sessionId || getSessionId()
-    })
+      session_id: sessionId || getSessionId(),
+    }),
   });
-  
+
   return { data };
 };
 
@@ -142,7 +143,7 @@ const DataService = {
   ContinueChatWithLLM,
   DeleteChat,
   SubmitQuery,
-  uuid
+  uuid,
 };
 
 export default DataService;

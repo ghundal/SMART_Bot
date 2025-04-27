@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 from typing import Any, Dict, List
 
-from rag_pipeline.config import GENERATION_CONFIG, logger
+from .config import GENERATION_CONFIG, logger
 
 
 class OllamaLocalClient:

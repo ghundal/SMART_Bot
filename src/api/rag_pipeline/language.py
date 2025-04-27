@@ -12,7 +12,7 @@ from deep_translator import GoogleTranslator
 from fast_langdetect import detect as fasttext_detect
 
 # Import from rag_pipeline
-from rag_pipeline.config import logger
+from .config import logger
 
 
 class LanguageDetector:

@@ -5,8 +5,9 @@ Search functionality for the Ollama RAG system.
 import re
 
 from nltk.corpus import stopwords
-from rag_pipeline.config import VECTOR_SIMILARITY_THRESHOLD, logger
 from sqlalchemy import text
+
+from .config import VECTOR_SIMILARITY_THRESHOLD, logger
 
 
 def format_for_pgroonga(query: str) -> str:

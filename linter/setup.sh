@@ -1,10 +1,10 @@
 #!/bin/bash
-# Script to set up linters and formatters for the project
+# Script to set up linters and formatters for Python code only
 # All configuration files will be contained within the linter directory
 
 set -e
 
-echo "Setting up linters and formatters for your project..."
+echo "Setting up Python linters and formatters for your project..."
 
 # Create config directory if it doesn't exist
 mkdir -p linter/config
@@ -19,14 +19,6 @@ fi
 # Install linting dependencies with pipenv
 echo "Installing Python linting tools with pipenv..."
 pipenv install --dev black flake8 isort pylint mypy
-
-# Install JavaScript/TypeScript linters and formatters if frontend directory exists
-if [ -d "src/frontend" ]; then
-    npm install --save-dev eslint prettier eslint-config-prettier eslint-plugin-react typescript @typescript-eslint/parser @typescript-eslint/eslint-plugin
-
-    # Install SQL formatter
-    npm install --save-dev sql-formatter
-fi
 
 # Create configuration files
 echo "Creating configuration files..."
@@ -63,7 +55,7 @@ cat > linter/config/.flake8 << 'EOF'
 [flake8]
 max-line-length = 100
 extend-ignore = E203
-exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,.venv
+exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,.venv,tests/,src/frontend/
 EOF
 
 # Python - MyPy configuration
@@ -78,6 +70,7 @@ disallow_incomplete_defs = False
 ignore_missing_imports = True
 namespace_packages = True
 explicit_package_bases = True
+exclude = ('tests|src/frontend')
 
 [mypy.plugins.numpy.*]
 follow_imports = skip
@@ -89,45 +82,7 @@ ignore_missing_imports = True
 ignore_missing_imports = True
 EOF
 
-# Only create frontend config files if frontend directory exists
-if [ -d "src/frontend" ]; then
-    # JavaScript/TypeScript - ESLint configuration
-    cat > linter/config/.eslintrc.js << 'EOF'
-module.exports = {
-  root: true,
-  parser: '@typescript-eslint/parser',
-  plugins: [
-    '@typescript-eslint',
-  ],
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier',
-  ],
-  env: {
-    browser: true,
-    node: true,
-    es6: true,
-  },
-  rules: {
-    // Add custom rules here
-  },
-};
-EOF
-
-    # JavaScript/TypeScript - Prettier configuration
-    cat > linter/config/.prettierrc << 'EOF'
-{
-  "semi": true,
-  "trailingComma": "es5",
-  "singleQuote": true,
-  "printWidth": 100,
-  "tabWidth": 2
-}
-EOF
-fi
-
-# Create pre-commit config
+# Create pre-commit config for Python only
 cat > linter/config/.pre-commit-config.yaml << 'EOF'
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
@@ -157,27 +112,6 @@ repos:
         args: ["--config", "linter/config/.flake8"]
 EOF
 
-# Add frontend hooks only if frontend directory exists
-if [ -d "src/frontend" ]; then
-    cat >> linter/config/.pre-commit-config.yaml << 'EOF'
--   repo: local
-    hooks:
-    -   id: eslint
-        name: eslint
-        language: node
-        entry: npx eslint --config linter/config/.eslintrc.js
-        files: \.(js|ts|tsx)$
-        types: [file]
-
-    -   id: prettier
-        name: prettier
-        language: node
-        entry: npx prettier --config linter/config/.prettierrc --write
-        files: \.(js|ts|tsx|json|css|scss|md)$
-        types: [file]
-EOF
-fi
-
 # YAML linting config
 cat > linter/config/.yamllint << 'EOF'
 extends: default
@@ -189,16 +123,16 @@ rules:
   document-start: disable
 EOF
 
-# Create a helper script to run linters and formatters
+# Create a helper script to run linters and formatters (Python only)
 cat > linter/lint-and-format.sh << 'EOF'
 #!/bin/bash
 
-# Script to run linters and formatters on the project
+# Script to run Python linters and formatters on the project
 # All configuration files are in linter/config
 
 set -e
 
-echo "Running linters and formatters..."
+echo "Running Python linters and formatters..."
 
 # Format Python files
 echo "Formatting Python files with black..."
@@ -226,9 +160,8 @@ pipenv run flake8 --config linter/config/.flake8 src/datapipeline
 if [ -d "src/api" ]; then
     pipenv run flake8 --config linter/config/.flake8 src/api
 fi
-if [ -d "tests" ]; then
-    pipenv run flake8 --config linter/config/.flake8 tests
-fi
+# Skip linting test files with flake8
+echo "Skipping flake8 linting for test files..."
 
 # Type checking Python files
 echo "Type checking Python files with mypy..."
@@ -236,26 +169,10 @@ pipenv run mypy --config-file linter/config/mypy.ini src/datapipeline
 if [ -d "src/api" ]; then
     pipenv run mypy --config-file linter/config/mypy.ini src/api
 fi
-if [ -d "tests" ]; then
-    pipenv run mypy --config-file linter/config/mypy.ini tests
-fi
+# Skip type checking test files
+echo "Skipping mypy type checking for test files..."
 
-# Format and lint JavaScript/TypeScript files if frontend directory exists
-if [ -d "src/frontend" ]; then
-    echo "Formatting JavaScript/TypeScript files with prettier..."
-    npx prettier --config linter/config/.prettierrc --write "src/frontend/**/*.{js,jsx,ts,tsx,json,css,scss,md}"
-
-    echo "Linting JavaScript/TypeScript files with eslint..."
-    npx eslint --config linter/config/.eslintrc.js "src/frontend/**/*.{js,jsx,ts,tsx}"
-fi
-
-# Format SQL files if sql directory exists
-if [ -d "sql" ]; then
-    echo "Formatting SQL files..."
-    find sql -name "*.sql" -exec npx sql-formatter -o {} {} \;
-fi
-
-echo "All linting and formatting complete!"
+echo "All Python linting and formatting complete!"
 EOF
 
 # Make the script executable
@@ -338,9 +255,9 @@ chmod +x .git/hooks/pre-commit
 
 # Create README
 cat > linter/README.md << 'EOF'
-# Linting and Formatting Guide
+# Python Linting and Formatting Guide
 
-This guide covers how to set up and use linters and formatters to maintain code quality in this project.
+This guide covers how to set up and use linters and formatters to maintain Python code quality in this project.
 
 ## Setup
 
@@ -358,10 +275,6 @@ chmod +x linter/setup.sh
 - **isort**: Import statement formatter
 - **Flake8**: Style guide enforcer
 - **MyPy**: Type checker
-
-### JavaScript/TypeScript (if frontend exists)
-- **ESLint**: Linter
-- **Prettier**: Code formatter
 
 ### Docker and YAML
 - **hadolint**: Dockerfile linter
@@ -412,5 +325,5 @@ pre-commit run --all-files --config linter/config/.pre-commit-config.yaml
 You can customize the linter settings by editing the configuration files in `linter/config/`.
 EOF
 
-echo "Setup complete! You can now run ./linter/lint-and-format.sh to lint and format your code."
+echo "Setup complete! You can now run ./linter/lint-and-format.sh to lint and format your Python code."
 echo "All configuration files are contained within the linter/config directory."

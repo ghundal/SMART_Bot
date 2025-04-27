@@ -26,8 +26,8 @@ export function exportToCSV(data, filename = 'smart-report.csv') {
       csvData.push(headers);
 
       // Add data rows
-      data.forEach(item => {
-        const row = headers.map(header => item[header]);
+      data.forEach((item) => {
+        const row = headers.map((header) => item[header]);
         csvData.push(row);
       });
     }
@@ -37,14 +37,14 @@ export function exportToCSV(data, filename = 'smart-report.csv') {
     csvData.push(['Metric', 'Value']);
 
     // Add data rows
-    headers.forEach(header => {
+    headers.forEach((header) => {
       csvData.push([header, data[header]]);
     });
   }
 
   // Convert to CSV string
-  csvData.forEach(row => {
-    const processedRow = row.map(cell => {
+  csvData.forEach((row) => {
+    const processedRow = row.map((cell) => {
       // Handle special characters, wrap in quotes if needed
       if (cell === null || cell === undefined) return '';
 
@@ -100,11 +100,13 @@ export function exportToPDF(elementId, filename = 'smart-report.pdf') {
 
   if (!element) {
     console.error(`Element with ID '${elementId}' not found`);
-    alert('PDF export would be implemented with jsPDF and html2canvas libraries or a backend solution.');
+    alert(
+      'PDF export would be implemented with jsPDF and html2canvas libraries or a backend solution.'
+    );
     return;
   }
 
-  html2canvas(element).then(canvas => {
+  html2canvas(element).then((canvas) => {
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
     const imgProps = pdf.getImageProperties(imgData);
@@ -114,6 +116,4 @@ export function exportToPDF(elementId, filename = 'smart-report.pdf') {
     pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
     pdf.save(filename);
   });
-
-
 }

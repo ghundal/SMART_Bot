@@ -22,23 +22,18 @@ export default function LoginPage() {
             className={styles.logo}
           />
         </div>
-        
+
         <h1 className={styles.title}>
           <span className={styles.highlight}>SMART</span>
         </h1>
-        
-        <p className={styles.subtitle}>
-          Secure Management and Retrieval Technology
-        </p>
-        
+
+        <p className={styles.subtitle}>Secure Management and Retrieval Technology</p>
+
         <p className={styles.description}>
           Access your organization's documents with intelligent AI-powered search.
         </p>
-        
-        <button 
-          onClick={handleGoogleLogin}
-          className={styles.googleButton}
-        >
+
+        <button onClick={handleGoogleLogin} className={styles.googleButton}>
           <div className={styles.googleIcon}>
             <svg viewBox="0 0 24 24" width="18" height="18">
               <path

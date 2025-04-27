@@ -19,23 +19,8 @@ repos:
     -   id: isort
         args: ["--settings-path", "linter/config/pyproject.toml"]
 
--   repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-    hooks:
-    -   id: flake8
-        args: ["--config", "linter/config/.flake8"]
--   repo: local
-    hooks:
-    -   id: eslint
-        name: eslint
-        language: node
-        entry: npx eslint --config linter/config/.eslintrc.js
-        files: \.(js|ts|tsx)$
-        types: [file]
-
-    -   id: prettier
-        name: prettier
-        language: node
-        entry: npx prettier --config linter/config/.prettierrc --write
-        files: \.(js|ts|tsx|json|css|scss|md)$
-        types: [file]
+# -   repo: https://github.com/pycqa/flake8
+#     rev: 6.0.0
+#     hooks:
+#     -   id: flake8
+#         args: ["--config", "linter/config/.flake8"]

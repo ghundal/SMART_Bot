@@ -9,10 +9,7 @@ export default function LoginButton({ className }) {
   };
 
   return (
-    <button 
-      onClick={handleGoogleLogin}
-      className={className}
-    >
+    <button onClick={handleGoogleLogin} className={className}>
       <div style={{ display: 'flex', alignItems: 'center', marginRight: '12px' }}>
         <svg viewBox="0 0 24 24" width="18" height="18">
           <path
