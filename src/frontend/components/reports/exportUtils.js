@@ -24,7 +24,7 @@ export function exportToCSV(data, filename = 'smart-report.csv') {
     if (data.length > 0) {
       const headers = Object.keys(data[0]);
       csvData.push(headers);
-      
+
       // Add data rows
       data.forEach(item => {
         const row = headers.map(header => item[header]);
@@ -35,7 +35,7 @@ export function exportToCSV(data, filename = 'smart-report.csv') {
     // Single object
     const headers = Object.keys(data);
     csvData.push(['Metric', 'Value']);
-    
+
     // Add data rows
     headers.forEach(header => {
       csvData.push([header, data[header]]);
@@ -47,26 +47,26 @@ export function exportToCSV(data, filename = 'smart-report.csv') {
     const processedRow = row.map(cell => {
       // Handle special characters, wrap in quotes if needed
       if (cell === null || cell === undefined) return '';
-      
+
       const cellStr = String(cell);
       if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
         return `"${cellStr.replace(/"/g, '""')}"`;
       }
       return cellStr;
     });
-    
+
     csvContent += processedRow.join(',') + '\n';
   });
 
   // Create download
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-  
+
   const link = document.createElement('a');
   link.setAttribute('href', url);
   link.setAttribute('download', filename);
   link.style.visibility = 'hidden';
-  
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -81,7 +81,7 @@ export function exportToCSV(data, filename = 'smart-report.csv') {
 export function exportReport(reportType, data, format = 'csv') {
   const timestamp = new Date().toISOString().split('T')[0];
   const filename = `smart-${reportType}-report-${timestamp}.${format}`;
-  
+
   if (format === 'csv') {
     exportToCSV(data, filename);
   } else if (format === 'pdf') {
@@ -97,26 +97,23 @@ export function exportReport(reportType, data, format = 'csv') {
 export function exportToPDF(elementId, filename = 'smart-report.pdf') {
   // Check if element exists
   const element = document.getElementById(elementId);
-  
+
   if (!element) {
     console.error(`Element with ID '${elementId}' not found`);
     alert('PDF export would be implemented with jsPDF and html2canvas libraries or a backend solution.');
     return;
   }
-  
-  // This would normally use jsPDF and html2canvas
-  // Example implementation would be:
-  
+
   html2canvas(element).then(canvas => {
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
     const imgProps = pdf.getImageProperties(imgData);
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    
+
     pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
     pdf.save(filename);
   });
-  
-  
+
+
 }

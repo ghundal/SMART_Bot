@@ -37,6 +37,7 @@ CREATE TABLE audit (
     document_ids TEXT[],          -- Document IDs retrieved
     chunk_texts TEXT[],           -- Chunks passed to the LLM
     response TEXT,
+    language_code VARCHAR(10),
     event_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 

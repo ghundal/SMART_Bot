@@ -15,7 +15,7 @@ function ReportsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const reportContentRef = useRef(null);
-  
+
   // States for different report data
   const [stats, setStats] = useState(null);
   const [queryActivity, setQueryActivity] = useState([]);
@@ -35,35 +35,35 @@ function ReportsContent() {
         // Fetch system stats
         const systemStats = await ReportsService.getSystemStats();
         setStats(systemStats);
-        
+
         // Fetch user count
         const userCountData = await ReportsService.getUserCount();
         setUserCount(userCountData.user_count);
-        
+
         // Fetch query count based on time range
         const queryCountData = await ReportsService.getQueryCount(timeRange);
         setQueryCount(queryCountData.query_count);
-        
+
         // Fetch query activity based on time range
         const queryActivityData = await ReportsService.getQueryActivity(timeRange);
         setQueryActivity(queryActivityData);
-        
+
         // Fetch top documents
         const topDocsData = await ReportsService.getTopDocuments();
         setTopDocuments(topDocsData);
-        
+
         // Fetch top keywords
         const topKeywordsData = await ReportsService.getTopKeywords();
         setTopKeywords(topKeywordsData);
-        
+
         // Fetch top phrases
         const topPhrasesData = await ReportsService.getTopPhrases();
         setTopPhrases(topPhrasesData);
-        
+
         // Fetch user activity
         const userActivityData = await ReportsService.getUserActivity();
         setUserActivity(userActivityData);
-        
+
         // Fetch daily active users
         const dailyActiveUsersData = await ReportsService.getDailyActiveUsers(timeRange);
         setDailyActiveUsers(dailyActiveUsersData);
@@ -100,7 +100,7 @@ function ReportsContent() {
     return (
       <div className={styles.errorContainer}>
         <p className={styles.errorMessage}>{error}</p>
-        <button 
+        <button
           className={styles.retryButton}
           onClick={() => window.location.reload()}
         >
@@ -122,25 +122,25 @@ function ReportsContent() {
 
       {/* Navigation Tabs */}
       <div className={styles.tabContainer}>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeReport === 'overview' ? styles.activeTab : ''}`}
           onClick={() => setActiveReport('overview')}
         >
           Overview
         </button>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeReport === 'documents' ? styles.activeTab : ''}`}
           onClick={() => setActiveReport('documents')}
         >
           Documents
         </button>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeReport === 'queries' ? styles.activeTab : ''}`}
           onClick={() => setActiveReport('queries')}
         >
           Queries
         </button>
-        <button 
+        <button
           className={`${styles.tabButton} ${activeReport === 'users' ? styles.activeTab : ''}`}
           onClick={() => setActiveReport('users')}
         >
@@ -151,19 +151,19 @@ function ReportsContent() {
       {/* Time Range Selector */}
       <div className={styles.timeRangeSelector}>
         <span>Time range: </span>
-        <button 
+        <button
           className={`${styles.rangeButton} ${timeRange === 7 ? styles.activeRange : ''}`}
           onClick={() => handleTimeRangeChange(7)}
         >
           7 days
         </button>
-        <button 
+        <button
           className={`${styles.rangeButton} ${timeRange === 30 ? styles.activeRange : ''}`}
           onClick={() => handleTimeRangeChange(30)}
         >
           30 days
         </button>
-        <button 
+        <button
           className={`${styles.rangeButton} ${timeRange === 90 ? styles.activeRange : ''}`}
           onClick={() => handleTimeRangeChange(90)}
         >
@@ -209,10 +209,10 @@ function ReportsContent() {
               <div className={styles.activityChart}>
                 {queryActivity.map((day, index) => (
                   <div key={index} className={styles.barContainer}>
-                    <div 
-                      className={styles.bar} 
-                      style={{ 
-                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map(d => d.query_count))) * 100)}%` 
+                    <div
+                      className={styles.bar}
+                      style={{
+                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map(d => d.query_count))) * 100)}%`
                       }}
                     >
                     </div>
@@ -275,10 +275,10 @@ function ReportsContent() {
               <h3>Top Search Keywords</h3>
               <div className={styles.keywordCloud}>
                 {topKeywords.map((keyword, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className={styles.keywordTag}
-                    style={{ 
+                    style={{
                       fontSize: `${Math.max(100, (keyword.count / Math.max(...topKeywords.map(k => k.count))) * 150)}%`
                     }}
                   >
@@ -313,10 +313,10 @@ function ReportsContent() {
               <div className={styles.activityChart}>
                 {queryActivity.map((day, index) => (
                   <div key={index} className={styles.barContainer}>
-                    <div 
-                      className={styles.bar} 
-                      style={{ 
-                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map(d => d.query_count))) * 100)}%` 
+                    <div
+                      className={styles.bar}
+                      style={{
+                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map(d => d.query_count))) * 100)}%`
                       }}
                     >
                     </div>
@@ -376,10 +376,10 @@ function ReportsContent() {
               <div className={styles.activityChart}>
                 {dailyActiveUsers.map((day, index) => (
                   <div key={index} className={styles.barContainer}>
-                    <div 
-                      className={styles.bar} 
-                      style={{ 
-                        height: `${Math.min(100, (day.user_count / Math.max(...dailyActiveUsers.map(d => d.user_count))) * 100)}%` 
+                    <div
+                      className={styles.bar}
+                      style={{
+                        height: `${Math.min(100, (day.user_count / Math.max(...dailyActiveUsers.map(d => d.user_count))) * 100)}%`
                       }}
                     >
                     </div>
@@ -395,13 +395,13 @@ function ReportsContent() {
       </div>
 
       <div className={styles.exportSection}>
-        <button 
+        <button
           className={styles.exportButton}
           onClick={() => {
             // Get appropriate data based on current tab
             let data;
             let reportType;
-            
+
             switch (activeReport) {
               case 'overview':
                 data = stats;
@@ -434,13 +434,13 @@ function ReportsContent() {
                 data = stats;
                 reportType = 'system';
             }
-            
+
             exportReport(reportType, data, 'csv');
           }}
         >
           Export Data as CSV
         </button>
-        <button 
+        <button
           className={styles.exportButton}
           onClick={() => {
             // For PDF export, we'll use the element reference

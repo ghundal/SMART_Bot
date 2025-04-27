@@ -22,12 +22,12 @@ langchain-ollama = "*"
 fastapi = "*"
 uvicorn = "*"
 deep_translator = "*"
-langid = "*"
 authlib = "*"
 httpx = "*"
 python-dotenv = "*"
 itsdangerous = "*"
 hf_xet = "*"
+fast-langdetect = "*"
 
 [dev-packages]
 

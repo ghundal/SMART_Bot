@@ -1,8 +1,8 @@
 """
 Configuration settings for the Ollama RAG system.
 """
+
 import logging
-import os
 
 # Ollama API endpoints
 OLLAMA_URL = "http://localhost:11434/api/generate"
@@ -11,21 +11,21 @@ OLLAMA_MODEL = "gemma3:12b"
 
 RERANKER_MODEL = "llama3:8b"
 SAFETY_MODEL = "llama-guard3:8b"
+EMBEDDING_MODEL = "all-mpnet-base-v2"
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
-logger = logging.getLogger('ollama_rag')
+logger = logging.getLogger("ollama_rag")
 
 # Define generation config with improved parameters
 GENERATION_CONFIG = {
     "max_length": 256,
-    "temperature": 0.1, 
+    "temperature": 0.1,
     "top_p": 0.9,
     "repeat_penalty": 1.3,
-    "stream": False
+    "stream": False,
 }
 
 # Token limits

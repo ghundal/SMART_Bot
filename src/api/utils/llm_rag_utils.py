@@ -1,52 +1,49 @@
-'''
+"""
 Provides utility functions for creating and managing chat sessions,
 including functions for generating responses through the Ollama RAG system
 and rebuilding chat context from history.
-'''
+"""
 
-import os
-from typing import Dict, Any, List, Optional
-from fastapi import HTTPException
-import traceback
 import logging
-from utils.database import connect_to_postgres, SessionLocal
-from sqlalchemy import text
+import traceback
+from typing import Any, Dict, List
+
+from fastapi import HTTPException
+from rag_pipeline.config import DEFAULT_BM25_K, DEFAULT_VECTOR_K, OLLAMA_MODEL
+from rag_pipeline.embedding import get_ch_embedding_model
+from utils.database import SessionLocal
 
 # Setup
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
-logger = logging.getLogger('llm_rag_utils')
+logger = logging.getLogger("llm_rag_utils")
 
 # Initialize chat sessions
 chat_sessions: Dict[str, Any] = {}
 
+
 def create_chat_session():
     """Create a new chat session for tracking conversation history"""
-    return {
-        "messages": [],
-        "metadata": {
-            "created_at": None,
-            "last_updated": None
-        }
-    }
+    return {"messages": [], "metadata": {"created_at": None, "last_updated": None}}
+
 
 def generate_chat_response(chat_session, message: Dict, user_email: str) -> str:
     """
     Generate a response using Ollama models via the hybrid search approach.
-    
     Args:
         chat_session: The chat session tracking conversation history
         message: Dict containing 'content' (text)
-    
+        user_email: The user's email
     Returns:
         str: The model's response
+    Raises:
+        HTTPException: If an error occurs during response generation
     """
     try:
         # Import here to avoid circular imports
-        from ollama import query_ollama_with_hybrid_search_multilingual, get_ch_embedding_model
-        
+        from rag_pipeline.ollama import query_ollama_with_hybrid_search_multilingual
+
         # Get content from message
         content = message.get("content", "")
         if not content:
@@ -54,63 +51,47 @@ def generate_chat_response(chat_session, message: Dict, user_email: str) -> str:
 
         # Get or initialize embedding model
         embedding_model = get_ch_embedding_model()
-        
+
         # Add message to chat history
-        chat_session["messages"].append({
-            "role": "user",
-            "content": content
-        })
-        
+        chat_session["messages"].append({"role": "user", "content": content})
+
         # Get response from Ollama using hybrid search
         result = query_ollama_with_hybrid_search_multilingual(
             session=SessionLocal(),
             question=content,
             embedding_model=embedding_model,
-            vector_k=10,
-            bm25_k=10,
-            user_email=user_email
+            vector_k=DEFAULT_BM25_K,
+            bm25_k=DEFAULT_VECTOR_K,
+            model_name=OLLAMA_MODEL,
+            user_email=user_email,
         )
-        
+
         # Extract response from result
-        response = result.get("response", "I'm sorry, I couldn't generate a response.")
-        
+        response: str = result.get("response", "I'm sorry, I couldn't generate a response.")
+
         # Add assistant response to chat history
-        chat_session["messages"].append({
-            "role": "assistant",
-            "content": response
-        })
-        
+        chat_session["messages"].append({"role": "assistant", "content": response})
+
         # Log success
         logger.info(f"Generated response with {result.get('context_count', 0)} context chunks")
-        
         return response
-        
     except Exception as e:
         logger.exception(f"Error generating response: {str(e)}")
         traceback.print_exc()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate response: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to generate response: {str(e)}")
 
-def rebuild_chat_session(chat_history: List[Dict]) -> Dict:
+
+def rebuild_chat_session(chat_history: List[Dict]) -> Dict[str, Any]:
     """
     Rebuild a chat session with complete context from chat history
-    
     Args:
         chat_history: List of message dictionaries from chat history
-    
     Returns:
-        Dict: Reconstructed chat session
+        Dict[str, Any]: Reconstructed chat session
     """
-    new_session = create_chat_session()
-    
+    new_session: Dict[str, Any] = create_chat_session()
     # Extract just the role and content for each message
     for message in chat_history:
         if message.get("role") and message.get("content"):
-            new_session["messages"].append({
-                "role": message["role"],
-                "content": message["content"]
-            })
-    
+            new_session["messages"].append({"role": message["role"], "content": message["content"]})
     return new_session

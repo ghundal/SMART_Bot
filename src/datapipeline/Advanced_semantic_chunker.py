@@ -1,22 +1,23 @@
+import copy
 import logging
 import re
-import copy
-import numpy as np
-from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
-from langchain_core.documents import BaseDocumentTransformer, Document
-from langchain_community.utils.math import cosine_similarity
 from functools import lru_cache
+from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
+
+import numpy as np
+from langchain_community.utils.math import cosine_similarity
+from langchain_core.documents import BaseDocumentTransformer, Document
 from sentence_transformers import SentenceTransformer
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
-logger = logging.getLogger('semantic_chunker')
+logger = logging.getLogger("semantic_chunker")
+
 
 @lru_cache(maxsize=2)
-def get_embedding_model(model_name='all-MiniLM-L6-v2'):
+def get_embedding_model(model_name="all-MiniLM-L6-v2"):
     """Load a sentence transformer model with caching."""
     try:
         logger.info(f"Loading embedding model: {model_name}")
@@ -25,25 +26,29 @@ def get_embedding_model(model_name='all-MiniLM-L6-v2'):
         logger.exception(f"Error loading embedding model {model_name}: {str(e)}")
         return None
 
-def generate_local_embeddings(texts, model_name='all-MiniLM-L6-v2', batch_size=32, preloaded_model=None):
+
+def generate_local_embeddings(
+    texts, model_name="all-MiniLM-L6-v2", batch_size=32, preloaded_model=None
+):
     """Generate embeddings using a local model (with model reuse)."""
     try:
         # Use preloaded model if provided, otherwise get from cache or load new
         model = preloaded_model if preloaded_model is not None else get_embedding_model(model_name)
         if model is None:
             return [[0.0] * 384] * len(texts)  # Default embedding size
-        
+
         # Generate embeddings in batches
         all_embeddings = []
         for i in range(0, len(texts), batch_size):
-            batch = texts[i:i+batch_size]
+            batch = texts[i : i + batch_size]
             embeddings = model.encode(batch, show_progress_bar=False)
             all_embeddings.extend(embeddings.tolist())
-        
+
         return all_embeddings
     except Exception as e:
         logger.error(f"Error generating embeddings: {str(e)}")
         return [[0.0] * 384] * len(texts)  # Default embedding size for the model
+
 
 def combine_sentences(sentences: List[dict], buffer_size: int = 1) -> List[dict]:
     """Combine sentences based on buffer size."""
@@ -59,17 +64,19 @@ def combine_sentences(sentences: List[dict], buffer_size: int = 1) -> List[dict]
         sentences[i]["combined_sentence"] = combined_sentence
     return sentences
 
+
 def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List[dict]]:
     """Calculate cosine distances between sentences."""
-    distances = []
+    distances: List[float] = []
     for i in range(len(sentences) - 1):
         embedding_current = sentences[i]["combined_sentence_embedding"]
         embedding_next = sentences[i + 1]["combined_sentence_embedding"]
         similarity = cosine_similarity([embedding_current], [embedding_next])[0][0]
-        distance = 1 - similarity
+        distance: float = float(1 - similarity)
         distances.append(distance)
         sentences[i]["distance_to_next"] = distance
     return distances, sentences
+
 
 BreakpointThresholdType = Literal["percentile", "standard_deviation", "interquartile", "gradient"]
 BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
@@ -78,6 +85,7 @@ BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
     "interquartile": 1.5,
     "gradient": 95,
 }
+
 
 class AdvancedSemanticChunker(BaseDocumentTransformer):
     """Split the text based on semantic similarity."""
@@ -90,9 +98,9 @@ class AdvancedSemanticChunker(BaseDocumentTransformer):
         breakpoint_threshold_amount: Optional[float] = None,
         number_of_chunks: Optional[int] = None,
         sentence_split_regex: str = r"(?<=[.?!])\s+",
-        embedding_function = None,
-        embedding_model: str = 'all-MiniLM-L6-v2',
-        preloaded_model = None
+        embedding_function=None,
+        embedding_model: str = "all-MiniLM-L6-v2",
+        preloaded_model=None,
     ):
         self._add_start_index = add_start_index
         self.buffer_size = buffer_size
@@ -101,61 +109,64 @@ class AdvancedSemanticChunker(BaseDocumentTransformer):
         self.sentence_split_regex = sentence_split_regex
         self.embedding_model = embedding_model
         self.preloaded_model = preloaded_model
-        
+
+        # Validate breakpoint_threshold_type
+        if breakpoint_threshold_type not in BREAKPOINT_DEFAULTS:
+            raise ValueError(f"Invalid breakpoint_threshold_type: {breakpoint_threshold_type}")
+
         if breakpoint_threshold_amount is None:
-            self.breakpoint_threshold_amount = BREAKPOINT_DEFAULTS[
-                breakpoint_threshold_type
-            ]
+            self.breakpoint_threshold_amount = BREAKPOINT_DEFAULTS[breakpoint_threshold_type]
         else:
             self.breakpoint_threshold_amount = breakpoint_threshold_amount
-            
+
         # Create embedding function with specified model
         if embedding_function is None:
             self.embedding_function = lambda texts: generate_local_embeddings(
-                texts, model_name=self.embedding_model,
-                preloaded_model=self.preloaded_model
+                texts,
+                model_name=self.embedding_model,
+                preloaded_model=self.preloaded_model,
             )
         else:
             self.embedding_function = embedding_function
 
-    def _calculate_breakpoint_threshold(
-        self, distances: List[float]
-    ) -> Tuple[float, List[float]]:
+    def _calculate_breakpoint_threshold(self, distances: List[float]) -> Tuple[float, List[float]]:
         if self.breakpoint_threshold_type == "percentile":
-            return cast(
-                float,
-                np.percentile(distances, self.breakpoint_threshold_amount),
-            ), distances
+            return (
+                float(np.percentile(distances, self.breakpoint_threshold_amount)),
+                distances,
+            )
         elif self.breakpoint_threshold_type == "standard_deviation":
-            return cast(
-                float,
-                np.mean(distances)
-                + self.breakpoint_threshold_amount * np.std(distances),
-            ), distances
+            return (
+                float(np.mean(distances) + self.breakpoint_threshold_amount * np.std(distances)),
+                distances,
+            )
         elif self.breakpoint_threshold_type == "interquartile":
-            q1, q3 = np.percentile(distances, [25, 75])
+            # Handle multiple percentiles correctly
+            percentile_25 = float(np.percentile(distances, 25))
+            percentile_75 = float(np.percentile(distances, 75))
+            q1 = percentile_25
+            q3 = percentile_75
             iqr = q3 - q1
-            return np.mean(
-                distances
-            ) + self.breakpoint_threshold_amount * iqr, distances
+            return (
+                float(np.mean(distances) + self.breakpoint_threshold_amount * iqr),
+                distances,
+            )
         elif self.breakpoint_threshold_type == "gradient":
             distance_gradient = np.gradient(distances, range(0, len(distances)))
-            return cast(
-                float,
-                np.percentile(distance_gradient, self.breakpoint_threshold_amount),
-            ), distance_gradient
+            gradient_list = [float(x) for x in distance_gradient]
+            return (
+                float(np.percentile(distance_gradient, self.breakpoint_threshold_amount)),
+                gradient_list,
+            )
         else:
             raise ValueError(
-                f"Got unexpected `breakpoint_threshold_type`: "
-                f"{self.breakpoint_threshold_type}"
+                f"Got unexpected `breakpoint_threshold_type`: " f"{self.breakpoint_threshold_type}"
             )
 
     def _threshold_from_clusters(self, distances: List[float]) -> float:
         """Calculate the threshold based on the number of chunks."""
         if self.number_of_chunks is None:
-            raise ValueError(
-                "This should never be called if `number_of_chunks` is None."
-            )
+            raise ValueError("This should never be called if `number_of_chunks` is None.")
         x1, y1 = len(distances), 0.0
         x2, y2 = 1.0, 100.0
         x = max(min(self.number_of_chunks, x1), x2)
@@ -170,9 +181,7 @@ class AdvancedSemanticChunker(BaseDocumentTransformer):
         self, single_sentences_list: List[str]
     ) -> Tuple[List[float], List[dict]]:
         """Split text into multiple components."""
-        _sentences = [
-            {"sentence": x, "index": i} for i, x in enumerate(single_sentences_list)
-        ]
+        _sentences = [{"sentence": x, "index": i} for i, x in enumerate(single_sentences_list)]
         sentences = combine_sentences(_sentences, self.buffer_size)
         embeddings = self.embedding_function([x["combined_sentence"] for x in sentences])
         for i, sentence in enumerate(sentences):
@@ -185,21 +194,25 @@ class AdvancedSemanticChunker(BaseDocumentTransformer):
     ) -> List[str]:
         # Splitting the essay (by default on '.', '?', and '!')
         single_sentences_list = re.split(self.sentence_split_regex, text)
-        single_sentences_list = [s for s in single_sentences_list if s.strip()]  # Remove empty strings
+        single_sentences_list = [
+            s for s in single_sentences_list if s.strip()
+        ]  # Remove empty strings
 
         # Edge cases
         if len(single_sentences_list) <= 1:
             return single_sentences_list
         if self.breakpoint_threshold_type == "gradient" and len(single_sentences_list) == 2:
             return single_sentences_list
-            
+
         distances, sentences = self._calculate_sentence_distances(single_sentences_list)
-        
+
         if self.number_of_chunks is not None:
             breakpoint_distance_threshold = self._threshold_from_clusters(distances)
-            breakpoint_array = distances
+            breakpoint_array: List[float] = distances
         else:
-            breakpoint_distance_threshold, breakpoint_array = self._calculate_breakpoint_threshold(distances)
+            breakpoint_distance_threshold, breakpoint_array = self._calculate_breakpoint_threshold(
+                distances
+            )
 
         indices_above_thresh = [
             i for i, x in enumerate(breakpoint_array) if x > breakpoint_distance_threshold
@@ -220,7 +233,7 @@ class AdvancedSemanticChunker(BaseDocumentTransformer):
         if start_index < len(sentences):
             combined_text = " ".join([d["sentence"] for d in sentences[start_index:]])
             chunks.append(combined_text)
-            
+
         return chunks
 
     def create_documents(

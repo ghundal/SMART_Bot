@@ -9,15 +9,15 @@ services:
         container_name: postgres
         restart: unless-stopped
         shm_size: 1g
-        volumes: 
-        - ${PERSISTENT_DIR}/postgres:/var/lib/postgresql/data
-        - ../sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+        volumes:
+            - ${PERSISTENT_DIR}/postgres:/var/lib/postgresql/data
+            - ../sql/init.sql:/docker-entrypoint-initdb.d/init.sql
         environment:
-        - POSTGRES_PASSWORD=postgres
+            - POSTGRES_PASSWORD=postgres
         ports:
-        - "5432:5432"
+            - "5432:5432"
         networks:
-        - smart-network
+            - smart-network
     datapipeline:
         depends_on:
             - postgres
@@ -38,9 +38,9 @@ services:
                     devices:
                         - driver: nvidia
                           count: all
-                          capabilities: [gpu]
+                          capabilities: [ gpu ]
         networks:
-        - smart-network
+            - smart-network
         command: datapipeline.py
     api:
         depends_on:
@@ -51,7 +51,7 @@ services:
             - ${BASE_DIR}/api:/app
             - ${SECRETS_DIR}:/secrets:ro
         ports:
-        - "9000:9000"
+            - "9000:9000"
         environment:
             DB_HOST: postgres
             NVIDIA_VISIBLE_DEVICES: all
@@ -64,9 +64,9 @@ services:
                     devices:
                         - driver: nvidia
                           count: all
-                          capabilities: [gpu]
+                          capabilities: [ gpu ]
         networks:
-        - smart-network
+            - smart-network
         tty: true
     frontend:
         #depends_on:
@@ -75,30 +75,5 @@ services:
         container_name: frontend
         ports:
             - "3000:3000"
-        # environment:
-        #     - NODE_ENV=production
         networks:
             - smart-network
-        
-    # cli:
-    #     depends_on:
-    #         - postgres
-    #     image: ${API_IMAGE_NAME}
-    #     container_name: cli
-    #     volumes:
-    #         - ${BASE_DIR}/api:/app
-    #     environment:
-    #         DB_HOST: postgres
-    #         NVIDIA_VISIBLE_DEVICES: all
-    #         NVIDIA_DRIVER_CAPABILITIES: compute,utility
-    #         DEV: 1
-    #     deploy:
-    #         resources:
-    #             reservations:
-    #                 devices:
-    #                     - driver: nvidia
-    #                       count: all
-    #                       capabilities: [gpu]
-    #     networks:
-    #     - smart-network
-    #     tty: true

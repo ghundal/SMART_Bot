@@ -19,8 +19,8 @@ docker network inspect smart-network >/dev/null 2>&1 || docker network create sm
 
 # Build the image based on the Dockerfile
 docker build -t $DP_IMAGE_NAME ./datapipeline
-docker build -t $API_IMAGE_NAME ./api
-docker build -t $FRONTEND_IMAGE_NAME ./frontend
+docker build --no-cache -t $API_IMAGE_NAME ./api
+docker build --no-cache -t $FRONTEND_IMAGE_NAME ./frontend
 
 # Run All Containers
 # docker-compose up --build ${1:+"$1"}
