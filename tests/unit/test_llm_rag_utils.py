@@ -1,4 +1,3 @@
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,7 +5,6 @@ from fastapi import HTTPException
 
 # Import the module to test
 from src.api.utils.llm_rag_utils import (
-    chat_sessions,
     create_chat_session,
     generate_chat_response,
     rebuild_chat_session,

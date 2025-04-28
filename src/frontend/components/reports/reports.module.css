@@ -145,9 +145,7 @@
 .reportSection {
   background: white;
   border-radius: 8px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   padding: 30px;
   margin-bottom: 30px;
 }
@@ -182,9 +180,7 @@
   padding: 20px;
   text-align: center;
   border: 1px solid #e2e8f0;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .statCard:hover {

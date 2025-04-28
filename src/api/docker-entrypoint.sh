@@ -21,7 +21,7 @@ The following commands are available:
 \033[0m
 "
 
-ollama serve & 
+ollama serve &
 echo "Waiting for Ollama server to start..."
 until curl -s http://localhost:11434/api/tags > /dev/null 2>&1; do
   sleep 1

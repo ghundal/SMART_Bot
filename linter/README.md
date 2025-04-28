@@ -14,12 +14,14 @@ chmod +x linter/setup.sh
 ## Tools Included
 
 ### Python
+
 - **Black**: Code formatter (line length: 100)
 - **isort**: Import statement formatter
 - **Flake8**: Style guide enforcer
 - **MyPy**: Type checker
 
 ### Docker and YAML
+
 - **hadolint**: Dockerfile linter
 - **yamllint**: YAML linter
 
@@ -40,6 +42,7 @@ For Docker files specifically:
 ## Running Individual Tools
 
 ### Python (with Pipenv)
+
 ```bash
 # Format code
 pipenv run black --config linter/config/pyproject.toml src/datapipeline

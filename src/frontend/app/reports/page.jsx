@@ -209,7 +209,11 @@ function ReportsContent() {
                     <div
                       className={styles.bar}
                       style={{
-                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map((d) => d.query_count))) * 100)}%`,
+                        height: `${Math.min(
+                          100,
+                          (day.query_count / Math.max(...queryActivity.map((d) => d.query_count))) *
+                            100
+                        )}%`,
                       }}
                     ></div>
                     <span className={styles.barLabel}>
@@ -280,7 +284,10 @@ function ReportsContent() {
                     key={index}
                     className={styles.keywordTag}
                     style={{
-                      fontSize: `${Math.max(100, (keyword.count / Math.max(...topKeywords.map((k) => k.count))) * 150)}%`,
+                      fontSize: `${Math.max(
+                        100,
+                        (keyword.count / Math.max(...topKeywords.map((k) => k.count))) * 150
+                      )}%`,
                     }}
                   >
                     {keyword.keyword}
@@ -317,7 +324,11 @@ function ReportsContent() {
                     <div
                       className={styles.bar}
                       style={{
-                        height: `${Math.min(100, (day.query_count / Math.max(...queryActivity.map((d) => d.query_count))) * 100)}%`,
+                        height: `${Math.min(
+                          100,
+                          (day.query_count / Math.max(...queryActivity.map((d) => d.query_count))) *
+                            100
+                        )}%`,
                       }}
                     ></div>
                     <span className={styles.barLabel}>
@@ -382,7 +393,12 @@ function ReportsContent() {
                     <div
                       className={styles.bar}
                       style={{
-                        height: `${Math.min(100, (day.user_count / Math.max(...dailyActiveUsers.map((d) => d.user_count))) * 100)}%`,
+                        height: `${Math.min(
+                          100,
+                          (day.user_count /
+                            Math.max(...dailyActiveUsers.map((d) => d.user_count))) *
+                            100
+                        )}%`,
                       }}
                     ></div>
                     <span className={styles.barLabel}>

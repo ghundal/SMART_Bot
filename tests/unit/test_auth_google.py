@@ -1,10 +1,9 @@
 import json
-import os
 from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
 from fastapi import HTTPException, Request
-from starlette.responses import RedirectResponse, Response
+from starlette.responses import RedirectResponse
 
 # Create mock data
 MOCK_GOOGLE_SECRETS = {
@@ -27,7 +26,7 @@ with patch("builtins.open", mock_open(read_data=json.dumps(MOCK_GOOGLE_SECRETS))
         MockOAuth.return_value = mock_oauth
 
         # Now import the module
-        from src.api.routers.auth_google import SessionLocal, oauth, router
+        from src.api.routers.auth_google import oauth, router
 
 
 class TestAuthGoogle:

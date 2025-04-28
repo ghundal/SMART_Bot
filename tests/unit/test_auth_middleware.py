@@ -1,7 +1,7 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import Cookie, Depends, HTTPException, Request, status
+from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 # Import the functions to test

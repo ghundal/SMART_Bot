@@ -269,7 +269,9 @@ function ChatContent() {
               {chat.messages.map((message) => (
                 <div
                   key={message.message_id}
-                  className={`${styles.message} ${message.role === 'assistant' ? styles.assistant : styles.user}`}
+                  className={`${styles.message} ${
+                    message.role === 'assistant' ? styles.assistant : styles.user
+                  }`}
                 >
                   <div className={styles.messageContent}>
                     {message.content.split('\n').map((line, i) => (

@@ -7,7 +7,7 @@ import numpy as np
 from langchain_core.documents import Document
 
 # Add the src directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 # Import the module to test - using correct path to your actual file
 from src.datapipeline.Advanced_semantic_chunker import (
@@ -210,7 +210,7 @@ class TestAdvancedSemanticChunker(unittest.TestCase):
         with patch.object(self.chunker, "create_documents") as mock_create_docs:
             mock_create_docs.return_value = [Document(page_content="Chunk", metadata={})]
 
-            result = self.chunker.split_documents(self.sample_documents)
+            self.chunker.split_documents(self.sample_documents)
 
             # Verify create_documents was called with the right parameters
             texts = [doc.page_content for doc in self.sample_documents]
@@ -222,7 +222,7 @@ class TestAdvancedSemanticChunker(unittest.TestCase):
         with patch.object(self.chunker, "split_documents") as mock_split_docs:
             mock_split_docs.return_value = [Document(page_content="Chunk", metadata={})]
 
-            result = self.chunker.transform_documents(self.sample_documents)
+            self.chunker.transform_documents(self.sample_documents)
 
             # Verify split_documents was called with the right parameters
             mock_split_docs.assert_called_once_with(self.sample_documents)

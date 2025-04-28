@@ -1,10 +1,10 @@
 import os
 import sys
 import unittest
-from unittest.mock import ANY, MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 # Add the src directory to the path so we can import our module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 # Import the module to test
 from src.api.rag_pipeline.ollama_api import (
@@ -57,7 +57,7 @@ class TestOllamaLocalClient(unittest.TestCase):
 
         # Create client - should log a warning but not fail
         with self.assertLogs(level="WARNING") as cm:
-            client = OllamaLocalClient(self.model_name)
+            OllamaLocalClient(self.model_name)
 
             # Verify warning was logged
             self.assertTrue(
@@ -72,7 +72,7 @@ class TestOllamaLocalClient(unittest.TestCase):
 
         # Create client - should log an error but not fail
         with self.assertLogs(level="ERROR") as cm:
-            client = OllamaLocalClient(self.model_name)
+            OllamaLocalClient(self.model_name)
 
             # Verify error was logged
             self.assertTrue(any("Ollama command not found" in msg for msg in cm.output))

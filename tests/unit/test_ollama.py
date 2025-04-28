@@ -1,12 +1,11 @@
 import os
 import sys
 import unittest
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
-import numpy as np
 
 # Add the src directory to the path so we can import our module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 # Import the module to test
 from src.api.rag_pipeline.ollama import query_ollama_with_hybrid_search_multilingual

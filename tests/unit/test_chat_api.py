@@ -13,7 +13,6 @@ from src.api.routers.chat_api import (
     get_chat,
     get_chats,
     process_query,
-    router,
     start_chat_with_llm,
 )
 

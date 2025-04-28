@@ -1,5 +1,7 @@
 # E115_SMART Milestone 2
+
 This repository contains a **Retrieval-Augmented Generation (RAG)** system that integrates a **vector database** with a **Large Language Model (LLM)**. The system:
+
 - **Chunks** text documents
 - **Embeds** the text into a vector space
 - **Stores** embeddings in a **PostgreSQL + pgvector database**
@@ -7,12 +9,15 @@ This repository contains a **Retrieval-Augmented Generation (RAG)** system that 
 - **Enhances** LLM responses with retrieved context
 
 Enhancements:
+
 - **Audit** Audit table
 - **BM25** Cleaned query for better search results
 - **Reranker** Added a model for reranked to give top documents
 
 ---
+
 ## **Details**
+
 - **Data**: The data is stored in Google cloud storage bucket. The input data includes 155 pdf documents from 10 Harvard Data Science classes. Additionally, it includes 2 csv files
   access.csv: store access level at class name with email and name
   meta.csv: metadata with class name, authors, term
@@ -23,9 +28,11 @@ Enhancements:
 ## **Prerequisites**
 
 ### **1. Install Docker**
+
 Make sure Docker is installed on your machine. You can follow [this guide](https://docs.docker.com/get-docker/) to install Docker.
 
 ### 2. Enable GPU on docker
+
 ```
 curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
   && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
@@ -38,17 +45,21 @@ docker run --rm --gpus all ubuntu nvidia-smi
 ```
 
 ### 3. Docker login
+
 ```
 docker login
-``` 
+```
 
 ### **4. Clone this repository**
+
 ```bash
 git clone https://github.com/ghundal/E115_SMART.git
 cd E115_SMART
 ```
+
 ### **5. Setup GCP Account**
-Go to Google console and ensure that you have access to smart_input_data bucket. Download the key as JSON file and rename it ```smart_input_key.json```. Your folder structure should look like:
+
+Go to Google console and ensure that you have access to smart_input_data bucket. Download the key as JSON file and rename it `smart_input_key.json`. Your folder structure should look like:
 
 ```
 |-E115_SMART
@@ -59,16 +70,19 @@ Go to Google console and ensure that you have access to smart_input_data bucket.
 ## **Running the system**
 
 ### **1. Run the image smart_input to prepare the input data**
+
 - **Loads** documents from GCP
 - **Validates** to ensure that data is complete
-- **Chunks** text documents using semantic chunking. Change default to recursive/semantic in main to change the chunking method. Current default = recursive. 
+- **Chunks** text documents using semantic chunking. Change default to recursive/semantic in main to change the chunking method. Current default = recursive.
 - **Embeds** the text into a vector space
 - **Stores** embeddings in a **PostgreSQL + pgvector database**
+
 ```bash
 sh docker-shell.sh smart_input
 ```
 
 ### **2. Run the image smart_model for RAG system**
+
 - **Query**: embed the query using embedding model
 - **Hybrid Search**: performs hybrid search with BM25 and vector
 - **Chunks**: retrieves the most relevant chunks
@@ -79,12 +93,16 @@ sh docker-shell.sh smart_model
 ```
 
 ## To access the database container
+
 ### Ubuntu
+
 ```
 sudo apt update && sudo apt install -y postgresql-client
 psql -U postgres -h localhost
 ```
+
 ### OS independent
+
 ```
 docker exec -it postgres /bin/bash
 psql -U postgres
@@ -92,6 +110,7 @@ psql -U postgres
 ```
 
 ## For clean reruns
+
 ```
 docker-compose stop
 docker system prune
