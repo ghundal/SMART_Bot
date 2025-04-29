@@ -126,9 +126,9 @@ def mock_semantic_chunker_dependencies():
 
     # Mock specific modules imported in Advanced_semantic_chunker.py
     # Fix: Update the import path to use the full module path
-    with patch("src.datapipeline.Advanced_semantic_chunker.SentenceTransformer", MockSentenceTransformer), patch(
-        "src.datapipeline.Advanced_semantic_chunker.np", np
-    ):
+    with patch(
+        "src.datapipeline.Advanced_semantic_chunker.SentenceTransformer", MockSentenceTransformer
+    ), patch("src.datapipeline.Advanced_semantic_chunker.np", np):
         yield
 
 
