@@ -4,7 +4,7 @@ import tempfile
 
 import pandas as pd
 import torch
-from Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
+from .Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
 from google.cloud import storage
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader

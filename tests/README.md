@@ -47,8 +47,8 @@ python -m pytest -v
 To run a specific test file or to output in a text file:
 
 ```bash
-python -m pytest tests/test_data_pipeline.py
-python -m pytest tests/test_data_pipeline.py > output.txt
+python -m pytest tests/unit/test_data_pipeline.py
+python -m pytest tests/unit/test_data_pipeline.py > output.txt
 ```
 
 To run a specific test class or function:
