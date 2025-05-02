@@ -101,7 +101,7 @@ export function exportToPDF(elementId, filename = 'smart-report.pdf') {
   if (!element) {
     console.error(`Element with ID '${elementId}' not found`);
     alert(
-      'PDF export would be implemented with jsPDF and html2canvas libraries or a backend solution.'
+      'PDF export would be implemented with jsPDF and html2canvas libraries or a backend solution.',
     );
     return;
   }

@@ -111,7 +111,7 @@ export function PieChart({ data, labelKey, valueKey, colors = [] }) {
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute(
           'd',
-          `M ${centerX} ${centerY} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`
+          `M ${centerX} ${centerY} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`,
         );
 
         // Set color

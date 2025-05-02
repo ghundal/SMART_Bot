@@ -212,7 +212,7 @@ function ReportsContent() {
                         height: `${Math.min(
                           100,
                           (day.query_count / Math.max(...queryActivity.map((d) => d.query_count))) *
-                            100
+                            100,
                         )}%`,
                       }}
                     ></div>
@@ -286,7 +286,7 @@ function ReportsContent() {
                     style={{
                       fontSize: `${Math.max(
                         100,
-                        (keyword.count / Math.max(...topKeywords.map((k) => k.count))) * 150
+                        (keyword.count / Math.max(...topKeywords.map((k) => k.count))) * 150,
                       )}%`,
                     }}
                   >
@@ -327,7 +327,7 @@ function ReportsContent() {
                         height: `${Math.min(
                           100,
                           (day.query_count / Math.max(...queryActivity.map((d) => d.query_count))) *
-                            100
+                            100,
                         )}%`,
                       }}
                     ></div>
@@ -397,7 +397,7 @@ function ReportsContent() {
                           100,
                           (day.user_count /
                             Math.max(...dailyActiveUsers.map((d) => d.user_count))) *
-                            100
+                            100,
                         )}%`,
                       }}
                     ></div>
@@ -468,7 +468,7 @@ function ReportsContent() {
             if (reportContentRef.current) {
               exportToPDF(
                 'reportContent',
-                `smart-${activeReport}-report-${new Date().toISOString().slice(0, 10)}.pdf`
+                `smart-${activeReport}-report-${new Date().toISOString().slice(0, 10)}.pdf`,
               );
             } else {
               alert('Unable to find report content for PDF export');

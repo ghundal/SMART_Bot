@@ -4,13 +4,14 @@ import tempfile
 
 import pandas as pd
 import torch
-from .Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
 from google.cloud import storage
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from sentence_transformers import SentenceTransformer
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
+from .Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
 
 # Set up environment
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"

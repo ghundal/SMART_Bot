@@ -47,7 +47,7 @@ lint_docker_files() {
     else
         for file in $compose_files; do
             echo "Linting $file"
-            pipenv run yamllint -c linter/config/.yamllint "$file"
+            pipenv run yamllint "$file"
         done
     fi
 }

@@ -112,7 +112,7 @@ export async function getTopKeywords(limit = 20, minLength = 4) {
       headers: {
         'Content-Type': 'application/json',
       },
-    }
+    },
   );
 
   if (!response.ok) {

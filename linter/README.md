@@ -1,6 +1,6 @@
-# Python Linting and Formatting Guide
+# Python and TypeScript Linting and Formatting Guide
 
-This guide covers how to set up and use linters and formatters to maintain Python code quality in this project.
+This guide covers how to set up and use linters and formatters to maintain code quality in this project.
 
 ## Setup
 
@@ -20,23 +20,22 @@ chmod +x linter/setup.sh
 - **Flake8**: Style guide enforcer
 - **MyPy**: Type checker
 
+### TypeScript/JavaScript
+
+- **ESLint**: Static code analyzer (using flat config format)
+- **Prettier**: Code formatter
+
 ### Docker and YAML
 
 - **hadolint**: Dockerfile linter
 - **yamllint**: YAML linter
 
-## Running Linters and Formatters
+## Running All Linters and Formatters
 
 You can run all linters and formatters with a single command:
 
 ```bash
-./linter/lint-and-format.sh
-```
-
-For Docker files specifically:
-
-```bash
-./linter/docker-lint.sh
+./linter/run-all-linters.sh
 ```
 
 ## Running Individual Tools
@@ -44,19 +43,51 @@ For Docker files specifically:
 ### Python (with Pipenv)
 
 ```bash
-# Format code
-pipenv run black --config linter/config/pyproject.toml src/datapipeline
-
-# Sort imports
-pipenv run isort --settings-path linter/config/pyproject.toml src/datapipeline
-
-# Lint
-pipenv run flake8 --config linter/config/.flake8 src/datapipeline
-
-# Type check
-pipenv run mypy --config-file linter/config/mypy.ini src/datapipeline
+./linter/lint-and-format.sh
 ```
+
+### TypeScript/JavaScript (with npm)
+
+```bash
+./linter/ts-lint-and-format.sh
+```
+
+### Docker Files
+
+```bash
+./linter/docker-lint.sh
+```
+
+## Configuration Files
+
+All configuration files are now at the root level of the project:
+
+- Python:
+
+  - `pyproject.toml` (Black, isort)
+  - `.flake8`
+  - `mypy.ini`
+
+- TypeScript:
+
+  - `eslint.config.js` (ESLint flat config)
+  - `.prettierrc`
+
+- Docker/YAML:
+  - `.yamllint`
+
+## Flat Config Format for ESLint
+
+This project uses ESLint's new flat config format, which is the default in ESLint v9+. The key differences from the traditional format are:
+
+- Configuration is an array of config objects
+- Parser settings are specified under `languageOptions`
+- Plugins are specified as objects instead of strings
+- No `extends` property - configs are composed by adding objects to the array
+- No `root` property (flat configs are always treated as root)
+
+For more details, see the [ESLint Flat Config Migration Guide](https://eslint.org/docs/latest/use/configure/migration-guide).
 
 ## Customizing Configuration
 
-You can customize the linter settings by editing the configuration files in `linter/config/`.
+You can customize the linter settings by editing the configuration files at the root level of the project.

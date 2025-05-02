@@ -40,3 +40,11 @@ pytest-cov = "*"
 
 [requires]
 python_version = "3.12"
+
+[dev-packages]
+black = "*"
+flake8 = "*"
+isort = "*"
+pylint = "*"
+mypy = "*"
+yamllint = "*"

@@ -54,8 +54,8 @@ python -m pytest tests/unit/test_data_pipeline.py > output.txt
 To run a specific test class or function:
 
 ```bash
-python -m pytest tests/test_data_pipeline.py::TestDataPipeline
-python -m pytest tests/test_data_pipeline.py::TestDataPipeline::test_clean_chunks
+python -m pytest tests/unit/test_data_pipeline.py::TestDataPipeline
+python -m pytest tests/unit/test_data_pipeline.py::TestDataPipeline::test_clean_chunks
 ```
 
 ### Logging
