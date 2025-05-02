@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import DataService from '../../services/DataService';
@@ -91,16 +91,12 @@ function ChatContent() {
         ],
       });
 
-      console.log(`Starting new chat with message: "${message}" using model: ${model}`);
-
       // Make a POST request to create a new chat
       const response = await DataService.StartChatWithLLM(model, { content: message });
 
       if (!response || !response.data) {
         throw new Error('Failed to create new chat - no response data');
       }
-
-      console.log('New chat created:', response.data);
 
       setChat(response.data);
       setChatId(response.data.chat_id);
@@ -118,7 +114,9 @@ function ChatContent() {
   };
 
   const continueChat = async (message) => {
-    if (!chatId) return;
+    if (!chatId) {
+      return;
+    }
 
     try {
       setIsTyping(true);
@@ -159,7 +157,9 @@ function ChatContent() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim()) {
+      return;
+    }
 
     if (hasActiveChat && chatId) {
       continueChat(inputMessage);

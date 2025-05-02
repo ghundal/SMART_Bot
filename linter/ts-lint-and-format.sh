@@ -21,10 +21,10 @@ fi
 
 # Format TypeScript files with Prettier
 echo "Formatting TypeScript files with Prettier..."
-npx prettier --write "$FRONTEND_DIR/**/*.{ts,tsx,js,jsx}"
+npx prettier --write "$FRONTEND_DIR"
 
 # Lint TypeScript files with ESLint
 echo "Linting TypeScript files with ESLint..."
-ESLINT_USE_FLAT_CONFIG=true npx eslint "$FRONTEND_DIR/**/*.{ts,tsx}" --ext .ts,.tsx
+ESLINT_USE_FLAT_CONFIG=true npx eslint "$FRONTEND_DIR" --ext .ts,.tsx
 
 echo "All TypeScript linting and formatting complete!"

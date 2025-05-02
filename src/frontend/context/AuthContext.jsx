@@ -1,6 +1,7 @@
 'use client';
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+
+import { createContext, useContext, useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 
 // Create the auth context
 const AuthContext = createContext();
@@ -19,12 +20,10 @@ export function AuthProvider({ children }) {
       try {
         // In a real app, verify with backend
         const userEmail = getCookie('user_email');
-
         if (userEmail) {
           setUser({ email: userEmail });
         } else {
           setUser(null);
-
           // Redirect to login if not on login page
           const publicPaths = ['/', '/login'];
           if (!publicPaths.includes(pathname)) {
@@ -38,7 +37,6 @@ export function AuthProvider({ children }) {
         setLoading(false);
       }
     };
-
     checkAuth();
   }, [pathname, router]);
 
@@ -47,7 +45,6 @@ export function AuthProvider({ children }) {
     // Clear cookies (requires backend coordination)
     document.cookie = 'access_token=; Max-Age=0; path=/; samesite=lax; secure';
     document.cookie = 'user_email=; Max-Age=0; path=/; samesite=lax; secure';
-
     setUser(null);
     router.push('/');
   };
@@ -56,7 +53,9 @@ export function AuthProvider({ children }) {
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
+    if (parts.length === 2) {
+      return parts.pop().split(';').shift();
+    }
     return null;
   }
 

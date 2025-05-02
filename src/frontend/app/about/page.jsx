@@ -24,17 +24,13 @@ function AboutContent() {
           priority
         />
       </div>
-
       <h1 className={styles.title}>
         About <span className={styles.highlight}>SMART</span>
       </h1>
-
       <div className={styles.underline}></div>
-
       <div className={styles.tagline}>
         Empowering organizations with intelligent document retrieval
       </div>
-
       <div className={styles.content}>
         <div className={styles.contentBox}>
           <p>
@@ -54,7 +50,6 @@ function AboutContent() {
           </p>
         </div>
       </div>
-
       <div className={styles.footer}>
         <p>
           Built with <span className={styles.heart}>❤️</span> by Hellen Momoh, Tiffany Valdecantos,

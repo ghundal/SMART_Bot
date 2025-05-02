@@ -18,7 +18,9 @@ export default function Header() {
   const { user, logout } = useAuth();
 
   // If no user, don't render the header
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   return (
     <>
@@ -27,7 +29,6 @@ export default function Header() {
           <Link href="/about" className={styles.logo}>
             <span>SMART</span>
           </Link>
-
           <div className={styles.navLinks}>
             {navItems.map((item) => (
               <Link
@@ -38,12 +39,10 @@ export default function Header() {
                 <span className={styles.linkText}>{item.name}</span>
               </Link>
             ))}
-
             <button onClick={logout} className={styles.logoutButton}>
               Logout
             </button>
           </div>
-
           <button
             className={`${styles.menuButton} ${isMobileMenuOpen ? styles.active : ''}`}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -54,7 +53,6 @@ export default function Header() {
           </button>
         </nav>
       </header>
-
       <div className={`${styles.mobileMenu} ${isMobileMenuOpen ? styles.active : ''}`}>
         {navItems.map((item) => (
           <Link

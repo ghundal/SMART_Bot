@@ -10,7 +10,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000';
  * Get session ID from localStorage or generate a new one
  */
 const getSessionId = () => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined') {
+    return null;
+  }
 
   let sessionId = localStorage.getItem('session_id');
   if (!sessionId) {
@@ -33,7 +35,6 @@ export const uuid = () => {
  */
 const fetchWithAuth = async (endpoint, options = {}) => {
   const sessionId = getSessionId();
-
   const defaultOptions = {
     credentials: 'include',
     headers: {

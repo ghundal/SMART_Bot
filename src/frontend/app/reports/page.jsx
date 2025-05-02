@@ -1,13 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import ReportsService from '../../services/ReportsService';
 import styles from '../../components/reports/reports.module.css';
 import { exportReport, exportToPDF } from '../../components/reports/exportUtils';
-import { BarChart, PieChart, TagCloud, LineChart } from '../../components/reports/ChartComponent';
 
 function ReportsContent() {
   const [activeReport, setActiveReport] = useState('overview');
