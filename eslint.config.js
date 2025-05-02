@@ -9,10 +9,14 @@ module.exports = [
       '**/frontend/.next/**',
       '**/E115_SMART/src/frontend/.next/**',
       '/next/home/gurpreet/Desktop/Spring2025/CSCI115/Project/E115_SMART/src/frontend/.next/**',
+
+      // Code coverage reports - generated files that shouldn't be linted
+      '**/htmlcov/**',
+
       // Other common directories to ignore
       '**/node_modules/**',
       '**/dist/**',
-      '**/build/**'
+      '**/build/**',
     ],
   },
   {
@@ -37,24 +41,30 @@ module.exports = [
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', {
-        'argsIgnorePattern': '^_',
-        'varsIgnorePattern': '^_'
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
 
       // General best practices
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'error',
       'no-var': 'error',
-      'eqeqeq': ['error', 'always'],
-      'curly': ['error', 'all'],
+      eqeqeq: ['error', 'always'],
+      curly: ['error', 'all'],
       'no-duplicate-imports': 'error',
-      'no-multiple-empty-lines': ['error', { 'max': 1, 'maxEOF': 1 }],
-      'sort-imports': ['error', {
-        'ignoreCase': true,
-        'ignoreDeclarationSort': true,
-        'ignoreMemberSort': false
-      }]
+      'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 1 }],
+      'sort-imports': [
+        'error',
+        {
+          ignoreCase: true,
+          ignoreDeclarationSort: true,
+          ignoreMemberSort: false,
+        },
+      ],
     },
   },
   // Prettier rules instead of using extends

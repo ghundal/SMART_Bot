@@ -14,16 +14,19 @@ chmod +x linter/setup.sh
 ## Tools Included
 
 ### Python
+
 - **Black**: Code formatter (line length: 100)
 - **isort**: Import statement formatter
 - **Flake8**: Style guide enforcer
 - **MyPy**: Type checker
 
 ### TypeScript/JavaScript
+
 - **ESLint**: Static code analyzer (using flat config format)
 - **Prettier**: Code formatter
 
 ### Docker and YAML
+
 - **hadolint**: Dockerfile linter
 - **yamllint**: YAML linter
 
@@ -38,16 +41,19 @@ You can run all linters and formatters with a single command:
 ## Running Individual Tools
 
 ### Python (with Pipenv)
+
 ```bash
 ./linter/lint-and-format.sh
 ```
 
 ### TypeScript/JavaScript (with npm)
+
 ```bash
 ./linter/ts-lint-and-format.sh
 ```
 
 ### Docker Files
+
 ```bash
 ./linter/docker-lint.sh
 ```
@@ -57,11 +63,13 @@ You can run all linters and formatters with a single command:
 All configuration files are now at the root level of the project:
 
 - Python:
+
   - `pyproject.toml` (Black, isort)
   - `.flake8`
   - `mypy.ini`
 
 - TypeScript:
+
   - `eslint.config.js` (ESLint flat config)
   - `.prettierrc`
 
