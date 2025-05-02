@@ -51,4 +51,4 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v2'
 
       - name: 'Helm Install'
-        run: 'helm install ./helm --set image.tag=${GITHUB_SHA::7}'
+        run: 'helm install smart ./helm --set image.tag=${GITHUB_SHA::7}'
