@@ -1,4 +1,4 @@
-name: test
+name: cd_ci
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
     branches: [gurpreet]
 
 jobs:
-  backend:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,3 +18,15 @@ jobs:
           pipenv sync
       - name: Test with pytest
         run: pipenv run python -m pytest
+
+  deploy:
+    runs-on: ubuntu-latest
+    depends-on: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Data Pipeline
+        run: docker build -t datapipeline ./src/datapipeline
+      - name: Build API
+        run: docker build -t api ./src/api
+      - name: Build Frontend
+        run: docker build -t frontend ./src/frontend
