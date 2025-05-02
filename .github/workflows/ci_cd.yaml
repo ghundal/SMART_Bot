@@ -21,7 +21,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    depends-on: test
+    needs: [test]
     steps:
       - uses: actions/checkout@v4
       - name: Build Data Pipeline
