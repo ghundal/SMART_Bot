@@ -41,7 +41,7 @@ async def get_query_count(
         # Query to count queries in the specified time period
         result = db.execute(
             text(
-                "SELECT COUNT(*) FROM audit WHERE event_time > CURRENT_TIMESTAMP - INTERVAL ':days days'"
+                "SELECT COUNT(*) FROM audit WHERE event_time > CURRENT_TIMESTAMP - make_interval(days => :days)"
             ),
             {"days": days},
         ).scalar()
@@ -105,7 +105,7 @@ async def get_query_activity(
                 """
             SELECT DATE(event_time) as date, COUNT(*) as query_count
             FROM audit
-            WHERE event_time > CURRENT_TIMESTAMP - INTERVAL ':days days'
+            WHERE event_time > CURRENT_TIMESTAMP - make_interval(days => :days)
             GROUP BY DATE(event_time)
             ORDER BY date
             """
@@ -131,27 +131,12 @@ async def get_top_keywords(
 
     # Common words to exclude from analysis
     exclude_words = [
-        "what",
-        "when",
-        "where",
-        "which",
-        "who",
-        "how",
-        "why",
-        "the",
-        "and",
-        "for",
-        "that",
-        "this",
-        "with",
-        "can",
-        "you",
-        "have",
-        "are",
-        "not",
-        "from",
-        "your",
+        "what", "when", "where", "which", "who", "how", "why", "the", "and", "for",
+        "that", "this", "with", "can", "you", "have", "are", "not", "from", "your",
     ]
+
+    # Convert the list to a format suitable for PostgreSQL's ANY operator
+    exclude_words_array = "{" + ",".join(exclude_words) + "}"
 
     db = SessionLocal()
     try:
@@ -169,7 +154,10 @@ async def get_top_keywords(
                 ) t
                 WHERE
                     length(word) >= :min_length
-                    AND word NOT IN :exclude_words
+                    AND word NOT IN (
+                        'what', 'when', 'where', 'which', 'who', 'how', 'why', 'the', 'and', 'for',
+                        'that', 'this', 'with', 'can', 'you', 'have', 'are', 'not', 'from', 'your'
+                    )
                     AND word ~ '^[a-z0-9]+$'  -- only include alphanumeric words
                 GROUP BY word
                 ORDER BY count DESC
@@ -178,7 +166,7 @@ async def get_top_keywords(
             SELECT word, count FROM keywords
             """
             ),
-            {"limit": limit, "min_length": min_length, "exclude_words": tuple(exclude_words)},
+            {"limit": limit, "min_length": min_length},
         ).fetchall()
 
         # Format the results
@@ -198,28 +186,44 @@ async def get_top_phrases(
 
     db = SessionLocal()
     try:
-        # Extract common 2-3 word phrases
+        # Extract common 2-word phrases with a simpler approach
         results = db.execute(
             text(
                 """
             WITH words AS (
-                SELECT audit_id, regexp_split_to_table(lower(query), E'\\s+') as word
-                FROM audit
+                SELECT
+                    audit_id,
+                    word,
+                    row_number() OVER (PARTITION BY audit_id ORDER BY position) as position
+                FROM (
+                    SELECT
+                        audit_id,
+                        regexp_split_to_table(lower(query), E'\\s+') as word,
+                        regexp_split_to_table(lower(query), E'\\s+') with ordinality as position
+                    FROM audit
+                ) t
+                WHERE length(word) >= 3
+                AND word NOT IN (
+                    'what', 'when', 'where', 'which', 'who', 'how', 'why', 'the', 'and', 'for',
+                    'that', 'this', 'with', 'can', 'you', 'have', 'are', 'not', 'from', 'your'
+                )
             ),
-            pairs AS (
+            phrases AS (
                 SELECT
                     w1.audit_id,
                     w1.word || ' ' || w2.word AS phrase
                 FROM words w1
-                JOIN words w2 ON w1.audit_id = w2.audit_id
-                WHERE w1.word < w2.word  -- This ensures we don't double count
-                  AND w1.word !~ '^(what|when|where|which|who|how|why|the|and|for|that|this|with|can|you|have|are|not|from|your)$'
-                  AND w2.word !~ '^(what|when|where|which|who|how|why|the|and|for|that|this|with|can|you|have|are|not|from|your)$'
-                  AND length(w1.word) >= 3
-                  AND length(w2.word) >= 3
+                JOIN words w2 ON
+                    w1.audit_id = w2.audit_id AND
+                    w1.position + 1 = w2.position
+                WHERE length(w2.word) >= 3
+                AND w2.word NOT IN (
+                    'what', 'when', 'where', 'which', 'who', 'how', 'why', 'the', 'and', 'for',
+                    'that', 'this', 'with', 'can', 'you', 'have', 'are', 'not', 'from', 'your'
+                )
             )
             SELECT phrase, COUNT(*) as count
-            FROM pairs
+            FROM phrases
             GROUP BY phrase
             ORDER BY count DESC
             LIMIT :limit
@@ -300,7 +304,7 @@ async def get_daily_active_users(
                 COUNT(DISTINCT user_email) as user_count
             FROM audit
             WHERE
-                event_time > CURRENT_TIMESTAMP - INTERVAL ':days days'
+                event_time > CURRENT_TIMESTAMP - make_interval(days => :days)
                 AND user_email IS NOT NULL
             GROUP BY DATE(event_time)
             ORDER BY date
@@ -346,14 +350,14 @@ async def get_system_stats(user_email: str = Depends(verify_token)):
         # Queries in last 24 hours
         stats["queries_last_24h"] = db.execute(
             text(
-                "SELECT COUNT(*) FROM audit WHERE event_time > CURRENT_TIMESTAMP - INTERVAL '1 day'"
+                "SELECT COUNT(*) FROM audit WHERE event_time > CURRENT_TIMESTAMP - interval '1 day'"
             )
         ).scalar()
 
         # Active users in last 24 hours
         stats["active_users_last_24h"] = db.execute(
             text(
-                "SELECT COUNT(DISTINCT user_email) FROM audit WHERE event_time > CURRENT_TIMESTAMP - INTERVAL '1 day'"
+                "SELECT COUNT(DISTINCT user_email) FROM audit WHERE event_time > CURRENT_TIMESTAMP - interval '1 day'"
             )
         ).scalar()
 
@@ -364,7 +368,7 @@ async def get_system_stats(user_email: str = Depends(verify_token)):
             SELECT AVG(query_count) FROM (
                 SELECT DATE(event_time) as day, COUNT(*) as query_count
                 FROM audit
-                WHERE event_time > CURRENT_TIMESTAMP - INTERVAL '30 days'
+                WHERE event_time > CURRENT_TIMESTAMP - make_interval(days => 30)
                 GROUP BY day
             ) daily_counts
             """

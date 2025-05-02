@@ -88,6 +88,9 @@ This project uses ESLint's new flat config format, which is the default in ESLin
 
 For more details, see the [ESLint Flat Config Migration Guide](https://eslint.org/docs/latest/use/configure/migration-guide).
 
-## Customizing Configuration
+## Commit
 
-You can customize the linter settings by editing the configuration files at the root level of the project.
+Run pre-commit locally before pushing:
+```
+pre-commit run --all-files
+```
