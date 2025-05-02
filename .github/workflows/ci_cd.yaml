@@ -29,11 +29,13 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
       - name: Build Data Pipeline
-        run: docker build -t us-west1-docker.pkg.dev/${{ PROJECT_ID }}/${{ GCR_REPO }}/datapipeline:${GITHUB_SHA::7} ./src/datapipeline
-      # - name: Build API
-      #   run: docker build -t us-west1-docker.pkg.dev/${{ PROJECT_ID }}/${{ GCR_REPO }}/api:${GITHUB_SHA::7} ./src/api
+        run: |
+          docker build -t gcr.io/${{ PROJECT_ID }}/datapipeline:${GITHUB_SHA::7} ./src/datapipeline
+          docker push gcr.io/${{ PROJECT_ID }}/datapipeline:${GITHUB_SHA::7}
       - name: Build Frontend
-        run: docker build -t us-west1-docker.pkg.dev/${{ PROJECT_ID }}/${{ GCR_REPO }}/frontend:${GITHUB_SHA::7} ./src/frontend
+        run: |
+          docker build -t gcr.io/${{ PROJECT_ID }}/frontend:${GITHUB_SHA::7} ./src/frontend
+          docker push gcr.io/${{ PROJECT_ID }}/frontend:${GITHUB_SHA::7}
 
   deploy:
     runs-on: ubuntu-latest
