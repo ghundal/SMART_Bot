@@ -19,14 +19,29 @@ jobs:
       - name: Test with pytest
         run: pipenv run python -m pytest
 
-  deploy:
+  docker:
     runs-on: ubuntu-latest
-    needs: [test]
+#    needs: [test]
     steps:
       - uses: actions/checkout@v4
       - name: Build Data Pipeline
         run: docker build -t datapipeline ./src/datapipeline
-      - name: Build API
-        run: docker build -t api ./src/api
+      # - name: Build API
+      #   run: docker build -t api ./src/api
       - name: Build Frontend
         run: docker build -t frontend ./src/frontend
+
+  job_id:
+    runs-on: ubuntu-latest
+#    needs: [docker]
+    steps:
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v2'
+
+    - name: 'Use gcloud CLI'
+      run: 'gcloud info'
