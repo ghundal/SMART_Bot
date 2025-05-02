@@ -24,24 +24,29 @@ jobs:
 #    needs: [test]
     steps:
       - uses: actions/checkout@v4
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
       - name: Build Data Pipeline
-        run: docker build -t datapipeline ./src/datapipeline
+        run: docker build -t us-west1-docker.pkg.dev/${{ PROJECT_ID }}/${{ GCR_REPO }}/datapipeline:${GITHUB_SHA::7} ./src/datapipeline
       # - name: Build API
-      #   run: docker build -t api ./src/api
+      #   run: docker build -t us-west1-docker.pkg.dev/${{ PROJECT_ID }}/${{ GCR_REPO }}/api:${GITHUB_SHA::7} ./src/api
       - name: Build Frontend
-        run: docker build -t frontend ./src/frontend
+        run: docker build -t us-west1-docker.pkg.dev/${{ PROJECT_ID }}/${{ GCR_REPO }}/frontend:${GITHUB_SHA::7} ./src/frontend
 
   deploy:
     runs-on: ubuntu-latest
 #    needs: [docker]
     steps:
-    - id: 'auth'
-      uses: 'google-github-actions/auth@v2'
-      with:
-        credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+      - uses: actions/checkout@v4
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
 
-    - name: 'Set up Cloud SDK'
-      uses: 'google-github-actions/setup-gcloud@v2'
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
 
-    - name: 'Use gcloud CLI'
-      run: 'gcloud info'
+      - name: 'Use gcloud CLI'
+        run: 'gcloud info'
