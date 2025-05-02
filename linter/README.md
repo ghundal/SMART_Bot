@@ -91,6 +91,7 @@ For more details, see the [ESLint Flat Config Migration Guide](https://eslint.or
 ## Commit
 
 Run pre-commit locally before pushing:
+
 ```
 pre-commit run --all-files
 ```

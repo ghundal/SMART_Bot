@@ -131,12 +131,30 @@ async def get_top_keywords(
 
     # Common words to exclude from analysis
     exclude_words = [
-        "what", "when", "where", "which", "who", "how", "why", "the", "and", "for",
-        "that", "this", "with", "can", "you", "have", "are", "not", "from", "your",
+        "what",
+        "when",
+        "where",
+        "which",
+        "who",
+        "how",
+        "why",
+        "the",
+        "and",
+        "for",
+        "that",
+        "this",
+        "with",
+        "can",
+        "you",
+        "have",
+        "are",
+        "not",
+        "from",
+        "your",
     ]
 
     # Convert the list to a format suitable for PostgreSQL's ANY operator
-    exclude_words_array = "{" + ",".join(exclude_words) + "}"
+    "{" + ",".join(exclude_words) + "}"
 
     db = SessionLocal()
     try:
