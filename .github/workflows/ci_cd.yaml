@@ -40,8 +40,7 @@ jobs:
       #     docker push gcr.io/smart-452816/datapipeline:${GITHUB_SHA::7}
       - name: Build Frontend
         run: |
-          gcloud auth login --brief --cred-file="${{ steps.auth.outputs.credentials_file_path }}"
-          gcloud auth configure-docker gcr.io --quiet
+          ${{steps.auth.outputs.access_token}} | docker login -u oauth2accesstoken --password-stdin gcr.io
           docker build -t gcr.io/smart-452816/frontend:${GITHUB_SHA::7} ./src/frontend
           docker push gcr.io/smart-452816/frontend:${GITHUB_SHA::7}
 
