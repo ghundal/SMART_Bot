@@ -28,9 +28,9 @@ jobs:
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
-      - run : |
-          mkdir -p ~/.gsutil
-          echo "${{ secrets.GCP_CREDS }}" > ~/.gsutil/credstore2
+      # - run : |
+      #     mkdir -p ~/.gsutil
+      #     echo "${{ secrets.GCP_CREDS }}" > ~/.gsutil/credstore2
       - name: Docker Login
         run:  gcloud auth configure-docker gcr.io --quiet
       # - name: Build Data Pipeline
