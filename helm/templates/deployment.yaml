@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "smart.fullname" . }}
+  name: {{ include "smart.fullname" . }}-frontend
   labels:
     {{- include "smart.labels" . | nindent 4 }}
 spec:
@@ -10,7 +10,7 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{- include "smart.selectorLabels" . | nindent 6 }}
+      {{- include "smart.selectorLabels" . | nindent 6 }}-frontend
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,7 +18,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "smart.labels" . | nindent 8 }}
+        {{- include "smart.labels" . | nindent 8 }}-frontend
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -38,7 +38,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}/frontend:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
@@ -94,7 +94,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:15
+          image: "{{ .Values.image.repository }}/postgres:{{ .Values.image.tag | default .Chart.AppVersion }}"
           ports:
             - containerPort: 5432
           env:
