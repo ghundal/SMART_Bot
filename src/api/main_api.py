@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.auth_google import router as google_router
 from routers.chat_api import router as query_router
 from routers.reports import router as reports_router
+from routers.health import router as health_router
 from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI()
@@ -41,3 +42,4 @@ app.include_router(query_router, prefix="/api")
 
 # Add the reports router under `/api`
 app.include_router(reports_router, prefix="/api", tags=["reports"])
+app.include_router(health_router, prefix="/", tags=["health"])
