@@ -13,15 +13,18 @@ export function exportToCSV(data, filename = 'smart-report.csv') {
   if (!data) {
     return;
   }
+
   // Prepare data based on type
   let csvContent = '';
   const csvData = [];
+
   // Determine data structure
   if (Array.isArray(data)) {
     // Array of objects
     if (data.length > 0) {
       const headers = Object.keys(data[0]);
       csvData.push(headers);
+
       // Add data rows
       data.forEach((item) => {
         const row = headers.map((header) => item[header]);
@@ -32,11 +35,13 @@ export function exportToCSV(data, filename = 'smart-report.csv') {
     // Single object
     const headers = Object.keys(data);
     csvData.push(['Metric', 'Value']);
+
     // Add data rows
     headers.forEach((header) => {
       csvData.push([header, data[header]]);
     });
   }
+
   // Convert to CSV string
   csvData.forEach((row) => {
     const processedRow = row.map((cell) => {
@@ -52,6 +57,7 @@ export function exportToCSV(data, filename = 'smart-report.csv') {
     });
     csvContent += processedRow.join(',') + '\n';
   });
+
   // Create download
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -92,7 +98,7 @@ export function exportToPDF(elementId, filename = 'smart-report.pdf') {
   if (!element) {
     console.error(`Element with ID '${elementId}' not found`);
     alert(
-      'PDF export would be implemented with jsPDF and html2canvas libraries or a backend solution.',
+      'PDF export would be implemented with jsPDF and html2canvas libraries or a backend solution.'
     );
     return;
   }

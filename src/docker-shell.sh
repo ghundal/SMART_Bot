@@ -18,10 +18,15 @@ export GOOGLE_CREDENTIALS_FILE="/secrets/client_secrets.json"
 docker network inspect smart-network >/dev/null 2>&1 || docker network create smart-network
 
 # Build the image based on the Dockerfile
-docker build -t $DP_IMAGE_NAME ./datapipeline
-docker build --no-cache -t $API_IMAGE_NAME ./api
-docker build --no-cache -t $FRONTEND_IMAGE_NAME ./frontend
+if [ "$1" = "$DP_IMAGE_NAME" ] || [ -z "$1" ]; then
+    docker build -t $DP_IMAGE_NAME ./datapipeline
+fi
+if [ "$1" = "$API_IMAGE_NAME" ] || [ -z "$1" ]; then
+    docker build --no-cache -t $API_IMAGE_NAME ./api
+fi
+if [ "$1" = "$FRONTEND_IMAGE_NAME" ] || [ -z "$1" ]; then
+    docker build --no-cache -t $FRONTEND_IMAGE_NAME ./frontend
+fi
 
-# Run All Containers
-# docker-compose up --build ${1:+"$1"}
+# Run requested container
 docker-compose run --rm --service-ports ${1:-$DP_IMAGE_NAME}

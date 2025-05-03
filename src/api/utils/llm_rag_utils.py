@@ -10,8 +10,8 @@ from typing import Any, Dict, List
 
 from fastapi import HTTPException
 
-from ..rag_pipeline.config import DEFAULT_BM25_K, DEFAULT_VECTOR_K, OLLAMA_MODEL
-from ..rag_pipeline.embedding import get_ch_embedding_model
+from rag_pipeline.config import DEFAULT_BM25_K, DEFAULT_VECTOR_K, OLLAMA_MODEL
+from rag_pipeline.embedding import get_ch_embedding_model
 from .database import SessionLocal
 
 # Setup

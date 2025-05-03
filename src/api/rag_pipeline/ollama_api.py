@@ -9,6 +9,9 @@ from typing import Any, Dict, List
 
 from .config import GENERATION_CONFIG, logger
 
+# Import the reranker from the new module
+from .transformer_reranker import rerank_chunks
+
 
 class OllamaLocalClient:
     def __init__(self, model_name: str):
@@ -142,58 +145,8 @@ PARAMETER repeat_penalty {repeat_penalty}
             return f"Error: {str(e)}"
 
 
-def rerank_with_llm(
-    chunks: List[Dict[str, Any]], query: str, model_name: str
-) -> List[Dict[str, Any]]:
-    """
-    Use a local Ollama model to rerank chunks based on relevance to the query.
-    """
-    try:
-        reranking_results = []
-        # Initialize local Ollama client
-        model_client = OllamaLocalClient(model_name)
-
-        # Create a scoring prompt for each chunk
-        for chunk in chunks:
-            prompt = f"""
-Task: Evaluate the relevance of the following text to the query.
-Query: {query}
-Text: {chunk['chunk_text']}
-On a scale of 0 to 10, how relevant is the text to the query?
-Respond with only a number from 0 to 10.
-"""
-            # Generate score using local model
-            score_text = model_client.generate_text(
-                prompt=prompt,
-                temperature=0.1,  # Low temperature for consistent scoring
-                max_tokens=50,  # We only need a short response
-            )
-
-            # Try to get a numerical score, default to 0 if parsing fails
-            try:
-                # Extract the first number from the response
-                import re
-
-                numbers = re.findall(r"\d+(?:\.\d+)?", score_text)
-                relevance_score = float(numbers[0]) if numbers else 0
-                # Ensure score is in valid range
-                relevance_score = max(0, min(10, relevance_score))
-            except (ValueError, IndexError):
-                relevance_score = 0
-
-            # Add to results with the LLM-assigned score
-            chunk_with_score = chunk.copy()
-            chunk_with_score["llm_score"] = relevance_score
-            reranking_results.append(chunk_with_score)
-
-        # Sort by LLM score in descending order
-        reranked_chunks = sorted(reranking_results, key=lambda x: x["llm_score"], reverse=True)
-        logger.info(f"Reranked {len(reranked_chunks)} chunks using local Ollama model")
-        return reranked_chunks
-    except Exception as e:
-        logger.exception(f"Error in LLM reranking: {str(e)}")
-        # Return original chunks if reranking fails
-        return chunks
+# Expose the rerank function from the transformer_reranker module
+rerank_with_llm = rerank_chunks
 
 
 def format_prompt(

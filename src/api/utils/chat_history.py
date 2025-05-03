@@ -21,7 +21,7 @@ class ChatHistoryManager:
         # Connect to PostgreSQL
         self.SessionLocal = SessionLocal
 
-    def save_chat(self, chat_to_save: Dict, session_id: str) -> None:
+    def save_chat(self, chat_to_save: Dict, user_email: str, session_id: str) -> None:
         """Save a chat to PostgreSQL database"""
         try:
             # Create a new database session
@@ -33,14 +33,14 @@ class ChatHistoryManager:
             # Check if chat exists and update or insert accordingly
             sql = """
             SELECT COUNT(*) FROM chat_history
-            WHERE chat_id = :chat_id AND session_id = :session_id AND model = :model
+            WHERE chat_id = :chat_id AND user_email = :user_email AND model = :model
             """
 
             result = db_session.execute(
                 text(sql),
                 {
                     "chat_id": chat_to_save["chat_id"],
-                    "session_id": session_id,
+                    "user_email": user_email,
                     "model": self.model,
                 },
             ).scalar()
@@ -59,9 +59,9 @@ class ChatHistoryManager:
                 # Insert new chat
                 sql = """
                 INSERT INTO chat_history (
-                    chat_id, session_id, model, title, messages, dts, created_at, updated_at
+                    chat_id, session_id, user_email, model, title, messages, dts, created_at, updated_at
                 ) VALUES (
-                    :chat_id, :session_id, :model, :title, :messages, :dts, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                    :chat_id, :session_id, :user_email, :model, :title, :messages, :dts, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
                 """
 
@@ -71,6 +71,7 @@ class ChatHistoryManager:
                 {
                     "chat_id": chat_to_save["chat_id"],
                     "session_id": session_id,
+                    "user_email": user_email,
                     "model": self.model,
                     "title": chat_to_save.get("title", "Untitled Chat"),
                     "messages": messages_json,
@@ -89,7 +90,7 @@ class ChatHistoryManager:
         finally:
             db_session.close()
 
-    def get_chat(self, chat_id: str, session_id: str) -> Optional[Dict]:
+    def get_chat(self, chat_id: str) -> Optional[Dict]:
         """Get a specific chat by ID from the database"""
         try:
             # Create a new database session
@@ -99,12 +100,12 @@ class ChatHistoryManager:
             sql = """
             SELECT chat_id, session_id, model, title, messages, dts, created_at, updated_at
             FROM chat_history
-            WHERE chat_id = :chat_id AND session_id = :session_id AND model = :model
+            WHERE chat_id = :chat_id
             """
 
             result = db_session.execute(
                 text(sql),
-                {"chat_id": chat_id, "session_id": session_id, "model": self.model},
+                {"chat_id": chat_id},
             ).fetchone()
 
             if result:
@@ -132,7 +133,7 @@ class ChatHistoryManager:
         finally:
             db_session.close()
 
-    def get_recent_chats(self, session_id: str, limit: Optional[int] = None) -> List[Dict]:
+    def get_recent_chats(self, user_email: str, limit: Optional[int] = None) -> List[Dict]:
         """Get recent chats from the database, optionally limited to a specific number"""
         recent_chats = []
         try:
@@ -143,7 +144,7 @@ class ChatHistoryManager:
             sql = """
             SELECT chat_id, session_id, model, title, messages, dts, created_at, updated_at
             FROM chat_history
-            WHERE session_id = :session_id AND model = :model
+            WHERE user_email = :user_email AND model = :model
             ORDER BY dts DESC
             """
 
@@ -151,7 +152,7 @@ class ChatHistoryManager:
                 sql += f" LIMIT {int(limit)}"
 
             results = db_session.execute(
-                text(sql), {"session_id": session_id, "model": self.model}
+                text(sql), {"user_email": user_email, "model": self.model}
             ).fetchall()
 
             for result in results:
@@ -179,7 +180,7 @@ class ChatHistoryManager:
         finally:
             db_session.close()
 
-    def delete_chat(self, chat_id: str, session_id: str) -> bool:
+    def delete_chat(self, chat_id: str) -> bool:
         """Delete a chat from the database"""
         try:
             # Create a new database session
@@ -188,12 +189,12 @@ class ChatHistoryManager:
             # Delete from database
             sql = """
             DELETE FROM chat_history
-            WHERE chat_id = :chat_id AND session_id = :session_id AND model = :model
+            WHERE chat_id = :chat_id
             """
 
             result = db_session.execute(
                 text(sql),
-                {"chat_id": chat_id, "session_id": session_id, "model": self.model},
+                {"chat_id": chat_id},
             )
             # Check if any row was actually deleted
             rows_affected = result.rowcount

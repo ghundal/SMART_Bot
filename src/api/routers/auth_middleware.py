@@ -9,8 +9,7 @@ from fastapi import Cookie, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
-
-from ..utils.database import SessionLocal
+from utils.database import SessionLocal
 
 # Optional OAuth2 scheme for token extraction from Authorization header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)

@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS chat_history (
     id SERIAL PRIMARY KEY,
     chat_id TEXT NOT NULL,
     session_id TEXT NOT NULL,
+    user_email TEXT NOT NULL,
     model TEXT NOT NULL,
     title TEXT DEFAULT 'Untitled Chat',
     messages JSONB NOT NULL,

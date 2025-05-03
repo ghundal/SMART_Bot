@@ -12,8 +12,7 @@ from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 from starlette.responses import RedirectResponse
-
-from ..utils.database import connect_to_postgres
+from utils.database import connect_to_postgres
 
 router = APIRouter()
 

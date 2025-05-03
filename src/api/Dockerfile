@@ -44,14 +44,14 @@ WORKDIR /app
 # Pull all required models during build time
 RUN ollama serve & \
     sleep 5 && \
-    ollama pull llama-guard3:8b && \
-    ollama pull llama3:8b && \
-    ollama pull gemma3:12b
+    ollama pull llama-guard3:1b && \
+    ollama pull tinyllama:1.1b && \
+    ollama pull gemma3:1b
 
 # Install NLTK and download stopwords
 RUN python -m pip install --upgrade pip && \
-pip install nltk && \
-python -c "import nltk; nltk.download('stopwords')"
+    pip install nltk && \
+    python -c "import nltk; nltk.download('stopwords')"
 
 # Install python packages
 ADD --chown=app:app Pipfile Pipfile.lock /app/

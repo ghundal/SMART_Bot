@@ -6,11 +6,10 @@ import logging
 
 # Ollama API endpoints
 OLLAMA_URL = "http://localhost:11434/api/generate"
-# OLLAMA_MODEL = "llama3:8b"
-OLLAMA_MODEL = "gemma3:12b"
-
-RERANKER_MODEL = "llama3:8b"
-SAFETY_MODEL = "llama-guard3:8b"
+# OLLAMA_MODEL = "gemma3:1b"
+OLLAMA_MODEL = "tinyllama:1.1b-chat"
+RERANKER_MODEL = "BAAI/bge-reranker-base"
+SAFETY_MODEL = "llama-guard3:1b"
 EMBEDDING_MODEL = "all-mpnet-base-v2"
 
 # Configure logging

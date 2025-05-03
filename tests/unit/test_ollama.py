@@ -24,7 +24,7 @@ class TestOllamaRAG(unittest.TestCase):
         # Default test parameters
         self.test_question = "What is deep learning?"
         self.test_email = "user@example.com"
-        self.test_model = "gemma3:12b"
+        self.test_model = "tinyllama:1.1b-chat"
 
         # Sample embedding
         self.sample_embedding = [0.1] * 384

@@ -2,7 +2,7 @@
 Main RAG functionality for the Ollama system.
 """
 
-from api.utils.database import log_audit
+from utils.database import log_audit
 
 from .config import DEFAULT_BM25_K, DEFAULT_VECTOR_K, RERANKER_MODEL, logger
 from .embedding import embed_query

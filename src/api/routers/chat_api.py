@@ -11,12 +11,12 @@ from typing import Dict, Optional
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 
-from ..rag_pipeline.config import DEFAULT_BM25_K, DEFAULT_VECTOR_K, OLLAMA_MODEL
-from ..rag_pipeline.embedding import get_ch_embedding_model
-from ..rag_pipeline.ollama import query_ollama_with_hybrid_search_multilingual
-from ..utils.chat_history import ChatHistoryManager
-from ..utils.database import SessionLocal
-from ..utils.llm_rag_utils import chat_sessions, create_chat_session, rebuild_chat_session
+from rag_pipeline.config import DEFAULT_BM25_K, DEFAULT_VECTOR_K, OLLAMA_MODEL
+from rag_pipeline.embedding import get_ch_embedding_model
+from rag_pipeline.ollama import query_ollama_with_hybrid_search_multilingual
+from utils.chat_history import ChatHistoryManager
+from utils.database import SessionLocal
+from utils.llm_rag_utils import chat_sessions, create_chat_session, rebuild_chat_session
 from .auth_middleware import verify_token
 
 
@@ -45,7 +45,7 @@ async def get_chats(
 ):
     """Get all chats, optionally limited to a specific number"""
     print(f"User {user_email} retrieving chats with session: {x_session_id}")
-    return chat_manager.get_recent_chats(x_session_id, limit)
+    return chat_manager.get_recent_chats(user_email, limit)
 
 
 @router.get("/chats/{chat_id}")
@@ -56,7 +56,7 @@ async def get_chat(
 ):
     """Get a specific chat by ID"""
     print(f"User {user_email} retrieving chat {chat_id} with session: {x_session_id}")
-    chat = chat_manager.get_chat(chat_id, x_session_id)
+    chat = chat_manager.get_chat(chat_id)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
     return chat
@@ -118,7 +118,7 @@ async def start_chat_with_llm(
         chat_response["top_documents"] = result["top_documents"]
 
     # Save chat
-    chat_manager.save_chat(chat_response, x_session_id)
+    chat_manager.save_chat(chat_response, user_email, x_session_id)
     return chat_response
 
 
@@ -140,7 +140,7 @@ async def continue_chat_with_llm(
         raise HTTPException(status_code=400, detail="Message content is required")
 
     # Get existing chat
-    chat = chat_manager.get_chat(chat_id, x_session_id)
+    chat = chat_manager.get_chat(chat_id)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
 
@@ -191,7 +191,7 @@ async def continue_chat_with_llm(
         chat["top_documents"] = result["top_documents"]
 
     # Save updated chat
-    chat_manager.save_chat(chat, x_session_id)
+    chat_manager.save_chat(chat, user_email, x_session_id)
     return chat
 
 
@@ -209,7 +209,7 @@ async def delete_chat(
         del chat_sessions[chat_id]
 
     # Delete from database
-    success = chat_manager.delete_chat(chat_id, x_session_id)
+    success = chat_manager.delete_chat(chat_id)
     if not success:
         raise HTTPException(status_code=404, detail="Chat not found or could not be deleted")
 
@@ -237,7 +237,7 @@ async def process_query(request: QueryRequest, user_email: str = Depends(verify_
     # If chat_id is provided, add to existing chat, otherwise create new chat
     if chat_id:
         # Get existing chat
-        chat = chat_manager.get_chat(chat_id, session_id)
+        chat = chat_manager.get_chat(chat_id)
         if not chat:
             raise HTTPException(status_code=404, detail="Chat not found")
 
@@ -288,7 +288,7 @@ async def process_query(request: QueryRequest, user_email: str = Depends(verify_
         chat["messages"].append(assistant_message)
 
         # Save updated chat
-        chat_manager.save_chat(chat, session_id)
+        chat_manager.save_chat(chat, user_email, session_id)
 
         # Add document information if available
         if "top_documents" in result:
@@ -337,6 +337,6 @@ async def process_query(request: QueryRequest, user_email: str = Depends(verify_
             chat_response["top_documents"] = result["top_documents"]
 
         # Save chat
-        chat_manager.save_chat(chat_response, session_id)
+        chat_manager.save_chat(chat_response, user_email, session_id)
 
         return chat_response

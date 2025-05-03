@@ -11,7 +11,16 @@ from sentence_transformers import SentenceTransformer
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from .Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
+try:
+    # Try package-relative import first (for tests and package usage)
+    from src.datapipeline.Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
+except ImportError:
+    try:
+        # Try direct import (for when run directly)
+        from Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
+    except ImportError:
+        # Try relative import (for when in package)
+        from .Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
 
 # Set up environment
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"

@@ -13,7 +13,6 @@ const getSessionId = () => {
   if (typeof window === 'undefined') {
     return null;
   }
-
   let sessionId = localStorage.getItem('session_id');
   if (!sessionId) {
     sessionId =
@@ -35,22 +34,29 @@ export const uuid = () => {
  */
 const fetchWithAuth = async (endpoint, options = {}) => {
   const sessionId = getSessionId();
-  const defaultOptions = {
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Session-ID': sessionId,
-      ...options.headers,
-    },
+
+  // Ensure we have valid headers
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Session-ID': sessionId,
+    ...(options.headers || {})
   };
 
+  const defaultOptions = {
+    credentials: 'include',
+    headers
+  };
+
+  // Make the API call
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...defaultOptions,
-    ...options,
+    ...options
   });
 
+  // Handle errors
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'Unknown error');
+    console.error(`API error: ${response.status} ${response.statusText} - ${errorText}`);
     throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
@@ -65,7 +71,6 @@ export const GetChats = async (limit = null) => {
   if (limit) {
     endpoint += `?limit=${limit}`;
   }
-
   const data = await fetchWithAuth(endpoint);
   return { data };
 };
@@ -82,14 +87,14 @@ export const GetChat = async (model, chatId) => {
  * Start a new chat with LLM
  */
 export const StartChatWithLLM = async (model, message) => {
+  console.log(`Starting new chat with model: ${model}, message: ${message.content}`);
   const data = await fetchWithAuth('/api/chats', {
     method: 'POST',
     body: JSON.stringify({
       content: message.content,
-      model: model,
-    }),
+      model: model
+    })
   });
-
   return { data };
 };
 
@@ -97,14 +102,14 @@ export const StartChatWithLLM = async (model, message) => {
  * Continue an existing chat with LLM
  */
 export const ContinueChatWithLLM = async (model, chatId, message) => {
+  console.log(`Continuing chat: ${chatId} with model: ${model}, message: ${message.content}`);
   const data = await fetchWithAuth(`/api/chats/${chatId}`, {
     method: 'POST',
     body: JSON.stringify({
       content: message.content,
-      model: model,
-    }),
+      model: model
+    })
   });
-
   return { data };
 };
 
@@ -113,9 +118,8 @@ export const ContinueChatWithLLM = async (model, chatId, message) => {
  */
 export const DeleteChat = async (chatId) => {
   const data = await fetchWithAuth(`/api/chats/${chatId}`, {
-    method: 'DELETE',
+    method: 'DELETE'
   });
-
   return { data };
 };
 
@@ -129,10 +133,9 @@ export const SubmitQuery = async (model, chatId, question, sessionId) => {
       chat_id: chatId,
       question: question,
       model_name: model,
-      session_id: sessionId || getSessionId(),
-    }),
+      session_id: sessionId || getSessionId()
+    })
   });
-
   return { data };
 };
 
@@ -145,6 +148,7 @@ const DataService = {
   DeleteChat,
   SubmitQuery,
   uuid,
+  getSessionId
 };
 
 export default DataService;

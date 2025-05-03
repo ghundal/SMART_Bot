@@ -15,7 +15,7 @@ function ChatContent() {
   const [inputMessage, setInputMessage] = useState('');
   const [recentChats, setRecentChats] = useState([]);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [model, setModel] = useState('llama3:8b');
+  const [model, setModel] = useState('gemma3:1b');
   const messagesEndRef = useRef(null);
 
   const router = useRouter();
@@ -24,7 +24,7 @@ function ChatContent() {
   // Extract chat_id and model from URL parameters
   useEffect(() => {
     const id = searchParams.get('id');
-    const modelParam = searchParams.get('model') || 'llama3:8b';
+    const modelParam = searchParams.get('model') || 'gemma3:1b';
 
     if (id) {
       setChatId(id);
@@ -186,6 +186,15 @@ function ChatContent() {
     }
   };
 
+  // New function to handle query suggestions properly
+  const handleSuggestionClick = (suggestion) => {
+    if (hasActiveChat && chatId) {
+      continueChat(suggestion);
+    } else {
+      startNewChat(suggestion);
+    }
+  };
+
   const formatDate = (timestamp) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -193,6 +202,20 @@ function ChatContent() {
 
   return (
     <div className={styles.chatContainer}>
+      {/* Model Selector Button - Floating Fixed Position */}
+      <div className={styles.floatingModelSelector}>
+        <span className={styles.modelLabel}>Model:</span>
+        <select
+          id="model-select"
+          value={model}
+          onChange={handleModelChange}
+          className={styles.modelSelectButton}
+        >
+          <option value="tinyllama:1.1b-chat">Llama</option>
+          <option value="gemma3:1b">Gemma</option>
+        </select>
+      </div>
+
       {/* Sidebar */}
       <div className={`${styles.sidebar} ${showSidebar ? '' : styles.hidden}`}>
         <div className={styles.sidebarHeader}>
@@ -248,19 +271,6 @@ function ChatContent() {
           >
             {showSidebar ? '<<' : '>>'}
           </button>
-
-          <div className={styles.modelSelector}>
-            <label htmlFor="model-select">Model:</label>
-            <select
-              id="model-select"
-              value={model}
-              onChange={handleModelChange}
-              className={styles.modelSelect}
-            >
-              <option value="llama3:8b">Llama 3</option>
-              <option value="gemma3">Gemma</option>
-            </select>
-          </div>
         </div>
 
         <div className={styles.messagesContainer}>
@@ -303,14 +313,14 @@ function ChatContent() {
               <div className={styles.exampleQueries}>
                 <h3>Example queries:</h3>
                 <ul>
-                  <li onClick={() => startNewChat('What topics are covered in CS89?')}>
-                    What topics are covered in CS89?
+                  <li onClick={() => handleSuggestionClick('Was ist ein zufälliger Wald?')}>
+                  'Was ist ein zufälliger Wald?'
                   </li>
-                  <li onClick={() => startNewChat('What is a random forest?')}>
+                  <li onClick={() => handleSuggestionClick('What is a random forest?')}>
                     What is a random forest?
                   </li>
                   <li
-                    onClick={() => startNewChat('Summarize the key concepts from lecture on CNNs')}
+                    onClick={() => handleSuggestionClick('Summarize the key concepts from lecture on CNNs')}
                   >
                     Summarize the key concepts from lecture on CNNs
                   </li>
@@ -364,6 +374,33 @@ function ChatContent() {
               </button>
             </div>
           </form>
+
+          {/* Quick suggestion buttons - Add these for common follow-up questions */}
+          {hasActiveChat && chat?.messages && (
+            <div className={styles.suggestionContainer}>
+              <button
+                className={styles.suggestionButton}
+                onClick={() => handleSuggestionClick("give me assumptions")}
+                disabled={isTyping}
+              >
+                give me assumptions
+              </button>
+              <button
+                className={styles.suggestionButton}
+                onClick={() => handleSuggestionClick("explain in more detail")}
+                disabled={isTyping}
+              >
+                explain in more detail
+              </button>
+              <button
+                className={styles.suggestionButton}
+                onClick={() => handleSuggestionClick("provide an example")}
+                disabled={isTyping}
+              >
+                provide an example
+              </button>
+            </div>
+          )}
 
           {chat?.top_documents && (
             <div className={styles.sourcesContainer}>

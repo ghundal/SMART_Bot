@@ -4,11 +4,13 @@ This module provides endpoints for retrieving usage statistics and analytics.
 """
 
 from typing import Optional
+import re
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import text
+from nltk.corpus import stopwords
 
-from ..utils.database import SessionLocal
+from utils.database import SessionLocal
 from .auth_middleware import verify_token
 
 # Define a router for reports
@@ -124,73 +126,67 @@ async def get_query_activity(
 @router.get("/reports/top_keywords")
 async def get_top_keywords(
     limit: Optional[int] = Query(20, description="Number of keywords to return"),
-    min_length: Optional[int] = Query(4, description="Minimum keyword length"),
+    min_length: Optional[int] = Query(3, description="Minimum keyword length"),
     user_email: str = Depends(verify_token),
 ):
     """Get the most frequently used keywords in user queries"""
 
-    # Common words to exclude from analysis
-    exclude_words = [
-        "what",
-        "when",
-        "where",
-        "which",
-        "who",
-        "how",
-        "why",
-        "the",
-        "and",
-        "for",
-        "that",
-        "this",
-        "with",
-        "can",
-        "you",
-        "have",
-        "are",
-        "not",
-        "from",
-        "your",
-    ]
-
-    # Convert the list to a format suitable for PostgreSQL's ANY operator
-    "{" + ",".join(exclude_words) + "}"
-
     db = SessionLocal()
     try:
-        # Use PostgreSQL's text search capabilities to extract keywords
-        results = db.execute(
+        # Query to get all queries
+        all_queries = db.execute(
             text(
                 """
-            WITH keywords AS (
-                SELECT
-                    word,
-                    COUNT(*) as count
-                FROM (
-                    SELECT regexp_split_to_table(lower(query), E'\\s+') as word
-                    FROM audit
-                ) t
-                WHERE
-                    length(word) >= :min_length
-                    AND word NOT IN (
-                        'what', 'when', 'where', 'which', 'who', 'how', 'why', 'the', 'and', 'for',
-                        'that', 'this', 'with', 'can', 'you', 'have', 'are', 'not', 'from', 'your'
-                    )
-                    AND word ~ '^[a-z0-9]+$'  -- only include alphanumeric words
-                GROUP BY word
-                ORDER BY count DESC
-                LIMIT :limit
+                SELECT query FROM audit
+                WHERE query IS NOT NULL AND length(query) > 0
+                """
             )
-            SELECT word, count FROM keywords
-            """
-            ),
-            {"limit": limit, "min_length": min_length},
         ).fetchall()
 
-        # Format the results
-        formatted_results = [{"keyword": row[0], "count": row[1]} for row in results]
+        # Process queries to extract keywords
+        # Get NLTK stopwords for English
+        stop_words = set(stopwords.words("english"))
 
-        return formatted_results
+        # Additional common words to exclude
+        additional_stopwords = {
+            "give", "tell", "show", "find", "does", "about", "should",
+            "could", "would", "please", "help", "need", "want", "get",
+            "know", "explain", "describe", "provide", "make", "create"
+        }
+
+        # Combine all stopwords
+        all_stopwords = stop_words.union(additional_stopwords)
+
+        # Count keywords
+        keyword_counts = {}
+
+        for row in all_queries:
+            if not row[0]:  # Skip empty queries
+                continue
+
+            query = row[0].lower()
+
+            # Remove punctuation
+            query = re.sub(r"[^\w\s]", "", query)
+
+            # Split into words
+            words = query.strip().split()
+
+            # Filter out stopwords and short words
+            for word in words:
+                if (
+                    word not in all_stopwords
+                    and len(word) >= min_length
+                    and word.isalpha()  # Only keep alphabetic words
+                ):
+                    keyword_counts[word] = keyword_counts.get(word, 0) + 1
+
+        # Convert to list and sort by count
+        keywords = [{"keyword": k, "count": v} for k, v in keyword_counts.items()]
+        keywords.sort(key=lambda x: x["count"], reverse=True)
+
+        # Return top N results
+        return keywords[:limit]
     finally:
         db.close()
 
@@ -198,56 +194,34 @@ async def get_top_keywords(
 @router.get("/reports/top_phrases")
 async def get_top_phrases(
     limit: Optional[int] = Query(10, description="Number of phrases to return"),
+    min_words: Optional[int] = Query(2, description="Minimum number of words in a phrase"),
     user_email: str = Depends(verify_token),
 ):
-    """Get the most frequently used phrases in user queries"""
+    """Get the most frequently used complete queries as phrases"""
 
     db = SessionLocal()
     try:
-        # Extract common 2-word phrases with a simpler approach
+        # Get all complete queries as phrases - fixed GROUP BY clause
         results = db.execute(
             text(
                 """
-            WITH words AS (
-                SELECT
-                    audit_id,
-                    word,
-                    row_number() OVER (PARTITION BY audit_id ORDER BY position) as position
-                FROM (
-                    SELECT
-                        audit_id,
-                        regexp_split_to_table(lower(query), E'\\s+') as word,
-                        regexp_split_to_table(lower(query), E'\\s+') with ordinality as position
+                WITH cleaned_queries AS (
+                    SELECT lower(trim(query)) AS clean_query
                     FROM audit
-                ) t
-                WHERE length(word) >= 3
-                AND word NOT IN (
-                    'what', 'when', 'where', 'which', 'who', 'how', 'why', 'the', 'and', 'for',
-                    'that', 'this', 'with', 'can', 'you', 'have', 'are', 'not', 'from', 'your'
+                    WHERE query IS NOT NULL AND length(query) > 0
                 )
-            ),
-            phrases AS (
                 SELECT
-                    w1.audit_id,
-                    w1.word || ' ' || w2.word AS phrase
-                FROM words w1
-                JOIN words w2 ON
-                    w1.audit_id = w2.audit_id AND
-                    w1.position + 1 = w2.position
-                WHERE length(w2.word) >= 3
-                AND w2.word NOT IN (
-                    'what', 'when', 'where', 'which', 'who', 'how', 'why', 'the', 'and', 'for',
-                    'that', 'this', 'with', 'can', 'you', 'have', 'are', 'not', 'from', 'your'
-                )
-            )
-            SELECT phrase, COUNT(*) as count
-            FROM phrases
-            GROUP BY phrase
-            ORDER BY count DESC
-            LIMIT :limit
-            """
+                    clean_query AS phrase,
+                    COUNT(*) AS count,
+                    array_length(string_to_array(clean_query, ' '), 1) AS word_count
+                FROM cleaned_queries
+                GROUP BY clean_query
+                HAVING array_length(string_to_array(clean_query, ' '), 1) >= :min_words
+                ORDER BY count DESC, phrase
+                LIMIT :limit
+                """
             ),
-            {"limit": limit},
+            {"limit": limit, "min_words": min_words},
         ).fetchall()
 
         # Format the results

@@ -8,8 +8,7 @@ import os
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-
-from ..rag_pipeline.config import logger
+from rag_pipeline.config import logger
 
 
 def connect_to_postgres():

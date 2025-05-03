@@ -23,7 +23,6 @@ Enhancements:
   meta.csv: metadata with class name, authors, term
 - **Semantic Chunking Model**: all-MiniLM-L6-v2
 - **Embedding model**: all-mpnet-base-v2
-- **LLM Model**: microsoft/Phi-4-mini-instruct
 
 ## **Prerequisites**
 

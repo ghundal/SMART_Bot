@@ -1,0 +1,63 @@
+/* Access Denied Page Styles */
+.accessMessage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.warningIcon {
+    margin-bottom: 16px;
+}
+
+.contactEmail {
+    display: flex;
+    align-items: center;
+    color: #4285F4;
+    font-weight: 500;
+    text-decoration: none;
+    font-size: 18px;
+    margin: 12px 0;
+    padding: 8px 16px;
+    border-radius: 4px;
+    background-color: rgba(66, 133, 244, 0.1);
+    transition: all 0.2s ease;
+}
+
+.contactEmail:hover {
+    color: #2b6bc3;
+    background-color: rgba(66, 133, 244, 0.2);
+}
+
+.emailIcon {
+    margin-right: 8px;
+}
+
+.returnButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+    background-color: #4285F4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    height: 48px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.returnButton:hover {
+    background-color: #2b6bc3;
+}
+
+/* Make sure the highlight color for Access Denied is red */
+.highlight.red {
+    color: #EA4335;
+}
