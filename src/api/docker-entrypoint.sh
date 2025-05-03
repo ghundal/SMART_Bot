@@ -21,6 +21,7 @@ The following commands are available:
 \033[0m
 "
 
+python -c "import nltk; nltk.download('stopwords')"
 ollama serve &
 echo "Waiting for Ollama server to start..."
 until curl -s http://localhost:11434/api/tags > /dev/null 2>&1; do

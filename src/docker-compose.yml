@@ -38,7 +38,7 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     networks:
       - smart-network
     command: datapipeline.py
@@ -48,6 +48,7 @@ services:
     image: ${API_IMAGE_NAME}
     container_name: api
     volumes:
+      - ${PERSISTENT_DIR}/models:/var/ollama
       - ${BASE_DIR}/api:/app
       - ${SECRETS_DIR}:/secrets:ro
     ports:
@@ -64,7 +65,7 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     networks:
       - smart-network
     tty: true
