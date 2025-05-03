@@ -54,4 +54,4 @@ jobs:
           location: 'us-central1'
 
       - name: 'Helm Install'
-        run: 'helm install smart ./helm --set image.repository=gcr.io/smart-452816/frontend --set image.tag=${GITHUB_SHA::7}'
+        run: 'helm upgrade --install smart ./helm --set image.repository=gcr.io/smart-452816/frontend --set image.tag=${GITHUB_SHA::7}'
