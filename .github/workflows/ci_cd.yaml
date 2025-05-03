@@ -27,20 +27,10 @@ jobs:
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
-          project_id: smart-452816
           credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
-      # - run : |
-      #     mkdir -p ~/.gsutil
-      #     echo "${{ secrets.GCP_CREDS }}" > ~/.gsutil/credstore2
-      # - name: Docker Login
-      #   run:  gcloud auth configure-docker gcr.io --quiet
-      # - name: Build Data Pipeline
-      #   run: |
-      #     docker build -t gcr.io/smart-452816/datapipeline:${GITHUB_SHA::7} ./src/datapipeline
-      #     docker push gcr.io/smart-452816/datapipeline:${GITHUB_SHA::7}
+      - run: gcloud auth configure-docker gcr.io --quiet
       - name: Build Frontend
         run: |
-          gcloud auth configure-docker gcr.io --quiet
           docker build -t gcr.io/smart-452816/frontend:${GITHUB_SHA::7} ./src/frontend
           docker push gcr.io/smart-452816/frontend:${GITHUB_SHA::7}
 
@@ -49,9 +39,6 @@ jobs:
 #    needs: [docker]
     steps:
       - uses: actions/checkout@v4
-      - run : |
-          mkdir -p ~/.gsutil
-          echo "${{ secrets.GCP_CREDS }}" > ~/.gsutil/credstore2
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
@@ -71,4 +58,4 @@ jobs:
         run: 'kubectl get pods'
 
       - name: 'Helm Install'
-        run: 'helm install smart ./helm --set image.tag=${GITHUB_SHA::7}'
+        run: 'helm install smart ./helm --set image.repository=gcr.io/smart-452816/frontend --set image.tag=${GITHUB_SHA::7}'
