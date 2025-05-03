@@ -77,6 +77,8 @@ spec:
     metadata:
       labels:
         app: {{ include "smart.name" . }}-api
+    strategy:
+      type: Recreate
     spec:
       initContainers:
         - name: fix-ollama-permissions
