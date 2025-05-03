@@ -97,11 +97,11 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 9000
           readinessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 9000
           resources:
             limits:
