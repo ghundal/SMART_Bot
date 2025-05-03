@@ -27,18 +27,21 @@ jobs:
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
+          project_id: smart-452816
           credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
       # - run : |
       #     mkdir -p ~/.gsutil
       #     echo "${{ secrets.GCP_CREDS }}" > ~/.gsutil/credstore2
-      - name: Docker Login
-        run:  gcloud auth configure-docker gcr.io --quiet
+      # - name: Docker Login
+      #   run:  gcloud auth configure-docker gcr.io --quiet
       # - name: Build Data Pipeline
       #   run: |
       #     docker build -t gcr.io/smart-452816/datapipeline:${GITHUB_SHA::7} ./src/datapipeline
       #     docker push gcr.io/smart-452816/datapipeline:${GITHUB_SHA::7}
       - name: Build Frontend
         run: |
+          gcloud auth login --brief --cred-file="${{ steps.auth.outputs.credentials_file_path }}"
+          gcloud auth configure-docker gcr.io --quiet
           docker build -t gcr.io/smart-452816/frontend:${GITHUB_SHA::7} ./src/frontend
           docker push gcr.io/smart-452816/frontend:${GITHUB_SHA::7}
 
