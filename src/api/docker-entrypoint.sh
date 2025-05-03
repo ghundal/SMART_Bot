@@ -7,13 +7,23 @@ ollama serve &
 OLLAMA_PID=$!
 
 # Trap SIGINT and SIGTERM to stop Ollama gracefully
-cleanup() {
-  echo "Caught termination signal. Stopping Ollama..."
-  kill -TERM "$OLLAMA_PID" 2>/dev/null
-  wait "$OLLAMA_PID"
+term_handler() {
+  echo "Caught termination signal. Stopping Ollama and Uvicorn..."
+
+  if kill -0 "$OLLAMA_PID" 2>/dev/null; then
+    kill -TERM "$OLLAMA_PID"
+    wait "$OLLAMA_PID"
+  fi
+
+  if [[ -n "$UVICORN_PID" ]] && kill -0 "$UVICORN_PID" 2>/dev/null; then
+    kill -TERM "$UVICORN_PID"
+    wait "$UVICORN_PID"
+  fi
+
   exit 0
 }
-trap cleanup SIGINT SIGTERM
+
+trap term_handler SIGINT SIGTERM
 
 # this will run the api/service.py file with the instantiated app FastAPI
 uvicorn_server() {
@@ -22,6 +32,8 @@ uvicorn_server() {
 
 uvicorn_server_production() {
     pipenv run uvicorn main_api:app --host 0.0.0.0 --port 9000 --lifespan on
+    UVICORN_PID=$!
+    wait "$UVICORN_PID"
 }
 
 export -f uvicorn_server
