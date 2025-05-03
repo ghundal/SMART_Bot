@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import styles from '../../components/auth/access.module.css';
+import styles from '../../../components/auth/access.module.css';
 
 export default function AccessDenied() {
   return (
