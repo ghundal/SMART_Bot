@@ -126,5 +126,5 @@ affinity: {}
 postgresql:
   database: smart
   username: postgres
-  password: test123
+  password: postgres
   storageSize: 8Gi
