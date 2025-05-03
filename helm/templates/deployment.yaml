@@ -127,14 +127,13 @@ spec:
             requests:
               cpu: 500m
               memory: 2Gi
-          {{- with .Values.volumeMounts }}
           volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
+            - name: models-storage
+              mountPath: /var/ollama
       volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: {{ include "smart.fullname" . }}-models-pvc
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

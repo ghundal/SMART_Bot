@@ -8,3 +8,15 @@ spec:
   resources:
     requests:
       storage: {{ .Values.postgresql.storageSize }}
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "smart.fullname" . }}-models-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
