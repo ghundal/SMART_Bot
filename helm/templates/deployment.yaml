@@ -94,6 +94,8 @@ spec:
               value: smart-postgres
             - name: GOOGLE_CREDENTIALS_FILE
               value: /secrets/smart_input_key.json
+            - name: FRONTEND_URL
+              value: http://smart.com
           ports:
             - name: http
               containerPort: 9000
