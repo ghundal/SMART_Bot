@@ -98,6 +98,8 @@ spec:
           ports:
             - containerPort: 5432
           env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_DB
               value: {{ .Values.postgresql.database }}
             - name: POSTGRES_USER
@@ -109,7 +111,7 @@ spec:
                   key: password
           volumeMounts:
             - name: postgres-storage
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql/data/pgdata
       volumes:
         - name: postgres-storage
           persistentVolumeClaim:
