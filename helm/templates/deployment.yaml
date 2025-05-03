@@ -2,26 +2,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "smart.fullname" . }}-frontend
-  labels:
-    {{- include "smart.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "smart.selectorLabels" . | nindent 6 }}-frontend
+      app: {{ include "smart.name" . }}-frontend
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       labels:
-        {{- include "smart.labels" . | nindent 8 }}-frontend
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        app: {{ include "smart.name" . }}-frontend
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
