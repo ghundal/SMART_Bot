@@ -33,6 +33,10 @@ jobs:
         run: |
           docker build -t gcr.io/smart-452816/frontend:${GITHUB_SHA::7} ./src/frontend
           docker push gcr.io/smart-452816/frontend:${GITHUB_SHA::7}
+      - name: Build Postgres
+        run: |
+          docker build -t gcr.io/smart-452816/postgres:${GITHUB_SHA::7} -f ./src/Dockerfile.postgres ./src
+          docker push gcr.io/smart-452816/postgres:${GITHUB_SHA::7}
 
   deploy:
     runs-on: ubuntu-latest
