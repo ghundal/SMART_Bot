@@ -42,4 +42,4 @@ app.include_router(query_router, prefix="/api")
 
 # Add the reports router under `/api`
 app.include_router(reports_router, prefix="/api", tags=["reports"])
-app.include_router(health_router, prefix="/", tags=["health"])
+app.include_router(health_router, prefix="/health", tags=["health"])
