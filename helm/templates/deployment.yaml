@@ -107,7 +107,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: DB_HOST
-              value: postgres
+              value: smart-postgres
           ports:
             - name: http
               containerPort: 9000
