@@ -122,10 +122,10 @@ spec:
               port: 9000
           resources:
             limits:
-              cpu: 4000m
-              memory: 4Gi
+              cpu: 900m
+              memory: 2800000Ki
             requests:
-              cpu: 1000m
+              cpu: 500m
               memory: 2Gi
           {{- with .Values.volumeMounts }}
           volumeMounts:
