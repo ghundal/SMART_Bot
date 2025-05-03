@@ -36,7 +36,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-#    needs: [docker]
+    needs: [docker]
     steps:
       - uses: actions/checkout@v4
       - id: 'auth'
@@ -52,10 +52,6 @@ jobs:
         with:
           cluster_name: 'smart-cluster'
           location: 'us-central1'
-
-      # The KUBECONFIG env var is automatically exported and picked up by kubectl.
-      - id: 'get-pods'
-        run: 'kubectl get pods'
 
       - name: 'Helm Install'
         run: 'helm install smart ./helm --set image.repository=gcr.io/smart-452816/frontend --set image.tag=${GITHUB_SHA::7}'
