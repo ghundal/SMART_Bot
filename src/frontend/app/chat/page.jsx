@@ -15,7 +15,7 @@ function ChatContent() {
   const [inputMessage, setInputMessage] = useState('');
   const [recentChats, setRecentChats] = useState([]);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [model, setModel] = useState('gemma3:1b');
+  const [model, setModel] = useState('gemma3:12b');
   const messagesEndRef = useRef(null);
 
   const router = useRouter();
@@ -24,7 +24,7 @@ function ChatContent() {
   // Extract chat_id and model from URL parameters
   useEffect(() => {
     const id = searchParams.get('id');
-    const modelParam = searchParams.get('model') || 'gemma3:1b';
+    const modelParam = searchParams.get('model') || 'gemma3:12b';
 
     if (id) {
       setChatId(id);
@@ -211,8 +211,8 @@ function ChatContent() {
           onChange={handleModelChange}
           className={styles.modelSelectButton}
         >
-          <option value="tinyllama:1.1b-chat">Llama</option>
-          <option value="gemma3:1b">Gemma</option>
+          <option value="llama3:8b">Llama</option>
+          <option value="gemma3:12b">Gemma</option>
         </select>
       </div>
 
