@@ -121,3 +121,9 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+postgresql:
+  database: smart
+  username: postgres
+  password: test123
+  storageSize: 8Gi
