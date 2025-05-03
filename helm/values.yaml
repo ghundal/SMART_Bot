@@ -64,7 +64,7 @@ ingress:
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
-    - host: smart.local
+    - host: smart.com
       paths:
         - path: /api
           pathType: Prefix
