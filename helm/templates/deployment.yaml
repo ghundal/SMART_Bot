@@ -19,8 +19,8 @@ spec:
           image: "{{ .Values.image.repository }}/frontend:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: NEXT_PUBLIC_API_URL
-              value: http://smart.com
+            - name: NODE_ENV
+              value: production
           ports:
             - name: http
               containerPort: 3000
@@ -94,8 +94,8 @@ spec:
               value: smart-postgres
             - name: GOOGLE_CREDENTIALS_FILE
               value: /secrets/smart_input_key.json
-            - name: NODE_ENV
-              value: production
+            - name: FRONTEND_URL
+              value: http://smart.com
           ports:
             - name: http
               containerPort: 9000
