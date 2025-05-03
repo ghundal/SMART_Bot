@@ -32,7 +32,7 @@ jobs:
           mkdir -p ~/.gsutil
           echo "${{ secrets.GCP_CREDS }}" > ~/.gsutil/credstore2
       - name: Docker Login
-        run:  gcloud auth configure-docker
+        run:  gcloud auth configure-docker gcr.io --quiet
       # - name: Build Data Pipeline
       #   run: |
       #     docker build -t gcr.io/smart-452816/datapipeline:${GITHUB_SHA::7} ./src/datapipeline
