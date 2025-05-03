@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTP_200_OK, Request, Response
+from fastapi import APIRouter, Request, Response
+from starlette.status import HTTP_200_OK
 
 router = APIRouter()
 
