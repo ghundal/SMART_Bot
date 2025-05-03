@@ -39,18 +39,18 @@ const fetchWithAuth = async (endpoint, options = {}) => {
   const headers = {
     'Content-Type': 'application/json',
     'X-Session-ID': sessionId,
-    ...(options.headers || {})
+    ...(options.headers || {}),
   };
 
   const defaultOptions = {
     credentials: 'include',
-    headers
+    headers,
   };
 
   // Make the API call
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...defaultOptions,
-    ...options
+    ...options,
   });
 
   // Handle errors
@@ -92,8 +92,8 @@ export const StartChatWithLLM = async (model, message) => {
     method: 'POST',
     body: JSON.stringify({
       content: message.content,
-      model: model
-    })
+      model: model,
+    }),
   });
   return { data };
 };
@@ -107,8 +107,8 @@ export const ContinueChatWithLLM = async (model, chatId, message) => {
     method: 'POST',
     body: JSON.stringify({
       content: message.content,
-      model: model
-    })
+      model: model,
+    }),
   });
   return { data };
 };
@@ -118,7 +118,7 @@ export const ContinueChatWithLLM = async (model, chatId, message) => {
  */
 export const DeleteChat = async (chatId) => {
   const data = await fetchWithAuth(`/api/chats/${chatId}`, {
-    method: 'DELETE'
+    method: 'DELETE',
   });
   return { data };
 };
@@ -133,8 +133,8 @@ export const SubmitQuery = async (model, chatId, question, sessionId) => {
       chat_id: chatId,
       question: question,
       model_name: model,
-      session_id: sessionId || getSessionId()
-    })
+      session_id: sessionId || getSessionId(),
+    }),
   });
   return { data };
 };
@@ -148,7 +148,7 @@ const DataService = {
   DeleteChat,
   SubmitQuery,
   uuid,
-  getSessionId
+  getSessionId,
 };
 
 export default DataService;

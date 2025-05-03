@@ -10,10 +10,12 @@ import logging
 # Configure logger
 logger = logging.getLogger(__name__)
 
+
 class TransformerReranker:
     """
     A reranker that uses a transformer model to score document relevance.
     """
+
     def __init__(self, model_name: str = "BAAI/bge-reranker-base"):
         """
         Initialize the transformer reranker.
@@ -54,9 +56,17 @@ class TransformerReranker:
 
             # Tokenize pairs and get scores
             with torch.no_grad():
-                inputs = self.tokenizer(pairs, padding=True, truncation=True, return_tensors="pt", max_length=512)
+                inputs = self.tokenizer(
+                    pairs, padding=True, truncation=True, return_tensors="pt", max_length=512
+                )
                 # Get relevance scores
-                scores = self.model(**inputs, return_dict=True).logits.view(-1,).float()
+                scores = (
+                    self.model(**inputs, return_dict=True)
+                    .logits.view(
+                        -1,
+                    )
+                    .float()
+                )
 
             # Add scores to chunks
             reranking_results = []
@@ -70,7 +80,9 @@ class TransformerReranker:
 
             # Sort by score in descending order
             reranked_chunks = sorted(reranking_results, key=lambda x: x["llm_score"], reverse=True)
-            logger.info(f"Reranked {len(reranked_chunks)} chunks using transformer model {self.model_name}")
+            logger.info(
+                f"Reranked {len(reranked_chunks)} chunks using transformer model {self.model_name}"
+            )
             return reranked_chunks
 
         except Exception as e:
@@ -80,9 +92,7 @@ class TransformerReranker:
 
 
 def rerank_chunks(
-    chunks: List[Dict[str, Any]],
-    query: str,
-    model_name: str = "BAAI/bge-reranker-base"
+    chunks: List[Dict[str, Any]], query: str, model_name: str = "BAAI/bge-reranker-base"
 ) -> List[Dict[str, Any]]:
     """
     Rerank chunks based on relevance to the query using a transformer model.

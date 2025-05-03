@@ -314,13 +314,15 @@ function ChatContent() {
                 <h3>Example queries:</h3>
                 <ul>
                   <li onClick={() => handleSuggestionClick('Was ist ein zufälliger Wald?')}>
-                  'Was ist ein zufälliger Wald?'
+                    'Was ist ein zufälliger Wald?'
                   </li>
                   <li onClick={() => handleSuggestionClick('What is a random forest?')}>
                     What is a random forest?
                   </li>
                   <li
-                    onClick={() => handleSuggestionClick('Summarize the key concepts from lecture on CNNs')}
+                    onClick={() =>
+                      handleSuggestionClick('Summarize the key concepts from lecture on CNNs')
+                    }
                   >
                     Summarize the key concepts from lecture on CNNs
                   </li>
@@ -380,21 +382,21 @@ function ChatContent() {
             <div className={styles.suggestionContainer}>
               <button
                 className={styles.suggestionButton}
-                onClick={() => handleSuggestionClick("give me assumptions")}
+                onClick={() => handleSuggestionClick('give me assumptions')}
                 disabled={isTyping}
               >
                 give me assumptions
               </button>
               <button
                 className={styles.suggestionButton}
-                onClick={() => handleSuggestionClick("explain in more detail")}
+                onClick={() => handleSuggestionClick('explain in more detail')}
                 disabled={isTyping}
               >
                 explain in more detail
               </button>
               <button
                 className={styles.suggestionButton}
-                onClick={() => handleSuggestionClick("provide an example")}
+                onClick={() => handleSuggestionClick('provide an example')}
                 disabled={isTyping}
               >
                 provide an example

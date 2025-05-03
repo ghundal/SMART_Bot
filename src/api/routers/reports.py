@@ -149,9 +149,26 @@ async def get_top_keywords(
 
         # Additional common words to exclude
         additional_stopwords = {
-            "give", "tell", "show", "find", "does", "about", "should",
-            "could", "would", "please", "help", "need", "want", "get",
-            "know", "explain", "describe", "provide", "make", "create"
+            "give",
+            "tell",
+            "show",
+            "find",
+            "does",
+            "about",
+            "should",
+            "could",
+            "would",
+            "please",
+            "help",
+            "need",
+            "want",
+            "get",
+            "know",
+            "explain",
+            "describe",
+            "provide",
+            "make",
+            "create",
         }
 
         # Combine all stopwords

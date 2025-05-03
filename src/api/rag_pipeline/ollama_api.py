@@ -5,7 +5,6 @@ Client for local Ollama model interactions without API calls.
 import os
 import subprocess
 import tempfile
-from typing import Any, Dict, List
 
 from .config import GENERATION_CONFIG, logger
 

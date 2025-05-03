@@ -13,7 +13,10 @@ from sqlalchemy.orm import sessionmaker
 
 try:
     # Try package-relative import first (for tests and package usage)
-    from src.datapipeline.Advanced_semantic_chunker import AdvancedSemanticChunker, get_embedding_model
+    from src.datapipeline.Advanced_semantic_chunker import (
+        AdvancedSemanticChunker,
+        get_embedding_model,
+    )
 except ImportError:
     try:
         # Try direct import (for when run directly)
