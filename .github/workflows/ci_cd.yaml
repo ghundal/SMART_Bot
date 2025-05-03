@@ -28,10 +28,12 @@ jobs:
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
-      - name: Build Data Pipeline
-        run: |
-          docker build -t gcr.io/smart-452816/datapipeline:${GITHUB_SHA::7} ./src/datapipeline
-          docker push gcr.io/smart-452816/datapipeline:${GITHUB_SHA::7}
+      - name: Docker Login
+        run:  gcloud auth configure-docker
+      # - name: Build Data Pipeline
+      #   run: |
+      #     docker build -t gcr.io/smart-452816/datapipeline:${GITHUB_SHA::7} ./src/datapipeline
+      #     docker push gcr.io/smart-452816/datapipeline:${GITHUB_SHA::7}
       - name: Build Frontend
         run: |
           docker build -t gcr.io/smart-452816/frontend:${GITHUB_SHA::7} ./src/frontend
