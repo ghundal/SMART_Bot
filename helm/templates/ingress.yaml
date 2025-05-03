@@ -33,11 +33,13 @@ spec:
             {{- with .pathType }}
             pathType: {{ . }}
             {{- end }}
+            {{- with .service }}
             backend:
               service:
-                name: {{ include "smart.fullname" $ }}
+                name: {{ include "smart.fullname" $ }}-{{ . }}
                 port:
                   number: {{ $.Values.service.port }}
+            {{- end }}
           {{- end }}
     {{- end }}
 {{- end }}
