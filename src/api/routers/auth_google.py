@@ -47,7 +47,7 @@ oauth.register(
 
 @router.get("/login")
 async def login(request: Request):
-    redirect_uri = os.getenv("FRONTEND_URL", "http://localhost:3000") + "/auth/auth"
+    redirect_uri = os.getenv("FRONTEND_URL", "http://localhost:9000") + "/auth/auth"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 

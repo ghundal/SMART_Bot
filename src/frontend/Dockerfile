@@ -1,5 +1,7 @@
 # Build stage
 FROM node:18-alpine AS build
+ARG NEXT_PUBLIC_API_URL=http://localhost:9000
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 WORKDIR /app
 

@@ -31,7 +31,7 @@ jobs:
       - run: gcloud auth configure-docker gcr.io --quiet
       - name: Build Frontend
         run: |
-          docker build -t gcr.io/smart-452816/frontend:${GITHUB_SHA::7} ./src/frontend
+          docker build -t gcr.io/smart-452816/frontend:${GITHUB_SHA::7} --build-arg NEXT_PUBLIC_API_URL=https://smart.ghundal.com ./src/frontend
           docker push gcr.io/smart-452816/frontend:${GITHUB_SHA::7}
       - name: Build Postgres
         run: |

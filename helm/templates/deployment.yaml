@@ -29,9 +29,6 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}/frontend:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: NODE_ENV
-              value: production
           ports:
             - name: http
               containerPort: 3000
