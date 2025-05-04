@@ -43,12 +43,3 @@ spec:
           {{- end }}
     {{- end }}
 {{- end }}
----
-apiVersion: cloud.google.com/v1
-kind: BackendConfig
-metadata:
-  name: api-backendconfig
-spec:
-  healthCheck:
-    requestPath: /health
-    port: 9000
