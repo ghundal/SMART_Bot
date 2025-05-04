@@ -8,7 +8,7 @@ import logging
 OLLAMA_URL = "http://localhost:11434/api/generate"
 # OLLAMA_MODEL = "gemma3:12b"
 OLLAMA_MODEL = "llama3:8b"
-RERANKER_MODEL = "BAAI/bge-reranker-base"
+RERANKER_MODEL = "qllama/bge-reranker-large"
 SAFETY_MODEL = "llama-guard3:8b"
 EMBEDDING_MODEL = "all-mpnet-base-v2"
 
