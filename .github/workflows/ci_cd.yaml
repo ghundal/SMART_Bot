@@ -37,6 +37,11 @@ jobs:
         run: |
           docker build -t gcr.io/smart-452816/postgres:${GITHUB_SHA::7} -f ./src/Dockerfile.postgres ./src
           docker push gcr.io/smart-452816/postgres:${GITHUB_SHA::7}
+      - name: Build API
+        run: |
+          docker system prune -af
+          docker build -t gcr.io/smart-452816/api:${GITHUB_SHA::7} ./src/api
+          docker push gcr.io/smart-452816/api:${GITHUB_SHA::7}
 
   deploy:
     runs-on: ubuntu-latest
