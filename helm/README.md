@@ -56,3 +56,11 @@ kubectl describe pod <pod name>
 
 
 kubectl create secret generic oauth-secret --from-file=client_secrets.json=client_secrets2.json
+
+
+docker exec -it postgres /bin/bash
+pg_dump -U postgres -d smart -f /var/lib/postgresql/data/dump.sql
+sudo cp ../persistent-folder/postgres/dump.sql ../E115_SMART/
+kubectl cp dump.sql smart-postgres-65d584dfd4-lcx57:/var/lib/postgresql/data
+kubectl exec -it smart-postgres-65d584dfd4-lcx57 -- /bin/bash
+psql -U postgres -d smart -f /var/lib/postgresql/data/dump.sql
