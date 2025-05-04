@@ -5,7 +5,7 @@ Client for Ollama model interactions via API server.
 import re
 import requests
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 from .config import GENERATION_CONFIG, OLLAMA_URL, logger
 
@@ -60,7 +60,7 @@ class OllamaAPIClient:
                     "top_p": top_p,
                     "repeat_penalty": repeat_penalty,
                     "max_tokens": max_tokens,
-                    "stream": False  # We want the full response at once
+                    "stream": False,  # We want the full response at once
                 }
 
                 # Make the API request
@@ -69,11 +69,13 @@ class OllamaAPIClient:
                     self.api_base,
                     json=payload,
                     headers={"Content-Type": "application/json"},
-                    timeout=30  # Add timeout to prevent hanging requests
+                    timeout=30,  # Add timeout to prevent hanging requests
                 )
 
                 if response.status_code != 200:
-                    error_msg = f"Error generating text: {response.status_code} - {response.text[:200]}"
+                    error_msg = (
+                        f"Error generating text: {response.status_code} - {response.text[:200]}"
+                    )
                     logger.error(error_msg)
                     last_error = error_msg
 
@@ -91,13 +93,15 @@ class OllamaAPIClient:
 
                 # Clean the output to match the CLI behavior
                 if prompt in api_response:
-                    api_response = api_response[api_response.find(prompt) + len(prompt):].strip()
+                    api_response = api_response[api_response.find(prompt) + len(prompt) :].strip()
 
                 return api_response
 
             except Exception as e:
                 last_error = str(e)
-                logger.warning(f"Attempt {attempt+1} failed: {str(e)}. {'Retrying...' if attempt < max_retries-1 else 'Giving up.'}")
+                logger.warning(
+                    f"Attempt {attempt+1} failed: {str(e)}. {'Retrying...' if attempt < max_retries-1 else 'Giving up.'}"
+                )
                 time.sleep(1)  # Brief delay before retry
 
         # If we get here, all attempts failed
@@ -136,11 +140,13 @@ def rerank_with_llm(
                 prompt=test_prompt,
                 temperature=0.1,
                 max_tokens=10,
-                max_retries=1  # Only try once for the test
+                max_retries=1,  # Only try once for the test
             )
             # Check if we got an error response
             if test_response.startswith("Error:"):
-                logger.warning(f"Reranking model test failed: {test_response}. Using original chunk order.")
+                logger.warning(
+                    f"Reranking model test failed: {test_response}. Using original chunk order."
+                )
                 return chunks
         except Exception as e:
             logger.warning(f"Reranking model not available: {str(e)}. Using original chunk order.")
@@ -240,7 +246,7 @@ def query_llm(prompt: str, model_name: str) -> str:
             temperature=GENERATION_CONFIG["temperature"],
             top_p=GENERATION_CONFIG["top_p"],
             repeat_penalty=GENERATION_CONFIG["repeat_penalty"],
-            max_retries=2  # Add retries to make it more robust
+            max_retries=2,  # Add retries to make it more robust
         )
 
         return response
