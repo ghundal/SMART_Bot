@@ -83,16 +83,7 @@ spec:
     metadata:
       labels:
         app: {{ include "smart.name" . }}-api
-    strategy:
-      type: Recreate
     spec:
-      initContainers:
-        - name: fix-ollama-permissions
-          image: busybox:1.36
-          command: ["sh", "-c", "chown -R 1000:1000 /var/ollama"]
-          volumeMounts:
-            - name: models-storage
-              mountPath: /var/ollama
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}/api:latest"
@@ -102,8 +93,8 @@ spec:
               value: smart-postgres
             - name: FRONTEND_URL
               value: https://smart.ghundal.com
-            - name: OLLAMA_MODELS
-              value: /var/ollama
+            - name: OLLAMA_HOST
+              value: smart-ollama
           ports:
             - name: http
               containerPort: 9000
@@ -121,20 +112,15 @@ spec:
           resources:
             limits:
               cpu: 2000m
-              memory: 32Gi
+              memory: 3Gi
             requests:
               cpu: 1000m
-              memory: 16Gi
+              memory: 2Gi
           volumeMounts:
-            - name: models-storage
-              mountPath: /var/ollama
             - mountPath: /secrets
               name: secrets
               readOnly: true
       volumes:
-        - name: models-storage
-          persistentVolumeClaim:
-            claimName: {{ include "smart.fullname" . }}-models-pvc
         - name: secrets
           projected:
             sources:
@@ -194,3 +180,51 @@ spec:
         - name: postgres-storage
           persistentVolumeClaim:
             claimName: {{ include "smart.fullname" . }}-postgres-pvc
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "smart.fullname" . }}-ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "smart.name" . }}-ollama
+  template:
+    metadata:
+      labels:
+        app: {{ include "smart.name" . }}-ollama
+    strategy:
+      type: Recreate
+    spec:
+      initContainers:
+        - name: fix-ollama-permissions
+          image: busybox:1.36
+          command: ["sh", "-c", "chown -R 1000:1000 /var/ollama"]
+          volumeMounts:
+            - name: models-storage
+              mountPath: /var/ollama
+      containers:
+        - name: ollama
+          image: ollama/ollama
+          ports:
+            - containerPort: 11434
+          env:
+            - name: OLLAMA_MODELS
+              value: /var/ollama
+          volumeMounts:
+            - name: models-storage
+              mountPath: /var/ollama
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 32Gi
+            requests:
+              cpu: 1000m
+              memory: 16Gi
+      volumes:
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: {{ include "smart.fullname" . }}-models-pvc
