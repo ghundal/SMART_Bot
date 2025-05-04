@@ -51,3 +51,8 @@ kubectl scale deployment smart-frontend --replicas=3
 ```
 kubectl describe pod <pod name>
 ```
+
+
+
+
+kubectl create secret generic oauth-secret --from-file=client_secrets.json=client_secrets2.json

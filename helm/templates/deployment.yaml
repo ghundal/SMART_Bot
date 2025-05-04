@@ -102,8 +102,6 @@ spec:
           env:
             - name: DB_HOST
               value: smart-postgres
-            - name: GOOGLE_CREDENTIALS_FILE
-              value: /secrets/smart_input_key.json
             - name: FRONTEND_URL
               value: https://smart.ghundal.com
           ports:
