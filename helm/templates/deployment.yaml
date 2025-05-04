@@ -129,16 +129,19 @@ spec:
             - name: models-storage
               mountPath: /var/ollama
             - mountPath: /secrets
-              name: smart-input-key-secret
+              name: secrets
               readOnly: true
       volumes:
         - name: models-storage
           persistentVolumeClaim:
             claimName: {{ include "smart.fullname" . }}-models-pvc
-        - name: smart-input-key-secret
-          secret:
-            optional: false
-            secretName: smart-input-key-secret
+        - name: secrets
+          projected:
+            sources:
+            - secret:
+                name: smart-input-key-secret
+            - secret:
+                name: oauth-secret
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
