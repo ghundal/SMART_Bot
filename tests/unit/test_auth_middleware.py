@@ -10,13 +10,11 @@ Tests the authentication middleware functions including:
 import sys
 import os
 import unittest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import Cookie, Depends, HTTPException, Request, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import text
 
 
 class TestAuthMiddleware(unittest.TestCase):
@@ -39,13 +37,13 @@ class TestAuthMiddleware(unittest.TestCase):
         self.mock_utils_module.database.SessionLocal = self.mock_session_local
 
         # Add mock modules to sys.modules
-        sys.modules['utils'] = self.mock_utils_module
-        sys.modules['utils.database'] = self.mock_utils_module.database
+        sys.modules["utils"] = self.mock_utils_module
+        sys.modules["utils.database"] = self.mock_utils_module.database
 
         # Mock sqlalchemy text function
         self.mock_text = MagicMock()
         self.mock_text.side_effect = lambda query: query  # Just return the query string
-        self.mock_text_patcher = patch('sqlalchemy.sql.text', self.mock_text)
+        self.mock_text_patcher = patch("sqlalchemy.sql.text", self.mock_text)
         self.mock_text_patcher.start()
 
         # Import auth_middleware
@@ -56,10 +54,10 @@ class TestAuthMiddleware(unittest.TestCase):
         self.mock_text_patcher.stop()
 
         # Remove mock modules
-        if 'utils' in sys.modules:
-            del sys.modules['utils']
-        if 'utils.database' in sys.modules:
-            del sys.modules['utils.database']
+        if "utils" in sys.modules:
+            del sys.modules["utils"]
+        if "utils.database" in sys.modules:
+            del sys.modules["utils.database"]
 
     def import_auth_middleware(self):
         """Import the auth_middleware module directly from file"""
@@ -68,9 +66,12 @@ class TestAuthMiddleware(unittest.TestCase):
 
         # Import the module directly using its file path
         import importlib.util
+
         spec = importlib.util.spec_from_file_location(
             "auth_middleware",
-            os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src/api/routers/auth_middleware.py"))
+            os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "../../src/api/routers/auth_middleware.py")
+            ),
         )
         auth_middleware = importlib.util.module_from_spec(spec)
 
@@ -108,9 +109,7 @@ class TestAuthMiddleware(unittest.TestCase):
 
         # Call the function with a cookie
         result = await self.auth_middleware.get_token_from_request(
-            self.mock_request,
-            access_token=token,
-            token_header=None
+            self.mock_request, access_token=token, token_header=None
         )
 
         # Verify the token from cookie is returned
@@ -123,9 +122,7 @@ class TestAuthMiddleware(unittest.TestCase):
 
         # Call the function with a header
         result = await self.auth_middleware.get_token_from_request(
-            self.mock_request,
-            access_token=None,
-            token_header=token
+            self.mock_request, access_token=None, token_header=token
         )
 
         # Verify the token from header is returned
@@ -139,9 +136,7 @@ class TestAuthMiddleware(unittest.TestCase):
 
         # Call the function with both
         result = await self.auth_middleware.get_token_from_request(
-            self.mock_request,
-            access_token=cookie_token,
-            token_header=header_token
+            self.mock_request, access_token=cookie_token, token_header=header_token
         )
 
         # Verify the token from cookie is returned (priority)
@@ -151,9 +146,7 @@ class TestAuthMiddleware(unittest.TestCase):
         """Test behavior when no token is provided"""
         # Call the function with no tokens
         result = await self.auth_middleware.get_token_from_request(
-            self.mock_request,
-            access_token=None,
-            token_header=None
+            self.mock_request, access_token=None, token_header=None
         )
 
         # Verify that None is returned
@@ -221,5 +214,5 @@ class TestAuthMiddleware(unittest.TestCase):
         assert "Database error" in exc_info.value.detail
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

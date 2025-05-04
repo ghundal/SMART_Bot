@@ -6,19 +6,19 @@ Tests the PostgreSQL connection and audit logging functionality.
 
 import unittest
 import os
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 import numpy as np
 import sys
 
 # Create mock modules
-sys.modules['sqlalchemy'] = MagicMock()
-sys.modules['sqlalchemy.orm'] = MagicMock()
-sys.modules['rag_pipeline'] = MagicMock()
-sys.modules['rag_pipeline.config'] = MagicMock()
+sys.modules["sqlalchemy"] = MagicMock()
+sys.modules["sqlalchemy.orm"] = MagicMock()
+sys.modules["rag_pipeline"] = MagicMock()
+sys.modules["rag_pipeline.config"] = MagicMock()
 
 # Mock the logger
 mock_logger = MagicMock()
-sys.modules['rag_pipeline.config'].logger = mock_logger
+sys.modules["rag_pipeline.config"].logger = mock_logger
 
 # Import after mocking
 from api.utils.database import connect_to_postgres, log_audit, SessionLocal
@@ -38,7 +38,7 @@ class TestDatabase(unittest.TestCase):
             "DB_PORT": "5432",
             "DB_NAME": "test-db",
             "DB_USER": "test-user",
-            "DB_PASSWORD": "test-password"
+            "DB_PASSWORD": "test-password",
         }
 
         # Save original environment variables
@@ -56,7 +56,7 @@ class TestDatabase(unittest.TestCase):
             else:
                 os.environ[key] = self.original_env[key]
 
-    @patch('api.utils.database.create_engine')
+    @patch("api.utils.database.create_engine")
     def test_connect_to_postgres(self, mock_create_engine):
         """Test the database connection function with environment variables"""
         # Set up mock
@@ -75,7 +75,7 @@ class TestDatabase(unittest.TestCase):
         # Check the result
         self.assertEqual(result, self.mock_engine)
 
-    @patch('api.utils.database.create_engine')
+    @patch("api.utils.database.create_engine")
     def test_connect_to_postgres_default_values(self, mock_create_engine):
         """Test the database connection function with default values"""
         # Save current environment variables
@@ -104,7 +104,7 @@ class TestDatabase(unittest.TestCase):
                 if value is not None:
                     os.environ[key] = value
 
-    @patch('api.utils.database.text')
+    @patch("api.utils.database.text")
     def test_log_audit(self, mock_text):
         """Test the audit logging function"""
         # Set up mocks
@@ -123,7 +123,7 @@ class TestDatabase(unittest.TestCase):
         query_embedding = np.array([0.1, 0.2, 0.3])
         chunks = [
             {"document_id": 1, "chunk_text": "chunk 1"},
-            {"document_id": 2, "chunk_text": "chunk 2"}
+            {"document_id": 2, "chunk_text": "chunk 2"},
         ]
         response = "test response"
         detected_language = "fr"
@@ -136,7 +136,7 @@ class TestDatabase(unittest.TestCase):
             query_embedding,
             chunks,
             response,
-            detected_language
+            detected_language,
         )
 
         # Verify the SQL contains expected elements
@@ -162,7 +162,7 @@ class TestDatabase(unittest.TestCase):
         # Verify logger.info was called
         mock_logger.info.assert_called_once()
 
-    @patch('api.utils.database.text')
+    @patch("api.utils.database.text")
     def test_log_audit_with_default_language(self, mock_text):
         """Test the audit logging function with default language"""
         # Set up mocks
@@ -183,19 +183,12 @@ class TestDatabase(unittest.TestCase):
         response = "test response"
 
         # Call the function without language
-        log_audit(
-            self.mock_session,
-            user_email,
-            query,
-            query_embedding,
-            chunks,
-            response
-        )
+        log_audit(self.mock_session, user_email, query, query_embedding, chunks, response)
 
         # Check the language_code is set to default "en"
         self.assertEqual(self.execute_params.get("language_code"), "en")
 
-    @patch('api.utils.database.text')
+    @patch("api.utils.database.text")
     def test_log_audit_with_empty_chunks(self, mock_text):
         """Test the audit logging function with empty chunks"""
         # Set up mocks
@@ -216,20 +209,13 @@ class TestDatabase(unittest.TestCase):
         response = "test response"
 
         # Call the function
-        log_audit(
-            self.mock_session,
-            user_email,
-            query,
-            query_embedding,
-            chunks,
-            response
-        )
+        log_audit(self.mock_session, user_email, query, query_embedding, chunks, response)
 
         # Check the document_ids and chunk_texts are empty lists
         self.assertEqual(self.execute_params.get("document_ids"), [])
         self.assertEqual(self.execute_params.get("chunk_texts"), [])
 
-    @patch('api.utils.database.text')
+    @patch("api.utils.database.text")
     def test_log_audit_with_none_chunks(self, mock_text):
         """Test the audit logging function with None chunks"""
         # Set up mocks
@@ -250,20 +236,13 @@ class TestDatabase(unittest.TestCase):
         response = "test response"
 
         # Call the function
-        log_audit(
-            self.mock_session,
-            user_email,
-            query,
-            query_embedding,
-            chunks,
-            response
-        )
+        log_audit(self.mock_session, user_email, query, query_embedding, chunks, response)
 
         # Check the document_ids and chunk_texts are empty lists
         self.assertEqual(self.execute_params.get("document_ids"), [])
         self.assertEqual(self.execute_params.get("chunk_texts"), [])
 
-    @patch('api.utils.database.text')
+    @patch("api.utils.database.text")
     def test_log_audit_with_list_embedding(self, mock_text):
         """Test the audit logging function with a list embedding instead of numpy array"""
         # Set up mocks
@@ -284,21 +263,14 @@ class TestDatabase(unittest.TestCase):
         response = "test response"
 
         # Call the function
-        log_audit(
-            self.mock_session,
-            user_email,
-            query,
-            query_embedding,
-            chunks,
-            response
-        )
+        log_audit(self.mock_session, user_email, query, query_embedding, chunks, response)
 
         # Verify SQL contains the embedding
         mock_text.assert_called_once()
         sql_arg = mock_text.call_args[0][0]
         self.assertIn(str(query_embedding), sql_arg)
 
-    @patch('api.utils.database.text')
+    @patch("api.utils.database.text")
     def test_log_audit_exception(self, mock_text):
         """Test exception handling in the audit logging function"""
         # Set up mocks
@@ -313,14 +285,7 @@ class TestDatabase(unittest.TestCase):
         response = "test response"
 
         # Call the function (should not raise exception)
-        log_audit(
-            self.mock_session,
-            user_email,
-            query,
-            query_embedding,
-            chunks,
-            response
-        )
+        log_audit(self.mock_session, user_email, query, query_embedding, chunks, response)
 
         # Verify logger.exception was called
         mock_logger.exception.assert_called_once()

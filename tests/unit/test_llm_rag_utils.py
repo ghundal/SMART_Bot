@@ -7,7 +7,6 @@ Tests the chat session management and response generation functionality.
 import unittest
 from unittest.mock import MagicMock, patch
 import sys
-import os
 
 # Apply patches at module level before any imports
 mock_rag_pipeline = MagicMock()
@@ -16,10 +15,10 @@ mock_embedding = MagicMock()
 mock_ollama = MagicMock()
 
 # Create module structure
-sys.modules['rag_pipeline'] = mock_rag_pipeline
-sys.modules['rag_pipeline.config'] = mock_config
-sys.modules['rag_pipeline.embedding'] = mock_embedding
-sys.modules['rag_pipeline.ollama'] = mock_ollama
+sys.modules["rag_pipeline"] = mock_rag_pipeline
+sys.modules["rag_pipeline.config"] = mock_config
+sys.modules["rag_pipeline.embedding"] = mock_embedding
+sys.modules["rag_pipeline.ollama"] = mock_ollama
 
 # Set up mock constants for config
 mock_config.DEFAULT_BM25_K = 10
@@ -32,8 +31,12 @@ MOCK_CHAT_MESSAGE = {"content": "Hello, how are you?"}
 MOCK_EMPTY_MESSAGE = {"content": ""}
 MOCK_CHAT_HISTORY = [
     {"role": "user", "content": "What is RAG?", "message_id": "msg1"},
-    {"role": "assistant", "content": "RAG stands for Retrieval Augmented Generation.", "message_id": "msg2"},
-    {"role": "user", "content": "How does it work?", "message_id": "msg3"}
+    {
+        "role": "assistant",
+        "content": "RAG stands for Retrieval Augmented Generation.",
+        "message_id": "msg2",
+    },
+    {"role": "user", "content": "How does it work?", "message_id": "msg3"},
 ]
 
 # Set up mock query_ollama function at module level
@@ -43,23 +46,18 @@ mock_query_ollama.return_value = {
     "context_count": 3,
     "top_documents": [
         {"document_id": 1, "content": "Sample document 1"},
-        {"document_id": 2, "content": "Sample document 2"}
-    ]
+        {"document_id": 2, "content": "Sample document 2"},
+    ],
 }
 mock_ollama.query_ollama_with_hybrid_search_multilingual = mock_query_ollama
+
 
 # Create a mock implementation of the module under test
 class MockLLMRAGUtils:
     @staticmethod
     def create_chat_session():
         """Create a new chat session"""
-        return {
-            "messages": [],
-            "metadata": {
-                "created_at": None,
-                "last_updated": None
-            }
-        }
+        return {"messages": [], "metadata": {"created_at": None, "last_updated": None}}
 
     @staticmethod
     def rebuild_chat_session(chat_history):
@@ -69,10 +67,7 @@ class MockLLMRAGUtils:
         # Only copy messages with valid structure
         for msg in chat_history:
             if isinstance(msg, dict) and "role" in msg and "content" in msg:
-                session["messages"].append({
-                    "role": msg["role"],
-                    "content": msg["content"]
-                })
+                session["messages"].append({"role": msg["role"], "content": msg["content"]})
 
         return session
 
@@ -105,6 +100,7 @@ class MockLLMRAGUtils:
 
         return response
 
+
 # Replace the actual imports with our mock implementation
 create_chat_session = MockLLMRAGUtils.create_chat_session
 rebuild_chat_session = MockLLMRAGUtils.rebuild_chat_session
@@ -112,8 +108,11 @@ generate_chat_response = MockLLMRAGUtils.generate_chat_response
 
 # Add mock patch for SessionLocal at module level
 session_local_mock = MagicMock()
-session_local_patcher = patch('api.utils.llm_rag_utils.SessionLocal', return_value=session_local_mock)
+session_local_patcher = patch(
+    "api.utils.llm_rag_utils.SessionLocal", return_value=session_local_mock
+)
 session_local_patcher.start()
+
 
 class TestLLMRAGUtils(unittest.TestCase):
     @classmethod
@@ -140,8 +139,8 @@ class TestLLMRAGUtils(unittest.TestCase):
             "context_count": 3,
             "top_documents": [
                 {"document_id": 1, "content": "Sample document 1"},
-                {"document_id": 2, "content": "Sample document 2"}
-            ]
+                {"document_id": 2, "content": "Sample document 2"},
+            ],
         }
 
     @classmethod
@@ -178,7 +177,9 @@ class TestLLMRAGUtils(unittest.TestCase):
         self.assertEqual(result["messages"][0]["role"], "user")
         self.assertEqual(result["messages"][0]["content"], "What is RAG?")
         self.assertEqual(result["messages"][1]["role"], "assistant")
-        self.assertEqual(result["messages"][1]["content"], "RAG stands for Retrieval Augmented Generation.")
+        self.assertEqual(
+            result["messages"][1]["content"], "RAG stands for Retrieval Augmented Generation."
+        )
         self.assertEqual(result["messages"][2]["role"], "user")
         self.assertEqual(result["messages"][2]["content"], "How does it work?")
 
@@ -205,8 +206,8 @@ class TestLLMRAGUtils(unittest.TestCase):
             "context_count": 3,
             "top_documents": [
                 {"document_id": 1, "content": "Sample document 1"},
-                {"document_id": 2, "content": "Sample document 2"}
-            ]
+                {"document_id": 2, "content": "Sample document 2"},
+            ],
         }
         mock_query_ollama.return_value = mock_query_response
         mock_query_ollama.side_effect = None  # Remove any side effect
@@ -222,7 +223,9 @@ class TestLLMRAGUtils(unittest.TestCase):
         self.assertEqual(chat_session["messages"][0]["role"], "user")
         self.assertEqual(chat_session["messages"][0]["content"], "Hello, how are you?")
         self.assertEqual(chat_session["messages"][1]["role"], "assistant")
-        self.assertEqual(chat_session["messages"][1]["content"], "I'm doing well, thank you for asking!")
+        self.assertEqual(
+            chat_session["messages"][1]["content"], "I'm doing well, thank you for asking!"
+        )
 
         # Verify that Ollama was called correctly
         mock_query_ollama.assert_called_once()

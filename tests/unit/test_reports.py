@@ -14,14 +14,10 @@ Tests the analytics and reporting endpoints including:
 """
 
 import sys
-import os
 import unittest
 from datetime import date, datetime
 from unittest.mock import MagicMock, patch, AsyncMock
 
-import pytest
-from fastapi import HTTPException
-from sqlalchemy.orm import Session
 
 # Apply patches at module level before any imports
 # Set up mock modules first so any later imports use our mocks
@@ -33,12 +29,12 @@ mock_stopwords = MagicMock()
 mock_auth_middleware = MagicMock()
 
 # Create the module structure
-sys.modules['utils'] = mock_utils
-sys.modules['utils.database'] = mock_database
-sys.modules['nltk'] = mock_nltk
-sys.modules['nltk.corpus'] = mock_nltk_corpus
-sys.modules['nltk.corpus.stopwords'] = mock_stopwords
-sys.modules['api.routers.auth_middleware'] = mock_auth_middleware
+sys.modules["utils"] = mock_utils
+sys.modules["utils.database"] = mock_database
+sys.modules["nltk"] = mock_nltk
+sys.modules["nltk.corpus"] = mock_nltk_corpus
+sys.modules["nltk.corpus.stopwords"] = mock_stopwords
+sys.modules["api.routers.auth_middleware"] = mock_auth_middleware
 
 # Mock stopwords with a set for testing
 MOCK_STOPWORDS_SET = {"a", "an", "the", "is", "are", "in", "on", "at", "of", "for", "with"}
@@ -62,7 +58,7 @@ mock_auth_middleware.verify_token = mock_verify_token
 # Mock sqlalchemy.text at module level
 mock_text = MagicMock()
 mock_text.side_effect = lambda query: query  # Just return the query string
-sqlalchemy_text_patcher = patch('sqlalchemy.text', mock_text)
+sqlalchemy_text_patcher = patch("sqlalchemy.text", mock_text)
 sqlalchemy_text_patcher.start()
 
 # Set up mock execute and result methods
@@ -77,8 +73,9 @@ mock_verify_token = AsyncMock(return_value="test@example.com")
 # Mock sqlalchemy.text at module level
 mock_text = MagicMock()
 mock_text.side_effect = lambda query: query  # Just return the query string
-sqlalchemy_text_patcher = patch('sqlalchemy.text', mock_text)
+sqlalchemy_text_patcher = patch("sqlalchemy.text", mock_text)
 sqlalchemy_text_patcher.start()
+
 
 # Create a dummy mock module for reports to avoid importing the real one
 class MockReports:
@@ -100,7 +97,7 @@ class MockReports:
                 "class_id": class_id,
                 "class_name": class_name,
                 "authors": authors,
-                "reference_count": ref_count
+                "reference_count": ref_count,
             }
             for class_id, class_name, authors, ref_count in rows
         ]
@@ -108,13 +105,7 @@ class MockReports:
     async def get_query_activity(self, days, user_email):
         """Mock implementation of get_query_activity"""
         rows = mock_execute.fetchall.return_value
-        return [
-            {
-                "date": d.strftime("%Y-%m-%d"),
-                "query_count": count
-            }
-            for d, count in rows
-        ]
+        return [{"date": d.strftime("%Y-%m-%d"), "query_count": count} for d, count in rows]
 
     async def get_top_keywords(self, limit, min_length, user_email):
         """Mock implementation of get_top_keywords"""
@@ -122,19 +113,13 @@ class MockReports:
         return [
             {"keyword": "machine", "count": 10},
             {"keyword": "learning", "count": 8},
-            {"keyword": "examples", "count": 5}
+            {"keyword": "examples", "count": 5},
         ]
 
     async def get_top_phrases(self, limit, min_words, user_email):
         """Mock implementation of get_top_phrases"""
         rows = mock_execute.fetchall.return_value
-        return [
-            {
-                "phrase": phrase,
-                "count": count
-            }
-            for phrase, count, _ in rows
-        ]
+        return [{"phrase": phrase, "count": count} for phrase, count, _ in rows]
 
     async def get_user_activity(self, limit, user_email):
         """Mock implementation of get_user_activity"""
@@ -145,7 +130,7 @@ class MockReports:
                 "query_count": count,
                 "first_query": first.strftime("%Y-%m-%dT%H:%M:%S"),
                 "last_query": last.strftime("%Y-%m-%dT%H:%M:%S"),
-                "active_days": days
+                "active_days": days,
             }
             for email, count, first, last, days in rows
         ]
@@ -153,13 +138,7 @@ class MockReports:
     async def get_daily_active_users(self, days, user_email):
         """Mock implementation of get_daily_active_users"""
         rows = mock_execute.fetchall.return_value
-        return [
-            {
-                "date": d.strftime("%Y-%m-%d"),
-                "user_count": count
-            }
-            for d, count in rows
-        ]
+        return [{"date": d.strftime("%Y-%m-%d"), "user_count": count} for d, count in rows]
 
     async def get_system_stats(self, user_email):
         """Mock implementation of get_system_stats"""
@@ -176,11 +155,13 @@ class MockReports:
             "total_chunks": scalar_values[4],
             "queries_last_24h": scalar_values[5],
             "active_users_last_24h": scalar_values[6],
-            "avg_queries_per_day": scalar_values[7]
+            "avg_queries_per_day": scalar_values[7],
         }
+
 
 # Use our mock reports module instead of trying to import the real one
 reports_module = MockReports()
+
 
 class TestReportsAPI(unittest.TestCase):
     @classmethod
@@ -346,7 +327,9 @@ class TestReportsAPI(unittest.TestCase):
         mock_stopwords.words.return_value = MOCK_STOPWORDS_SET
 
         # Call the function
-        result = await self.reports.get_top_keywords(limit=5, min_length=3, user_email="test@example.com")
+        result = await self.reports.get_top_keywords(
+            limit=5, min_length=3, user_email="test@example.com"
+        )
 
         # Verify the database was queried correctly
         mock_session.execute.assert_called_once()
@@ -378,7 +361,9 @@ class TestReportsAPI(unittest.TestCase):
         mock_execute.fetchall.return_value = mock_rows
 
         # Call the function
-        result = await self.reports.get_top_phrases(limit=10, min_words=2, user_email="test@example.com")
+        result = await self.reports.get_top_phrases(
+            limit=10, min_words=2, user_email="test@example.com"
+        )
 
         # Verify the database was queried correctly
         mock_session.execute.assert_called_once()
@@ -527,5 +512,5 @@ class TestReportsAPI(unittest.TestCase):
         mock_session.close.assert_called_once()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

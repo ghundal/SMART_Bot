@@ -11,7 +11,6 @@ from unittest.mock import MagicMock, patch, mock_open, AsyncMock
 
 import pytest
 from fastapi import HTTPException
-from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 
@@ -31,17 +30,17 @@ class TestOAuthRouter(unittest.TestCase):
         self.session_local = MagicMock()
 
         # Mock environment variables
-        self.env_patcher = patch.dict('os.environ', {
-            'GOOGLE_CREDENTIALS_FILE': 'test_client_secrets.json',
-            'FRONTEND_URL': 'http://localhost:3000/about'
-        })
+        self.env_patcher = patch.dict(
+            "os.environ",
+            {
+                "GOOGLE_CREDENTIALS_FILE": "test_client_secrets.json",
+                "FRONTEND_URL": "http://localhost:3000/about",
+            },
+        )
         self.env_patcher.start()
 
         # Mock JSON file for credentials loading
-        self.mock_json_data = {
-            "client_id": "test_client_id",
-            "client_secret": "test_client_secret"
-        }
+        self.mock_json_data = {"client_id": "test_client_id", "client_secret": "test_client_secret"}
 
         # Mock the database session
         self.mock_db = MagicMock(spec=Session)
@@ -62,13 +61,13 @@ class TestOAuthRouter(unittest.TestCase):
         self.mock_utils_module.database.connect_to_postgres = self.mock_postgres
 
         # Add mock utils to sys.modules
-        sys.modules['utils'] = self.mock_utils_module
-        sys.modules['utils.database'] = self.mock_utils_module.database
+        sys.modules["utils"] = self.mock_utils_module
+        sys.modules["utils.database"] = self.mock_utils_module.database
 
         # Mock the text function from sqlalchemy
         self.mock_text = MagicMock()
         self.mock_text.side_effect = lambda query: query  # Just return the query string
-        self.mock_sqlalchemy_text_patcher = patch('sqlalchemy.sql.text', self.mock_text)
+        self.mock_sqlalchemy_text_patcher = patch("sqlalchemy.sql.text", self.mock_text)
         self.mock_sqlalchemy_text_patcher.start()
 
     def tearDown(self):
@@ -77,10 +76,10 @@ class TestOAuthRouter(unittest.TestCase):
         self.mock_sqlalchemy_text_patcher.stop()
 
         # Remove mock modules
-        if 'utils' in sys.modules:
-            del sys.modules['utils']
-        if 'utils.database' in sys.modules:
-            del sys.modules['utils.database']
+        if "utils" in sys.modules:
+            del sys.modules["utils"]
+        if "utils.database" in sys.modules:
+            del sys.modules["utils.database"]
 
     def import_auth_google(self):
         """Import the real auth_google module and patch it with our mocks"""
@@ -89,14 +88,17 @@ class TestOAuthRouter(unittest.TestCase):
 
         # Import the module directly using its file path
         import importlib.util
+
         spec = importlib.util.spec_from_file_location(
             "auth_google",
-            os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src/api/routers/auth_google.py"))
+            os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "../../src/api/routers/auth_google.py")
+            ),
         )
         auth_google = importlib.util.module_from_spec(spec)
 
         # Execute the module but with patches for open() to avoid loading real credentials
-        with patch('builtins.open', mock_open(read_data=json.dumps(self.mock_json_data))):
+        with patch("builtins.open", mock_open(read_data=json.dumps(self.mock_json_data))):
             spec.loader.exec_module(auth_google)
 
         # Now manually patch the module with our mocks
@@ -125,7 +127,9 @@ class TestOAuthRouter(unittest.TestCase):
 
         # Assert redirect was called with correct parameters
         mock_request.url_for.assert_called_once_with("auth_callback")
-        self.oauth.google.authorize_redirect.assert_called_once_with(mock_request, "http://testserver/auth")
+        self.oauth.google.authorize_redirect.assert_called_once_with(
+            mock_request, "http://testserver/auth"
+        )
 
         # Assert the result is what we expect
         assert result == redirect_result
@@ -139,7 +143,7 @@ class TestOAuthRouter(unittest.TestCase):
         token_data = {
             "access_token": "test_access_token",
             "expires_in": 3600,
-            "expires_at": 1620000000
+            "expires_at": 1620000000,
         }
         self.oauth.google.authorize_access_token.return_value = token_data
 
@@ -160,7 +164,7 @@ class TestOAuthRouter(unittest.TestCase):
         # Assert redirect response
         assert isinstance(result, RedirectResponse)
         assert result.status_code == 307
-        assert result.headers['location'] == 'http://localhost:3000/about'
+        assert result.headers["location"] == "http://localhost:3000/about"
 
         # Assert database was called correctly
         assert self.mock_db.execute.call_count >= 1  # At least the access check
@@ -176,7 +180,7 @@ class TestOAuthRouter(unittest.TestCase):
         token_data = {
             "access_token": "test_access_token",
             "expires_in": 3600,
-            "expires_at": 1620000000
+            "expires_at": 1620000000,
         }
         self.oauth.google.authorize_access_token.return_value = token_data
 
@@ -211,7 +215,7 @@ class TestOAuthRouter(unittest.TestCase):
         token_data = {
             "access_token": "test_access_token",
             "expires_in": 3600,
-            "expires_at": 1620000000
+            "expires_at": 1620000000,
         }
         self.oauth.google.authorize_access_token.return_value = token_data
 
@@ -240,29 +244,31 @@ class TestOAuthRouter(unittest.TestCase):
         # (which includes multiple operations), we'll test the file opening logic directly
 
         # Mock the open function
-        mock_open_obj = mock_open(read_data='{"client_id": "test_id", "client_secret": "test_secret"}')
+        mock_open_obj = mock_open(
+            read_data='{"client_id": "test_id", "client_secret": "test_secret"}'
+        )
 
         # Mock os.getenv to return our test path
-        with patch('builtins.open', mock_open_obj), \
-             patch('os.getenv', return_value='test_client_secrets.json'):
+        with patch("builtins.open", mock_open_obj), patch(
+            "os.getenv", return_value="test_client_secrets.json"
+        ):
 
             # We need to run the credentials loading logic directly
             # This is typically done during module import, but we'll call it explicitly
             try:
-                credentials_file = 'test_client_secrets.json'
+                credentials_file = "test_client_secrets.json"
                 with open(credentials_file) as f:
                     google_secrets = json.load(f)
 
                 # Assert the secrets were loaded correctly
-                assert google_secrets['client_id'] == 'test_id'
-                assert google_secrets['client_secret'] == 'test_secret'
+                assert google_secrets["client_id"] == "test_id"
+                assert google_secrets["client_secret"] == "test_secret"
 
                 # Verify that open was called with the right file
-                mock_open_obj.assert_called_once_with('test_client_secrets.json')
+                mock_open_obj.assert_called_once_with("test_client_secrets.json")
             except Exception as e:
                 pytest.fail(f"Loading credentials failed: {e}")
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

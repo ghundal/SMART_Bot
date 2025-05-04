@@ -9,7 +9,6 @@ Tests the RAG chatbot API endpoints including:
 - Processing queries
 """
 
-import json
 import sys
 import os
 import time
@@ -43,7 +42,7 @@ MOCK_OLLAMA_RESULT = {
     "top_documents": [
         {"id": 1, "content": "Document about RAG", "metadata": {"source": "article1.pdf"}},
         {"id": 2, "content": "More about retrieval", "metadata": {"source": "article2.pdf"}},
-    ]
+    ],
 }
 
 
@@ -80,38 +79,44 @@ class TestChatAPI(unittest.TestCase):
         """Set up all the module patches"""
         # Create mock modules
         self.mock_modules = {
-            'utils': MagicMock(),
-            'utils.chat_history': MagicMock(),
-            'utils.database': MagicMock(),
-            'utils.llm_rag_utils': MagicMock(),
-            'rag_pipeline': MagicMock(),
-            'rag_pipeline.config': MagicMock(),
-            'rag_pipeline.embedding': MagicMock(),
-            'rag_pipeline.ollama': MagicMock(),
+            "utils": MagicMock(),
+            "utils.chat_history": MagicMock(),
+            "utils.database": MagicMock(),
+            "utils.llm_rag_utils": MagicMock(),
+            "rag_pipeline": MagicMock(),
+            "rag_pipeline.config": MagicMock(),
+            "rag_pipeline.embedding": MagicMock(),
+            "rag_pipeline.ollama": MagicMock(),
         }
 
         # Configure mock modules
-        self.mock_modules['utils.chat_history'].ChatHistoryManager = MagicMock(return_value=self.mock_chat_manager)
-        self.mock_modules['utils.database'].SessionLocal = self.mock_session_local
-        self.mock_modules['utils.llm_rag_utils'].chat_sessions = {}
-        self.mock_modules['utils.llm_rag_utils'].create_chat_session = MagicMock(return_value={})
-        self.mock_modules['utils.llm_rag_utils'].rebuild_chat_session = MagicMock(return_value={})
-        self.mock_modules['rag_pipeline.config'].DEFAULT_VECTOR_K = 10
-        self.mock_modules['rag_pipeline.config'].DEFAULT_BM25_K = 10
-        self.mock_modules['rag_pipeline.config'].OLLAMA_MODEL = "llama2"
-        self.mock_modules['rag_pipeline.embedding'].get_ch_embedding_model = MagicMock(return_value=self.mock_embedding_model)
-        self.mock_modules['rag_pipeline.ollama'].query_ollama_with_hybrid_search_multilingual = self.mock_query_ollama
+        self.mock_modules["utils.chat_history"].ChatHistoryManager = MagicMock(
+            return_value=self.mock_chat_manager
+        )
+        self.mock_modules["utils.database"].SessionLocal = self.mock_session_local
+        self.mock_modules["utils.llm_rag_utils"].chat_sessions = {}
+        self.mock_modules["utils.llm_rag_utils"].create_chat_session = MagicMock(return_value={})
+        self.mock_modules["utils.llm_rag_utils"].rebuild_chat_session = MagicMock(return_value={})
+        self.mock_modules["rag_pipeline.config"].DEFAULT_VECTOR_K = 10
+        self.mock_modules["rag_pipeline.config"].DEFAULT_BM25_K = 10
+        self.mock_modules["rag_pipeline.config"].OLLAMA_MODEL = "llama2"
+        self.mock_modules["rag_pipeline.embedding"].get_ch_embedding_model = MagicMock(
+            return_value=self.mock_embedding_model
+        )
+        self.mock_modules["rag_pipeline.ollama"].query_ollama_with_hybrid_search_multilingual = (
+            self.mock_query_ollama
+        )
 
         # Add mock modules to sys.modules
         for name, module in self.mock_modules.items():
             sys.modules[name] = module
 
         # Patch uuid
-        self.uuid_patcher = patch('uuid.uuid4', return_value=MOCK_CHAT_ID)
+        self.uuid_patcher = patch("uuid.uuid4", return_value=MOCK_CHAT_ID)
         self.uuid_patcher.start()
 
         # Patch time
-        self.time_patcher = patch('time.time', return_value=12345)
+        self.time_patcher = patch("time.time", return_value=12345)
         self.time_patcher.start()
 
     def tearDown(self):
@@ -131,9 +136,12 @@ class TestChatAPI(unittest.TestCase):
 
         # Import the module directly using its file path
         import importlib.util
+
         spec = importlib.util.spec_from_file_location(
             "chat_api",
-            os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src/api/routers/chat_api.py"))
+            os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "../../src/api/routers/chat_api.py")
+            ),
         )
         chat_api = importlib.util.module_from_spec(spec)
 
@@ -154,7 +162,9 @@ class TestChatAPI(unittest.TestCase):
         chat_api = self.import_chat_api()
 
         # Call the get_chats function
-        result = await chat_api.get_chats(x_session_id=MOCK_SESSION_ID, limit=10, user_email=MOCK_USER_EMAIL)
+        result = await chat_api.get_chats(
+            x_session_id=MOCK_SESSION_ID, limit=10, user_email=MOCK_USER_EMAIL
+        )
 
         # Verify the chat manager was called correctly
         self.mock_chat_manager.get_recent_chats.assert_called_once_with(MOCK_USER_EMAIL, 10)
@@ -169,9 +179,7 @@ class TestChatAPI(unittest.TestCase):
 
         # Call the get_chat function
         result = await chat_api.get_chat(
-            chat_id=MOCK_CHAT_ID,
-            x_session_id=MOCK_SESSION_ID,
-            user_email=MOCK_USER_EMAIL
+            chat_id=MOCK_CHAT_ID, x_session_id=MOCK_SESSION_ID, user_email=MOCK_USER_EMAIL
         )
 
         # Verify the chat manager was called correctly
@@ -191,9 +199,7 @@ class TestChatAPI(unittest.TestCase):
         # Call the get_chat function and expect an error
         with pytest.raises(HTTPException) as exc_info:
             await chat_api.get_chat(
-                chat_id=MOCK_CHAT_ID,
-                x_session_id=MOCK_SESSION_ID,
-                user_email=MOCK_USER_EMAIL
+                chat_id=MOCK_CHAT_ID, x_session_id=MOCK_SESSION_ID, user_email=MOCK_USER_EMAIL
             )
 
         # Verify the correct error was raised
@@ -210,9 +216,7 @@ class TestChatAPI(unittest.TestCase):
 
         # Call the start_chat_with_llm function
         result = await chat_api.start_chat_with_llm(
-            message=message,
-            x_session_id=MOCK_SESSION_ID,
-            user_email=MOCK_USER_EMAIL
+            message=message, x_session_id=MOCK_SESSION_ID, user_email=MOCK_USER_EMAIL
         )
 
         # Verify the query function was called correctly
@@ -242,9 +246,7 @@ class TestChatAPI(unittest.TestCase):
         # Call the start_chat_with_llm function and expect an error
         with pytest.raises(HTTPException) as exc_info:
             await chat_api.start_chat_with_llm(
-                message=message,
-                x_session_id=MOCK_SESSION_ID,
-                user_email=MOCK_USER_EMAIL
+                message=message, x_session_id=MOCK_SESSION_ID, user_email=MOCK_USER_EMAIL
             )
 
         # Verify the correct error was raised
@@ -264,7 +266,7 @@ class TestChatAPI(unittest.TestCase):
             chat_id=MOCK_CHAT_ID,
             message=message,
             x_session_id=MOCK_SESSION_ID,
-            user_email=MOCK_USER_EMAIL
+            user_email=MOCK_USER_EMAIL,
         )
 
         # Verify the chat manager was called correctly
@@ -298,7 +300,7 @@ class TestChatAPI(unittest.TestCase):
                 chat_id=MOCK_CHAT_ID,
                 message=message,
                 x_session_id=MOCK_SESSION_ID,
-                user_email=MOCK_USER_EMAIL
+                user_email=MOCK_USER_EMAIL,
             )
 
         # Verify the correct error was raised
@@ -311,13 +313,11 @@ class TestChatAPI(unittest.TestCase):
         chat_api = self.import_chat_api()
 
         # Set up chat_sessions with the mock chat
-        self.mock_modules['utils.llm_rag_utils'].chat_sessions = {MOCK_CHAT_ID: {}}
+        self.mock_modules["utils.llm_rag_utils"].chat_sessions = {MOCK_CHAT_ID: {}}
 
         # Call the delete_chat function
         result = await chat_api.delete_chat(
-            chat_id=MOCK_CHAT_ID,
-            x_session_id=MOCK_SESSION_ID,
-            user_email=MOCK_USER_EMAIL
+            chat_id=MOCK_CHAT_ID, x_session_id=MOCK_SESSION_ID, user_email=MOCK_USER_EMAIL
         )
 
         # Verify the chat manager was called correctly
@@ -328,7 +328,7 @@ class TestChatAPI(unittest.TestCase):
         assert f"Chat {MOCK_CHAT_ID} deleted successfully" in result["message"]
 
         # Verify the chat was removed from chat_sessions
-        assert MOCK_CHAT_ID not in self.mock_modules['utils.llm_rag_utils'].chat_sessions
+        assert MOCK_CHAT_ID not in self.mock_modules["utils.llm_rag_utils"].chat_sessions
 
     async def test_delete_chat_not_found(self):
         """Test the delete_chat endpoint with a chat that doesn't exist"""
@@ -341,9 +341,7 @@ class TestChatAPI(unittest.TestCase):
         # Call the delete_chat function and expect an error
         with pytest.raises(HTTPException) as exc_info:
             await chat_api.delete_chat(
-                chat_id=MOCK_CHAT_ID,
-                x_session_id=MOCK_SESSION_ID,
-                user_email=MOCK_USER_EMAIL
+                chat_id=MOCK_CHAT_ID, x_session_id=MOCK_SESSION_ID, user_email=MOCK_USER_EMAIL
             )
 
         # Verify the correct error was raised
@@ -462,5 +460,5 @@ class TestChatAPI(unittest.TestCase):
         assert "Session ID is required" in exc_info.value.detail
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

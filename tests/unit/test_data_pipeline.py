@@ -25,7 +25,6 @@ from src.datapipeline.datapipeline import (
     get_metadata,
     list_document_folders,
     load_pdf_from_gcs,
-    main,
     recursive_chunking,
     semantic_chunking,
     validate_data,
@@ -624,6 +623,7 @@ class TestDataPipeline(unittest.TestCase):
 
             # Test main function with recursive chunking
             from src.datapipeline.datapipeline import main
+
             result = main(chunk_method="recursive")
 
             # Verify bucket connection was established

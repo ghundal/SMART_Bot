@@ -9,9 +9,8 @@ Tests the transformer-based reranker functionality including:
 """
 
 import unittest
-from unittest.mock import MagicMock, patch, call
-import sys
-import pytest
+from unittest.mock import MagicMock
+
 
 # Create a self-contained implementation for testing
 # The test implementation doesn't depend on external modules
@@ -52,16 +51,17 @@ class MockTransformerReranker:
             reranked_chunks = sorted(reranking_results, key=lambda x: x["llm_score"], reverse=True)
             return reranked_chunks
 
-        except Exception as e:
+        except Exception:
             # Return original chunks if reranking fails
             return chunks
+
 
 def mock_rerank_chunks(chunks, query, model_name="BAAI/bge-reranker-base"):
     """Mock implementation of rerank_chunks function"""
     try:
         reranker = MockTransformerReranker(model_name)
         return reranker.rerank(chunks, query)
-    except Exception as e:
+    except Exception:
         # Return original chunks if reranking fails
         return chunks
 
@@ -78,7 +78,7 @@ class TestTransformerReranker(unittest.TestCase):
             {"document_id": "doc2", "chunk_text": "More content about AI", "score": 0.7},
             {"document_id": "doc3", "chunk_text": "Deep learning techniques", "score": 0.6},
             {"document_id": "doc4", "chunk_text": "Unrelated content", "score": 0.2},
-            {"document_id": "doc5", "chunk_text": "Advanced ML methods", "score": 0.9}
+            {"document_id": "doc5", "chunk_text": "Advanced ML methods", "score": 0.9},
         ]
 
         # Create a reranker for testing
@@ -106,7 +106,9 @@ class TestTransformerReranker(unittest.TestCase):
 
         # Check that chunks are sorted by llm_score in descending order
         for i in range(len(reranked_chunks) - 1):
-            self.assertGreaterEqual(reranked_chunks[i]["llm_score"], reranked_chunks[i+1]["llm_score"])
+            self.assertGreaterEqual(
+                reranked_chunks[i]["llm_score"], reranked_chunks[i + 1]["llm_score"]
+            )
 
     def test_rerank_with_exception(self):
         """Test error handling in rerank method"""
@@ -132,19 +134,20 @@ class TestTransformerReranker(unittest.TestCase):
 
     def test_rerank_chunks_error_handling(self):
         """Test error handling in rerank_chunks function"""
+
         # Instead of patching, create a function that raises an exception
         def failing_rerank_chunks(chunks, query, model_name="BAAI/bge-reranker-base"):
             raise Exception("Model not found")
 
         # Save the original function
-        original_function = globals()['mock_rerank_chunks']
+        original_function = globals()["mock_rerank_chunks"]
 
         try:
             # Replace with our failing function
-            globals()['mock_rerank_chunks'] = failing_rerank_chunks
+            globals()["mock_rerank_chunks"] = failing_rerank_chunks
 
             # Call function - should handle exception and return original chunks
-            reranked_chunks = mock_rerank_chunks(self.chunks, self.query)
+            mock_rerank_chunks(self.chunks, self.query)
 
             # This should not be reached due to the exception
             self.fail("Exception was not raised")
@@ -155,12 +158,11 @@ class TestTransformerReranker(unittest.TestCase):
 
         finally:
             # Restore the original function
-            globals()['mock_rerank_chunks'] = original_function
+            globals()["mock_rerank_chunks"] = original_function
 
     def test_reranker_load_model_error(self):
         """Test error handling when model loading fails"""
         # This test is covered by test_rerank_chunks_error_handling in this simplified approach
-        pass
 
 
 if __name__ == "__main__":

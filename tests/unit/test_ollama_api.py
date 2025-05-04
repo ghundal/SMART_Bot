@@ -10,10 +10,7 @@ Tests the local Ollama client functionality including:
 """
 
 import unittest
-from unittest.mock import MagicMock, patch, call, ANY
-import os
-import subprocess
-import tempfile
+from unittest.mock import MagicMock, patch
 import sys
 
 
@@ -40,11 +37,13 @@ class TestOllamaLocalClient(unittest.TestCase):
         self.mock_os = MagicMock()
         self.mock_tempfile = MagicMock()
         self.mock_temp_file = MagicMock()
-        self.mock_tempfile.NamedTemporaryFile.return_value.__enter__.return_value = self.mock_temp_file
+        self.mock_tempfile.NamedTemporaryFile.return_value.__enter__.return_value = (
+            self.mock_temp_file
+        )
         self.mock_temp_file.name = "/tmp/tempfile.modelfile"
 
-    @patch('api.rag_pipeline.ollama_api.subprocess')
-    @patch('api.rag_pipeline.ollama_api.logger')
+    @patch("api.rag_pipeline.ollama_api.subprocess")
+    @patch("api.rag_pipeline.ollama_api.logger")
     def test_init_model_exists(self, mock_logger, mock_subprocess):
         """Test initialization when model exists locally"""
         # Configure mock
@@ -62,17 +61,14 @@ class TestOllamaLocalClient(unittest.TestCase):
 
         # Verify subprocess was called correctly
         mock_subprocess.run.assert_called_once_with(
-            ["ollama", "list"],
-            capture_output=True,
-            text=True,
-            check=True
+            ["ollama", "list"], capture_output=True, text=True, check=True
         )
 
         # Verify logger was not called for warnings
         mock_logger.warning.assert_not_called()
 
-    @patch('api.rag_pipeline.ollama_api.subprocess')
-    @patch('api.rag_pipeline.ollama_api.logger')
+    @patch("api.rag_pipeline.ollama_api.subprocess")
+    @patch("api.rag_pipeline.ollama_api.logger")
     def test_init_model_not_exists(self, mock_logger, mock_subprocess):
         """Test initialization when model doesn't exist locally"""
         # Configure mock
@@ -83,7 +79,7 @@ class TestOllamaLocalClient(unittest.TestCase):
         from api.rag_pipeline.ollama_api import OllamaLocalClient
 
         # Create client
-        client = OllamaLocalClient("llama2")
+        OllamaLocalClient("llama2")
 
         # Verify warning was logged
         mock_logger.warning.assert_called_once()
@@ -91,8 +87,8 @@ class TestOllamaLocalClient(unittest.TestCase):
         # Verify info about available models was logged
         mock_logger.info.assert_called_once()
 
-    @patch('subprocess.run')
-    @patch('api.rag_pipeline.ollama_api.logger')
+    @patch("subprocess.run")
+    @patch("api.rag_pipeline.ollama_api.logger")
     def test_init_ollama_not_found(self, mock_logger, mock_subprocess_run):
         """Test initialization when Ollama is not installed"""
         # Configure mock to raise FileNotFoundError
@@ -102,19 +98,21 @@ class TestOllamaLocalClient(unittest.TestCase):
         from api.rag_pipeline.ollama_api import OllamaLocalClient
 
         # Create client
-        client = OllamaLocalClient("llama2")
+        OllamaLocalClient("llama2")
 
         # Verify error was logged
         mock_logger.error.assert_called_once()
 
-    @patch('api.rag_pipeline.ollama_api.subprocess')
-    @patch('api.rag_pipeline.ollama_api.os')
-    @patch('api.rag_pipeline.ollama_api.tempfile')
-    @patch('api.rag_pipeline.ollama_api.logger')
+    @patch("api.rag_pipeline.ollama_api.subprocess")
+    @patch("api.rag_pipeline.ollama_api.os")
+    @patch("api.rag_pipeline.ollama_api.tempfile")
+    @patch("api.rag_pipeline.ollama_api.logger")
     def test_create_temp_model(self, mock_logger, mock_tempfile, mock_os, mock_subprocess):
         """Test creating a temporary model"""
         # Configure mocks
-        mock_tempfile.NamedTemporaryFile.return_value.__enter__.return_value.name = "/tmp/model.modelfile"
+        mock_tempfile.NamedTemporaryFile.return_value.__enter__.return_value.name = (
+            "/tmp/model.modelfile"
+        )
         # Set up subprocess.run to return success for the create command only
         create_result = MagicMock()
         create_result.returncode = 0
@@ -146,9 +144,7 @@ class TestOllamaLocalClient(unittest.TestCase):
 
         # Verify temporary file was created
         mock_tempfile.NamedTemporaryFile.assert_called_once_with(
-            mode="w",
-            suffix=".modelfile",
-            delete=False
+            mode="w", suffix=".modelfile", delete=False
         )
 
         # Verify subprocess was called correctly - only once for create
@@ -161,14 +157,16 @@ class TestOllamaLocalClient(unittest.TestCase):
         # Verify temporary file was deleted
         mock_os.unlink.assert_called_once_with("/tmp/model.modelfile")
 
-    @patch('api.rag_pipeline.ollama_api.subprocess')
-    @patch('api.rag_pipeline.ollama_api.os')
-    @patch('api.rag_pipeline.ollama_api.tempfile')
-    @patch('api.rag_pipeline.ollama_api.logger')
+    @patch("api.rag_pipeline.ollama_api.subprocess")
+    @patch("api.rag_pipeline.ollama_api.os")
+    @patch("api.rag_pipeline.ollama_api.tempfile")
+    @patch("api.rag_pipeline.ollama_api.logger")
     def test_create_temp_model_error(self, mock_logger, mock_tempfile, mock_os, mock_subprocess):
         """Test error handling when creating a temporary model"""
         # Configure mocks
-        mock_tempfile.NamedTemporaryFile.return_value.__enter__.return_value.name = "/tmp/model.modelfile"
+        mock_tempfile.NamedTemporaryFile.return_value.__enter__.return_value.name = (
+            "/tmp/model.modelfile"
+        )
 
         # Add model check to the list of calls
         list_result = MagicMock()
@@ -203,7 +201,7 @@ class TestOllamaLocalClient(unittest.TestCase):
         # Verify error was logged
         mock_logger.error.assert_called_once()
 
-    @patch('api.rag_pipeline.ollama_api.logger')
+    @patch("api.rag_pipeline.ollama_api.logger")
     def test_generate_text(self, mock_logger):
         """Test generating text with local Ollama model"""
         # Import after patching
@@ -215,7 +213,7 @@ class TestOllamaLocalClient(unittest.TestCase):
         client._create_temp_model = MagicMock(return_value="llama2-temp-12345")
 
         # Mock subprocess.run for the actual test
-        with patch('api.rag_pipeline.ollama_api.subprocess.run') as mock_run:
+        with patch("api.rag_pipeline.ollama_api.subprocess.run") as mock_run:
             # Configure the run mock to return different values for run and cleanup
             run_result = MagicMock()
             run_result.returncode = 0
@@ -241,7 +239,7 @@ class TestOllamaLocalClient(unittest.TestCase):
             self.assertEqual(calls[0][0][0], ["ollama", "run", "llama2-temp-12345", "User prompt"])
             self.assertEqual(calls[1][0][0], ["ollama", "rm", "llama2-temp-12345"])
 
-    @patch('api.rag_pipeline.ollama_api.logger')
+    @patch("api.rag_pipeline.ollama_api.logger")
     def test_generate_text_error(self, mock_logger):
         """Test error handling in text generation"""
         # Import after patching
@@ -253,7 +251,7 @@ class TestOllamaLocalClient(unittest.TestCase):
         client._create_temp_model = MagicMock(return_value="llama2-temp-12345")
 
         # Mock subprocess.run for the actual test
-        with patch('api.rag_pipeline.ollama_api.subprocess.run') as mock_run:
+        with patch("api.rag_pipeline.ollama_api.subprocess.run") as mock_run:
             # Configure the run mock to return error for run but success for cleanup
             run_result = MagicMock()
             run_result.returncode = 1
@@ -273,7 +271,7 @@ class TestOllamaLocalClient(unittest.TestCase):
             # Verify error was logged
             mock_logger.error.assert_called_once()
 
-    @patch('api.rag_pipeline.ollama_api.logger')
+    @patch("api.rag_pipeline.ollama_api.logger")
     def test_cleanup_failure(self, mock_logger):
         """Test handling cleanup failure after generation"""
         # Import after patching
@@ -285,7 +283,7 @@ class TestOllamaLocalClient(unittest.TestCase):
         client._create_temp_model = MagicMock(return_value="llama2-temp-12345")
 
         # Mock subprocess.run for the actual test
-        with patch('api.rag_pipeline.ollama_api.subprocess.run') as mock_run:
+        with patch("api.rag_pipeline.ollama_api.subprocess.run") as mock_run:
             # Configure the run mock to return success for run but failure for cleanup
             run_result = MagicMock()
             run_result.returncode = 0
@@ -317,13 +315,13 @@ class TestOllamaLocalClient(unittest.TestCase):
         mock_transformer_reranker.rerank_chunks = mock_rerank_chunks
 
         # Save original and patch the module
-        original_module = sys.modules.get('api.rag_pipeline.transformer_reranker', None)
-        sys.modules['api.rag_pipeline.transformer_reranker'] = mock_transformer_reranker
+        original_module = sys.modules.get("api.rag_pipeline.transformer_reranker", None)
+        sys.modules["api.rag_pipeline.transformer_reranker"] = mock_transformer_reranker
 
         try:
             # Force reload of the ollama_api module to pick up our mock
-            if 'api.rag_pipeline.ollama_api' in sys.modules:
-                del sys.modules['api.rag_pipeline.ollama_api']
+            if "api.rag_pipeline.ollama_api" in sys.modules:
+                del sys.modules["api.rag_pipeline.ollama_api"]
 
             # Now import the module - this should use our mock transformer_reranker
             import api.rag_pipeline.ollama_api as ollama_api
@@ -342,9 +340,9 @@ class TestOllamaLocalClient(unittest.TestCase):
         finally:
             # Restore original module if it existed
             if original_module:
-                sys.modules['api.rag_pipeline.transformer_reranker'] = original_module
+                sys.modules["api.rag_pipeline.transformer_reranker"] = original_module
             else:
-                del sys.modules['api.rag_pipeline.transformer_reranker']
+                del sys.modules["api.rag_pipeline.transformer_reranker"]
 
     def test_format_prompt(self):
         """Test format_prompt function"""
@@ -356,7 +354,7 @@ class TestOllamaLocalClient(unittest.TestCase):
             system_prompt="You are a helpful assistant.",
             context="This is the context information.",
             question="What is the answer?",
-            conversation_history="User: Previous question\nAssistant: Previous answer"
+            conversation_history="User: Previous question\nAssistant: Previous answer",
         )
 
         # Verify prompt structure
@@ -365,12 +363,11 @@ class TestOllamaLocalClient(unittest.TestCase):
         self.assertIn("What is the answer?", prompt)
         self.assertIn("User: Previous question\nAssistant: Previous answer", prompt)
 
-    @patch('api.rag_pipeline.ollama_api.OllamaLocalClient')
-    @patch('api.rag_pipeline.ollama_api.GENERATION_CONFIG', {
-        "temperature": 0.8,
-        "top_p": 0.95,
-        "repeat_penalty": 1.2
-    })
+    @patch("api.rag_pipeline.ollama_api.OllamaLocalClient")
+    @patch(
+        "api.rag_pipeline.ollama_api.GENERATION_CONFIG",
+        {"temperature": 0.8, "top_p": 0.95, "repeat_penalty": 1.2},
+    )
     def test_query_llm(self, mock_ollama_client_class):
         """Test query_llm function"""
         # Configure mock
@@ -389,17 +386,14 @@ class TestOllamaLocalClient(unittest.TestCase):
 
         # Verify generate_text was called with correct parameters
         mock_client.generate_text.assert_called_once_with(
-            prompt="Test prompt",
-            temperature=0.8,
-            top_p=0.95,
-            repeat_penalty=1.2
+            prompt="Test prompt", temperature=0.8, top_p=0.95, repeat_penalty=1.2
         )
 
         # Verify response
         self.assertEqual(response, "Generated response")
 
-    @patch('api.rag_pipeline.ollama_api.OllamaLocalClient')
-    @patch('api.rag_pipeline.ollama_api.logger')
+    @patch("api.rag_pipeline.ollama_api.OllamaLocalClient")
+    @patch("api.rag_pipeline.ollama_api.logger")
     def test_query_llm_exception(self, mock_logger, mock_ollama_client_class):
         """Test query_llm with exception"""
         # Configure mock to raise exception

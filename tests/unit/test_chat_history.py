@@ -12,20 +12,16 @@ import json
 import unittest
 import time
 import sys
-import os
-import importlib.util
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 from datetime import datetime
 
-import pytest
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 
 # Mock modules
-sys.modules['rag_pipeline'] = MagicMock()
-sys.modules['rag_pipeline.config'] = MagicMock()
-sys.modules['rag_pipeline.embedding'] = MagicMock()
-sys.modules['rag_pipeline.ollama'] = MagicMock()
+sys.modules["rag_pipeline"] = MagicMock()
+sys.modules["rag_pipeline.config"] = MagicMock()
+sys.modules["rag_pipeline.embedding"] = MagicMock()
+sys.modules["rag_pipeline.ollama"] = MagicMock()
 
 # Mock data for testing
 MOCK_MODEL = "llama2"
@@ -62,9 +58,7 @@ class TestChatHistoryManager(unittest.TestCase):
         self.mock_session_local = MagicMock(return_value=self.mock_db_session)
 
         # Set up patching
-        self.patches = [
-            patch('api.utils.database.SessionLocal', self.mock_session_local)
-        ]
+        self.patches = [patch("api.utils.database.SessionLocal", self.mock_session_local)]
 
         # Start all patches
         for p in self.patches:
@@ -215,7 +209,10 @@ class TestChatHistoryManager(unittest.TestCase):
         """Test retrieving recent chats"""
         # Mock the fetchall result
         mock_result = MagicMock()
-        mock_result.fetchall.return_value = [MOCK_DB_ROW, MOCK_DB_ROW]  # Two identical rows for simplicity
+        mock_result.fetchall.return_value = [
+            MOCK_DB_ROW,
+            MOCK_DB_ROW,
+        ]  # Two identical rows for simplicity
         self.mock_db_session.execute.return_value = mock_result
 
         # Call the method to test
@@ -233,8 +230,8 @@ class TestChatHistoryManager(unittest.TestCase):
 
         # Alternatively, check that 10 was passed as a parameter
         # This assumes the implementation uses parameter binding for the limit
-        if 'params' in str(call_args):
-            self.assertIn('10', str(call_args))
+        if "params" in str(call_args):
+            self.assertIn("10", str(call_args))
 
         # Check that the results list has the expected length
         self.assertEqual(len(results), 2)
@@ -252,7 +249,7 @@ class TestChatHistoryManager(unittest.TestCase):
         self.mock_db_session.execute.return_value = mock_result
 
         # Call the method to test without a limit
-        results = self.chat_manager.get_recent_chats(MOCK_USER_EMAIL)
+        self.chat_manager.get_recent_chats(MOCK_USER_EMAIL)
 
         # Verify execute was called once
         self.mock_db_session.execute.assert_called_once()

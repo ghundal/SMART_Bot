@@ -11,18 +11,47 @@ Tests the search functionality including:
 
 import pytest
 import unittest
-from unittest.mock import MagicMock, patch, call
-import sys
+from unittest.mock import MagicMock
 import re
+
 
 # Directly implement the function to avoid dependency on nltk
 def format_for_pgroonga(query):
     """Format a query string for pgroonga search."""
     # Define common English stopwords
-    stop_words = {"a", "an", "the", "and", "but", "if", "or", "because", "as", "what",
-                 "which", "this", "that", "these", "those", "then", "just", "so",
-                 "than", "such", "both", "through", "about", "for", "is", "of",
-                 "while", "during", "to", "between", "in"}
+    stop_words = {
+        "a",
+        "an",
+        "the",
+        "and",
+        "but",
+        "if",
+        "or",
+        "because",
+        "as",
+        "what",
+        "which",
+        "this",
+        "that",
+        "these",
+        "those",
+        "then",
+        "just",
+        "so",
+        "than",
+        "such",
+        "both",
+        "through",
+        "about",
+        "for",
+        "is",
+        "of",
+        "while",
+        "during",
+        "to",
+        "between",
+        "in",
+    }
 
     # Remove punctuation and lowercase
     cleaned_query = re.sub(r"[^\w\s]", "", query.lower())
@@ -38,6 +67,7 @@ def format_for_pgroonga(query):
 
     return " AND ".join(keywords)
 
+
 # Test database search functions
 def bm25_search(session, query, limit, user_email):
     """Mock implementation of BM25 search"""
@@ -52,20 +82,18 @@ def bm25_search(session, query, limit, user_email):
     rows = [
         ("doc1", 1, f"Text about {formatted_query}", 0.95),
         ("doc2", 2, f"More content about {formatted_query}", 0.85),
-        ("doc3", 3, f"Additional information on {formatted_query}", 0.75)
+        ("doc3", 3, f"Additional information on {formatted_query}", 0.75),
     ]
 
     # Process the results
     search_results = []
     for row in rows[:limit]:
-        search_results.append({
-            "document_id": row[0],
-            "page_number": row[1],
-            "chunk_text": row[2],
-            "score": row[3]
-        })
+        search_results.append(
+            {"document_id": row[0], "page_number": row[1], "chunk_text": row[2], "score": row[3]}
+        )
 
     return search_results
+
 
 def vector_search(session, embedding, limit, user_email, threshold=0.7):
     """Mock implementation of vector search"""
@@ -78,21 +106,24 @@ def vector_search(session, embedding, limit, user_email, threshold=0.7):
         ("doc5", 2, "Vector search result 2", 0.88),
         ("doc1", 3, "Vector search result 3", 0.82),
         ("doc6", 4, "Vector search result 4", 0.76),
-        ("doc7", 5, "Vector search result 5", 0.71)
+        ("doc7", 5, "Vector search result 5", 0.71),
     ]
 
     # Process the results
     search_results = []
     for row in rows[:limit]:
         if row[3] >= threshold:
-            search_results.append({
-                "document_id": row[0],
-                "page_number": row[1],
-                "chunk_text": row[2],
-                "score": row[3]
-            })
+            search_results.append(
+                {
+                    "document_id": row[0],
+                    "page_number": row[1],
+                    "chunk_text": row[2],
+                    "score": row[3],
+                }
+            )
 
     return search_results
+
 
 def hybrid_search(session, query, embedding, vector_k, bm25_k, user_email):
     """Mock implementation of hybrid search"""
@@ -138,6 +169,7 @@ def hybrid_search(session, query, embedding, vector_k, bm25_k, user_email):
 
     return top_results, sorted_results
 
+
 def retrieve_document_metadata(session, document_ids):
     """Mock implementation of document metadata retrieval"""
     if not document_ids:
@@ -151,7 +183,7 @@ def retrieve_document_metadata(session, document_ids):
         "doc4": {"class_name": "DS405", "authors": "Alice Brown", "term": "Spring 2024"},
         "doc5": {"class_name": "CS101", "authors": "David Wilson", "term": "Fall 2024"},
         "doc6": {"class_name": "ML201", "authors": "Emma Davis", "term": "Winter 2024"},
-        "doc7": {"class_name": "AI101", "authors": "Michael Lee", "term": "Spring 2024"}
+        "doc7": {"class_name": "AI101", "authors": "Michael Lee", "term": "Spring 2024"},
     }
 
     # Filter to only the requested document IDs
@@ -180,7 +212,9 @@ class TestSearch(unittest.TestCase):
         # Test with punctuation
         query = "Machine learning, deep learning, and AI: what's the connection?"
         formatted = format_for_pgroonga(query)
-        self.assertEqual(formatted, "machine AND learning AND deep AND learning AND ai AND whats AND connection")
+        self.assertEqual(
+            formatted, "machine AND learning AND deep AND learning AND ai AND whats AND connection"
+        )
 
         # Test with only stopwords - all of these words are in our stopwords list
         query = "what is the in a"
@@ -196,7 +230,9 @@ class TestSearch(unittest.TestCase):
     def test_bm25_search(self):
         """Test BM25 search functionality"""
         # Test with valid parameters
-        results = bm25_search(self.mock_session, "machine learning algorithms", 2, "user@example.com")
+        results = bm25_search(
+            self.mock_session, "machine learning algorithms", 2, "user@example.com"
+        )
 
         # Check results structure
         self.assertEqual(len(results), 2)
@@ -238,14 +274,14 @@ class TestSearch(unittest.TestCase):
             self.mock_embedding,
             3,  # vector_k
             2,  # bm25_k
-            "user@example.com"
+            "user@example.com",
         )
 
         # Check top results structure
         self.assertLessEqual(len(top_results), 7)  # Should not have more than 7 results
 
         # Verify that results are sorted by combined score
-        last_score = float('inf')
+        last_score = float("inf")
         for item in sorted_results:
             current_score = item["combined_score"]
             self.assertLessEqual(current_score, last_score)
