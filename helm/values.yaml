@@ -66,6 +66,9 @@ ingress:
   hosts:
     - host: smart.com
       paths:
+        - path: /auth
+          pathType: Prefix
+          service: api
         - path: /api
           pathType: Prefix
           service: api
