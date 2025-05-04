@@ -11,7 +11,9 @@ import numpy as np
 from .config import logger
 
 
-def rerank_chunks(chunks: List[Dict[str, Any]], query: str, model_name: str) -> List[Dict[str, Any]]:
+def rerank_chunks(
+    chunks: List[Dict[str, Any]], query: str, model_name: str
+) -> List[Dict[str, Any]]:
     """
     Rerank chunks using a transformer-based reranker model via Ollama.
     This uses direct comparison rather than prompting.
@@ -40,7 +42,7 @@ def rerank_chunks(chunks: List[Dict[str, Any]], query: str, model_name: str) -> 
             chunk_copy = chunk.copy()
 
             # Get embedding for this chunk
-            chunk_embedding = get_embedding(chunk['chunk_text'], model_name)
+            chunk_embedding = get_embedding(chunk["chunk_text"], model_name)
 
             # Calculate similarity
             if query_embedding and chunk_embedding:
@@ -52,11 +54,11 @@ def rerank_chunks(chunks: List[Dict[str, Any]], query: str, model_name: str) -> 
                 # Fallback if embedding generation fails
                 score = 0
 
-            chunk_copy['llm_score'] = score
+            chunk_copy["llm_score"] = score
             scored_chunks.append(chunk_copy)
 
         # Sort by score in descending order
-        reranked_chunks = sorted(scored_chunks, key=lambda x: x['llm_score'], reverse=True)
+        reranked_chunks = sorted(scored_chunks, key=lambda x: x["llm_score"], reverse=True)
         logger.info(f"Reranked {len(reranked_chunks)} chunks using transformer model")
 
         return reranked_chunks
@@ -103,9 +105,10 @@ def get_embedding(text: str, model_name: str) -> List[float]:
         try:
             # Try parsing as JSON first (newer Ollama versions)
             import json
+
             embedding_data = json.loads(embedding_str)
-            if isinstance(embedding_data, dict) and 'embedding' in embedding_data:
-                return embedding_data['embedding']
+            if isinstance(embedding_data, dict) and "embedding" in embedding_data:
+                return embedding_data["embedding"]
             elif isinstance(embedding_data, list):
                 return embedding_data
         except json.JSONDecodeError:

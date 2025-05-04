@@ -115,21 +115,26 @@ docker-compose stop
 docker system prune
 sudo rm -rf ../persistent-folder/
 ```
+
 ## **Deployment**
 
 ### Preqrequsites
+
 - Add the secrets in th github in settings -> action
 
 ### Steps
+
 The workflows are set up in Github actions to run on commit with following steps:
+
 - run linters
 - run tests
 - build images
 - push the images to GCR
-<need ansible step here>
+  <need ansible step here>
 - deploy to kubernetes
 
 - **Commit**
+
 ```
 git add .
 git commit -m "<message>"

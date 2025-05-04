@@ -145,7 +145,9 @@ PARAMETER repeat_penalty {repeat_penalty}
             return f"Error: {str(e)}"
 
 
-def rerank_with_llm(chunks: List[Dict[str, Any]], query: str, model_name: str) -> List[Dict[str, Any]]:
+def rerank_with_llm(
+    chunks: List[Dict[str, Any]], query: str, model_name: str
+) -> List[Dict[str, Any]]:
     """
     Use a local Ollama model to rerank chunks based on relevance to the query.
 
@@ -181,14 +183,15 @@ Respond with only a number from 0 to 10.
             score_text = model_client.generate_text(
                 prompt=prompt,
                 temperature=0.1,  # Low temperature for consistent scoring
-                max_tokens=50  # We only need a short response
+                max_tokens=50,  # We only need a short response
             )
 
             # Try to get a numerical score, default to 0 if parsing fails
             try:
                 # Extract the first number from the response
                 import re
-                numbers = re.findall(r'\d+(?:\.\d+)?', score_text)
+
+                numbers = re.findall(r"\d+(?:\.\d+)?", score_text)
                 relevance_score = float(numbers[0]) if numbers else 0
                 # Ensure score is in valid range
                 relevance_score = max(0, min(10, relevance_score))
@@ -197,11 +200,11 @@ Respond with only a number from 0 to 10.
 
             # Add to results with the LLM-assigned score
             chunk_with_score = chunk.copy()
-            chunk_with_score['llm_score'] = relevance_score
+            chunk_with_score["llm_score"] = relevance_score
             reranking_results.append(chunk_with_score)
 
         # Sort by LLM score in descending order
-        reranked_chunks = sorted(reranking_results, key=lambda x: x['llm_score'], reverse=True)
+        reranked_chunks = sorted(reranking_results, key=lambda x: x["llm_score"], reverse=True)
         logger.info(f"Reranked {len(reranked_chunks)} chunks using local Ollama model")
         return reranked_chunks
     except Exception as e:
