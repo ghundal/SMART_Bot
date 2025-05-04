@@ -34,20 +34,9 @@ RUN set -ex; \
     chown app:app /app && \
     chown app:app /secrets
 
-# Install Ollama
-ENV OLLAMA_MODELS=/var/ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
-
 # Switch to the new user
 USER app
 WORKDIR /app
-
-# Pull all required models during build time
-# RUN ollama serve & \
-#     sleep 5 && \
-#     ollama pull llama-guard3:8b && \
-#     ollama pull llama3:8b && \
-#     ollama pull gemma3:12b
 
 # Install NLTK and download stopwords
 RUN python -m pip install --upgrade pip && \

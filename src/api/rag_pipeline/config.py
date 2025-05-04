@@ -2,10 +2,12 @@
 Configuration settings for the Ollama RAG system.
 """
 
+import os
 import logging
 
 # Ollama API endpoints
-OLLAMA_URL = "http://localhost:11434/api/generate"
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost")
+OLLAMA_URL = f"http://{OLLAMA_HOST}:11434/api/generate"
 # OLLAMA_MODEL = "gemma3:12b"
 OLLAMA_MODEL = "llama3:8b"
 RERANKER_MODEL = "llama3:8b"

@@ -45,20 +45,34 @@ services:
   api:
     depends_on:
       - postgres
+      - ollama
     image: ${API_IMAGE_NAME}
     container_name: api
     volumes:
-      - ${PERSISTENT_DIR}/models:/var/ollama
       - ${BASE_DIR}/api:/app
       - ${SECRETS_DIR}:/secrets:ro
     ports:
       - '9000:9000'
     environment:
       DB_HOST: postgres
-      NVIDIA_VISIBLE_DEVICES: all
-      NVIDIA_DRIVER_CAPABILITIES: compute,utility
       GOOGLE_CREDENTIALS_FILE: $GOOGLE_CREDENTIALS_FILE
       DEV: 1
+      OLLAMA_HOST: ollama
+    networks:
+      - smart-network
+    tty: true
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    volumes:
+      - ${PERSISTENT_DIR}/models:/var/ollama
+    restart: unless-stopped
+    environment:
+      OLLAMA_MODELS: /var/ollama
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    networks:
+      - smart-network
     deploy:
       resources:
         reservations:
@@ -66,9 +80,6 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    networks:
-      - smart-network
-    tty: true
   frontend:
     image: ${FRONTEND_IMAGE_NAME}
     container_name: frontend
