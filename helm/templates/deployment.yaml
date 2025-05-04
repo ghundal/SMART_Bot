@@ -75,9 +75,7 @@ kind: Deployment
 metadata:
   name: {{ include "smart.fullname" . }}-api
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  replicas: 1
   selector:
     matchLabels:
       app: {{ include "smart.name" . }}-api
