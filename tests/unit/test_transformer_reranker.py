@@ -49,15 +49,15 @@ class TestTransformerReranker(unittest.TestCase):
         self.expected_similarities = [1.0, 0.5, 0.0]
 
         # Patch logger to avoid actual logging during tests
-        self.logger_patch = patch('api.rag_pipeline.transformer_reranker.logger')
+        self.logger_patch = patch("api.rag_pipeline.transformer_reranker.logger")
         self.mock_logger = self.logger_patch.start()
 
     def tearDown(self):
         """Clean up after each test"""
         self.logger_patch.stop()
 
-    @patch('api.rag_pipeline.transformer_reranker.get_embedding')
-    @patch('api.rag_pipeline.transformer_reranker.cosine_similarity')
+    @patch("api.rag_pipeline.transformer_reranker.get_embedding")
+    @patch("api.rag_pipeline.transformer_reranker.cosine_similarity")
     def test_rerank_chunks_success(self, mock_cosine_sim, mock_get_embedding):
         """Test successful reranking of chunks"""
         # Set up mocks
@@ -105,7 +105,7 @@ class TestTransformerReranker(unittest.TestCase):
         # Verify warning was logged
         self.mock_logger.warning.assert_called_once_with("No chunks to rerank")
 
-    @patch('api.rag_pipeline.transformer_reranker.get_embedding')
+    @patch("api.rag_pipeline.transformer_reranker.get_embedding")
     def test_rerank_chunks_embedding_failure(self, mock_get_embedding):
         """Test reranking when embedding generation fails"""
         # Set up mocks
@@ -123,7 +123,7 @@ class TestTransformerReranker(unittest.TestCase):
         for chunk in result:
             self.assertEqual(chunk["llm_score"], 0)
 
-    @patch('api.rag_pipeline.transformer_reranker.get_embedding')
+    @patch("api.rag_pipeline.transformer_reranker.get_embedding")
     def test_rerank_chunks_exception(self, mock_get_embedding):
         """Test reranking with an exception"""
         # Set up mock to raise exception
@@ -141,9 +141,9 @@ class TestTransformerReranker(unittest.TestCase):
         # Verify exception was logged
         self.mock_logger.exception.assert_called_once()
 
-    @patch('tempfile.NamedTemporaryFile')
-    @patch('subprocess.run')
-    @patch('os.unlink')
+    @patch("tempfile.NamedTemporaryFile")
+    @patch("subprocess.run")
+    @patch("os.unlink")
     def test_get_embedding_success_json(self, mock_unlink, mock_subprocess_run, mock_temp_file):
         """Test successful embedding generation with JSON output"""
         # Set up mocks
@@ -164,16 +164,17 @@ class TestTransformerReranker(unittest.TestCase):
         mock_temp_file.assert_called_once()
         mock_subprocess_run.assert_called_once_with(
             ["ollama", "embeddings", "-m", self.test_model, "-f", "temp_text_file"],
-            capture_output=True, text=True
+            capture_output=True,
+            text=True,
         )
         mock_unlink.assert_called_once_with("temp_text_file")
 
         # Verify the result
         self.assertEqual(result, self.query_embedding)
 
-    @patch('tempfile.NamedTemporaryFile')
-    @patch('subprocess.run')
-    @patch('os.unlink')
+    @patch("tempfile.NamedTemporaryFile")
+    @patch("subprocess.run")
+    @patch("os.unlink")
     def test_get_embedding_success_list(self, mock_unlink, mock_subprocess_run, mock_temp_file):
         """Test successful embedding generation with list output"""
         # Set up mocks
@@ -193,10 +194,12 @@ class TestTransformerReranker(unittest.TestCase):
         # Verify the result
         self.assertEqual(result, self.query_embedding)
 
-    @patch('tempfile.NamedTemporaryFile')
-    @patch('subprocess.run')
-    @patch('os.unlink')
-    def test_get_embedding_success_plain_text(self, mock_unlink, mock_subprocess_run, mock_temp_file):
+    @patch("tempfile.NamedTemporaryFile")
+    @patch("subprocess.run")
+    @patch("os.unlink")
+    def test_get_embedding_success_plain_text(
+        self, mock_unlink, mock_subprocess_run, mock_temp_file
+    ):
         """Test successful embedding generation with plain text output"""
         # Set up mocks
         mock_file = MagicMock()
@@ -215,9 +218,9 @@ class TestTransformerReranker(unittest.TestCase):
         # Verify the result
         self.assertEqual(result, self.query_embedding)
 
-    @patch('tempfile.NamedTemporaryFile')
-    @patch('subprocess.run')
-    @patch('os.unlink')
+    @patch("tempfile.NamedTemporaryFile")
+    @patch("subprocess.run")
+    @patch("os.unlink")
     def test_get_embedding_subprocess_error(self, mock_unlink, mock_subprocess_run, mock_temp_file):
         """Test embedding generation with subprocess error"""
         # Set up mocks
@@ -247,9 +250,9 @@ class TestTransformerReranker(unittest.TestCase):
             "Error generating embedding: Error generating embedding"
         )
 
-    @patch('tempfile.NamedTemporaryFile')
-    @patch('subprocess.run')
-    @patch('os.unlink')
+    @patch("tempfile.NamedTemporaryFile")
+    @patch("subprocess.run")
+    @patch("os.unlink")
     def test_get_embedding_invalid_output(self, mock_unlink, mock_subprocess_run, mock_temp_file):
         """Test embedding generation with invalid output format"""
         self.mock_logger.reset_mock()
@@ -271,7 +274,7 @@ class TestTransformerReranker(unittest.TestCase):
         # Validate output
         self.assertIsNone(result)
 
-    @patch('tempfile.NamedTemporaryFile')
+    @patch("tempfile.NamedTemporaryFile")
     def test_get_embedding_exception(self, mock_temp_file):
         """Test embedding generation with exception"""
         # Set up mock to raise exception
@@ -284,7 +287,9 @@ class TestTransformerReranker(unittest.TestCase):
         self.assertIsNone(result)
 
         # Verify exception was logged
-        self.mock_logger.exception.assert_called_once_with("Error getting embedding: Test exception")
+        self.mock_logger.exception.assert_called_once_with(
+            "Error getting embedding: Test exception"
+        )
 
     def test_cosine_similarity_normal(self):
         """Test cosine similarity calculation with normal vectors"""
@@ -376,7 +381,7 @@ class TestTransformerReranker(unittest.TestCase):
     def test_cosine_similarity_exception(self):
         """Test cosine similarity with exception"""
         # Mock np.dot to raise exception
-        with patch('numpy.dot', side_effect=Exception("Test exception")):
+        with patch("numpy.dot", side_effect=Exception("Test exception")):
             # Call the function
             result = cosine_similarity([1, 2, 3], [4, 5, 6])
 
