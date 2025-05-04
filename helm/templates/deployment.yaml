@@ -97,7 +97,7 @@ spec:
             - name: GOOGLE_CREDENTIALS_FILE
               value: /secrets/smart_input_key.json
             - name: FRONTEND_URL
-              value: http://smart.com
+              value: https://smart.com
           ports:
             - name: http
               containerPort: 9000

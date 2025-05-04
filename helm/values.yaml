@@ -75,10 +75,10 @@ ingress:
         - path: /
           pathType: Prefix
           service: frontend
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  tls:
+   - secretName: smart-tls-secret
+     hosts:
+       - smart.com
 
 resources:
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -134,3 +134,55 @@ postgresql:
   username: postgres
   password: postgres
   storageSize: 8Gi
+
+tls:
+  enabled: true
+  crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIDCTCCAfGgAwIBAgIUOkyUM2shTKkv+I+FtcJcJ59J5w0wDQYJKoZIhvcNAQEL
+    BQAwFDESMBAGA1UEAwwJc21hcnQuY29tMB4XDTI1MDUwNDAwNTMxMVoXDTI2MDUw
+    NDAwNTMxMVowFDESMBAGA1UEAwwJc21hcnQuY29tMIIBIjANBgkqhkiG9w0BAQEF
+    AAOCAQ8AMIIBCgKCAQEA1ixMQ8kBlTtRisXVQxdyL1UKC/olJTsRleSTdEc0te2O
+    LTHFyRaNVqdckXpU6QAjj7R9rzTjkj232vSAaOF5r44Fl0ZwKzxreLVjKfJf+Nga
+    61Ce1XXHE705IXuvh6A8xNoeovCryikmI7/mUCG/8PBijwkPmLZjYBm9avDU8YXY
+    UYnd3Y3jZ8jGV9MZVGpgy8fI6otmnPOD48l6FqJOcvKkTiJQrdV27SkT0e9INCBf
+    +3efiASPf9WiQXxOE968o4QIUkzJUEWuW9JBnVy3OLQ7rtDxjb38VewRDb44XjOo
+    JhbSDrOKc+AfKmtU+7i1OP8WL0md5MU+qCOcxOH1HwIDAQABo1MwUTAdBgNVHQ4E
+    FgQU759kvHl726hrvvQM7fFH559BjxkwHwYDVR0jBBgwFoAU759kvHl726hrvvQM
+    7fFH559BjxkwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAsCXv
+    0IM2pVEOD8d4oA6zqCtYC+zEn/XXiGv9oXJiiQwW1apufOes3gDyYT05DPdNPtbF
+    vXQ3Fw9M70EkjsSOROtSAQMIwAX+z2f1jpUIDRveTbjm1t+iSHQdXkSdh3HILWRk
+    DgbI/5jrAbVEGWTyZeLo7eu5RE7g2G1rPVUlKtm8x7Pnq9u3LZHDphoLOs81IRTi
+    YHFvy1Z9ZhUfhqW0bjhkZR8MdkX0VF/Q7TlUkTlrX0kx4LTUu1LYHm0W3ZsZuu9H
+    2bDdYDwcJuNCbukbjN30bfk3uAqUdtiKnh61rxOG4wD27k8tVD10k7ln7MnkNhx+
+    vhf47A/xL15RiQpyIA==
+    -----END CERTIFICATE-----
+  key: |
+    -----BEGIN PRIVATE KEY-----
+    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDWLExDyQGVO1GK
+    xdVDF3IvVQoL+iUlOxGV5JN0RzS17Y4tMcXJFo1Wp1yRelTpACOPtH2vNOOSPbfa
+    9IBo4XmvjgWXRnArPGt4tWMp8l/42BrrUJ7VdccTvTkhe6+HoDzE2h6i8KvKKSYj
+    v+ZQIb/w8GKPCQ+YtmNgGb1q8NTxhdhRid3djeNnyMZX0xlUamDLx8jqi2ac84Pj
+    yXoWok5y8qROIlCt1XbtKRPR70g0IF/7d5+IBI9/1aJBfE4T3ryjhAhSTMlQRa5b
+    0kGdXLc4tDuu0PGNvfxV7BENvjheM6gmFtIOs4pz4B8qa1T7uLU4/xYvSZ3kxT6o
+    I5zE4fUfAgMBAAECggEAAPK71EYjrvC8t9K0rkjuJTKkeAetVZC4GH9cIp4UXvJk
+    byzJqhc+LvIrmAeSeYUHo0Y7t6RtlhDfmRL85NVnSPCvBfBI5NgbxtbjT6TxxUGM
+    Phq9+4+pNdMEx02ZTqCM1pv7dU/I4uqqSrQ5yhcHlvB7yqYI6BIHySuPbmfqQpJS
+    6Gg41FpYh+WMYdU/eq3GNQU1LVI2UC/b6hZ5sy/jAkMKGzXHnNesCzEZbNJFxuUp
+    9QyrELIGVZtW2un0GEna8WgpS8coFNAerDjqI09OVCIOcTUs+etx5C/yrZ2QMvdA
+    r0m9cTjnaF9RnyucMJ2mKyyKe+fb/W5yBZGm5EJhkQKBgQDuuXSRYCDxP6/n06v8
+    Fti9UOGwvSJWTTV/DGhMVjlQuEWH9rmbmeDf6X/zVqnkiT9hTd9lQKj+/s5YJaJB
+    WAIl1QTIIBpu+4vQPM0kA9DIouhRrca0VzdDsn5sOsH5JWm3AsFTJDPubqdLDMzS
+    gHfFg/gEMG9TJbW1DAJtZXKXdwKBgQDlrAKPq2dgW/VUiYVfmv9mRtqTfPr4Qzzb
+    q81C+R4SpdYAxOrxiQ2lwXx3ZbtYTScUrIniGogolr6IBrgCb8YTG+xqui3wep1U
+    rlIQa0YrVIr/MunPFyW0zatmL6scWCdmApC5LsMeXE8k255RYEu24+vElk86m6K8
+    5ecMqY/JmQKBgDde+sOxeVKbxBBQj4a0Qed/eCnHZMyBshPa6+Iw6bBoXXBQ8PI/
+    eeJVxaDKjDN/Bh1qs5NHsSscLP5TFFR1tmHSC/7jO15cqCxPvgFJhUbUSnCPjxRL
+    Wn0wTJSL+GvympehYvgG4KjAL7t/p453z9AXcRJ/rYKqr3/j3jhDnJW3AoGAPitN
+    li5DkWXTBssi+zotoDXVvM678K/irWPX8CUW6t1RDGxBXJhIxXGWi4tSJxjbV1FN
+    EZM1ACet84w+CwrOhyWr3UgAX3QRWnbFaARhviDobyQM/i252zNBDiwhGU8Tex1+
+    p2HtFy7NjaCVPlnepOcVTuWRFMBEUPW6kUbk0SECgYEA7RZZ0M3PpRovl2bTcP0z
+    yDNFSS0n3Te0RiN560/yIgykoiC8jqawUJha+LKSSNDzDB2GfiN4NmSIfs4D7iYY
+    7cnW0i6epNITnMSiJvIXsOY2vy5kwPhHyZU4qa64FfgYXtxZIp4GvHk6XBgF6c6e
+    vzP6HlO+56I2oykOS3VLCvo=
+    -----END PRIVATE KEY-----
