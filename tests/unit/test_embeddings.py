@@ -1,130 +1,84 @@
-import os
-import sys
+"""
+Unit tests for the embedding.py module.
+
+Tests the embedding model functionality for the Ollama RAG system including:
+- Loading the embedding model
+- Generating embeddings for queries
+"""
+
 import unittest
 from unittest.mock import MagicMock, patch
-
 import numpy as np
 
-# Add the src directory to the path so we can import our module
-# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+class TestEmbedding(unittest.TestCase):
+    def setUp(self):
+        """Set up common test environment before each test"""
+        self.mock_model = MagicMock()
+        self.mock_embedding = np.array([0.1, 0.2, 0.3])
 
-# Import the module to test
-from src.api.rag_pipeline.embedding import embed_query, get_ch_embedding_model
+        self.mock_model.to.return_value = self.mock_model
+        self.mock_model.encode.return_value = self.mock_embedding
 
+    @patch('api.rag_pipeline.embedding.EMBEDDING_MODEL', "mock-embedding-model")
+    @patch('api.rag_pipeline.embedding.logger', MagicMock())
+    @patch('api.rag_pipeline.embedding.SentenceTransformer')
+    @patch('torch.cuda.is_available', return_value=False)
+    def test_get_ch_embedding_model_cpu(self, mock_cuda_available, mock_sentence_transformer, *args):
+        """Test loading the embedding model on CPU"""
+        mock_sentence_transformer.return_value = self.mock_model
 
-class TestEmbeddingModel(unittest.TestCase):
-    """Test cases for the embedding model functionality."""
+        from api.rag_pipeline.embedding import get_ch_embedding_model
+        result = get_ch_embedding_model()
 
-    @patch("src.api.rag_pipeline.embedding.SentenceTransformer")
-    @patch("src.api.rag_pipeline.embedding.torch.cuda.is_available")
-    def test_get_ch_embedding_model_cuda(self, mock_cuda_available, mock_sentence_transformer):
-        """Test loading embedding model with CUDA available."""
-        # Mock CUDA availability
-        mock_cuda_available.return_value = True
+        mock_sentence_transformer.assert_called_once_with("mock-embedding-model")
+        self.mock_model.to.assert_called_once_with("cpu")
+        self.assertEqual(result, self.mock_model)
 
-        # Setup mock model
-        mock_model = MagicMock()
-        mock_model.to.return_value = mock_model
-        mock_sentence_transformer.return_value = mock_model
+    @patch('api.rag_pipeline.embedding.EMBEDDING_MODEL', "mock-embedding-model")
+    @patch('api.rag_pipeline.embedding.logger', MagicMock())
+    @patch('api.rag_pipeline.embedding.SentenceTransformer')
+    @patch('torch.cuda.is_available', return_value=True)
+    def test_get_ch_embedding_model_gpu(self, mock_cuda_available, mock_sentence_transformer, *args):
+        """Test loading the embedding model on GPU"""
+        mock_sentence_transformer.return_value = self.mock_model
 
-        # Call the function
-        model = get_ch_embedding_model()
+        from api.rag_pipeline.embedding import get_ch_embedding_model
+        result = get_ch_embedding_model()
 
-        # Verify model was loaded with the correct name
-        mock_sentence_transformer.assert_called_once_with("all-mpnet-base-v2")
+        mock_sentence_transformer.assert_called_once_with("mock-embedding-model")
+        self.mock_model.to.assert_called_once_with("cuda")
+        self.assertEqual(result, self.mock_model)
 
-        # Verify model was moved to CUDA
-        mock_model.to.assert_called_once_with("cuda")
+    @patch('api.rag_pipeline.embedding.EMBEDDING_MODEL', "mock-embedding-model")
+    @patch('api.rag_pipeline.embedding.logger')
+    @patch('api.rag_pipeline.embedding.SentenceTransformer')
+    def test_get_ch_embedding_model_exception(self, mock_sentence_transformer, mock_logger, *args):
+        """Test exception handling when loading the embedding model"""
+        mock_sentence_transformer.side_effect = Exception("Model not found")
 
-        # Verify the returned model is the expected one
-        self.assertEqual(model, mock_model)
-
-    @patch("src.api.rag_pipeline.embedding.SentenceTransformer")
-    @patch("src.api.rag_pipeline.embedding.torch.cuda.is_available")
-    def test_get_ch_embedding_model_cpu(self, mock_cuda_available, mock_sentence_transformer):
-        """Test loading embedding model with CUDA not available."""
-        # Mock CUDA availability
-        mock_cuda_available.return_value = False
-
-        # Setup mock model
-        mock_model = MagicMock()
-        mock_model.to.return_value = mock_model
-        mock_sentence_transformer.return_value = mock_model
-
-        # Call the function
-        model = get_ch_embedding_model()
-
-        # Verify model was loaded with the correct name
-        mock_sentence_transformer.assert_called_once_with("all-mpnet-base-v2")
-
-        # Verify model was moved to CPU
-        mock_model.to.assert_called_once_with("cpu")
-
-        # Verify the returned model is the expected one
-        self.assertEqual(model, mock_model)
-
-    @patch("src.api.rag_pipeline.embedding.SentenceTransformer")
-    def test_get_ch_embedding_model_exception(self, mock_sentence_transformer):
-        """Test error handling when loading model fails."""
-        # Setup mock to raise exception
-        mock_sentence_transformer.side_effect = Exception("Model loading failed")
-
-        # Verify that the exception is propagated
+        from api.rag_pipeline.embedding import get_ch_embedding_model
         with self.assertRaises(Exception):
             get_ch_embedding_model()
 
-    @patch("src.api.rag_pipeline.embedding.torch.cuda.is_available")
-    def test_embed_query_cuda(self, mock_cuda_available):
-        """Test query embedding with CUDA available."""
-        # Mock CUDA availability
-        mock_cuda_available.return_value = True
+        mock_logger.exception.assert_called_once()
 
-        # Setup mock model
-        mock_model = MagicMock()
-        mock_model.encode.return_value = np.array([0.1, 0.2, 0.3])
-
-        # Call the function
-        result = embed_query("test query", mock_model)
-
-        # Verify encode was called with the right parameters
-        mock_model.encode.assert_called_once_with(
-            "test query", show_progress_bar=False, device="cuda"
-        )
-
-        # Verify the result is the expected list
-        self.assertEqual(result, [0.1, 0.2, 0.3])
-
-    @patch("src.api.rag_pipeline.embedding.torch.cuda.is_available")
+    @patch('torch.cuda.is_available', return_value=False)
     def test_embed_query_cpu(self, mock_cuda_available):
-        """Test query embedding with CUDA not available."""
-        # Mock CUDA availability
-        mock_cuda_available.return_value = False
+        """Test generating an embedding for a query on CPU"""
+        from api.rag_pipeline.embedding import embed_query
+        result = embed_query("test query", self.mock_model)
 
-        # Setup mock model
-        mock_model = MagicMock()
-        mock_model.encode.return_value = np.array([0.1, 0.2, 0.3])
+        self.mock_model.encode.assert_called_once_with("test query", show_progress_bar=False, device="cpu")
+        self.assertEqual(result, self.mock_embedding.tolist())
 
-        # Call the function
-        result = embed_query("test query", mock_model)
+    @patch('torch.cuda.is_available', return_value=True)
+    def test_embed_query_gpu(self, mock_cuda_available):
+        """Test generating an embedding for a query on GPU"""
+        from api.rag_pipeline.embedding import embed_query
+        result = embed_query("test query", self.mock_model)
 
-        # Verify encode was called with the right parameters
-        mock_model.encode.assert_called_once_with(
-            "test query", show_progress_bar=False, device="cpu"
-        )
-
-        # Verify the result is the expected list
-        self.assertEqual(result, [0.1, 0.2, 0.3])
-
-    def test_embed_query_exception(self):
-        """Test error handling when embedding fails."""
-        # Setup mock model that raises an exception
-        mock_model = MagicMock()
-        mock_model.encode.side_effect = Exception("Embedding failed")
-
-        # Verify that the exception is propagated
-        with self.assertRaises(Exception):
-            embed_query("test query", mock_model)
+        self.mock_model.encode.assert_called_once_with("test query", show_progress_bar=False, device="cuda")
+        self.assertEqual(result, self.mock_embedding.tolist())
 
 
 if __name__ == "__main__":

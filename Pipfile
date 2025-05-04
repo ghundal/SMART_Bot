@@ -37,6 +37,7 @@ unstructured = {extras = ["pdf"], version = "*"}
 sentence-transformers = "*"
 pytest = "*"
 pytest-cov = "*"
+pytest-asyncio = "*"
 
 [requires]
 python_version = "3.12"

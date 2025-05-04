@@ -17,10 +17,6 @@ The project should have the following structure:
 ```
 E115_SMART/
 ├── src/
-│   ├── datapipeline/
-│   │   ├── __init__.py
-│   │   ├── datapipeline.py
-│   │   └── Advanced_semantic_chunker.py
 ├── tests/
 │   ├── __init__.py
 │   ├── test_data_pipeline.py

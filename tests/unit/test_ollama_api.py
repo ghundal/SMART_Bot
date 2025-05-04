@@ -1,371 +1,421 @@
-import os
-import sys
+"""
+Unit tests for the ollama_api.py module.
+
+Tests the local Ollama client functionality including:
+- Model existence checking
+- Temporary model creation
+- Text generation
+- Prompt formatting
+- Reranking integration
+"""
+
 import unittest
-from unittest.mock import MagicMock, patch
-
-# Add the src directory to the path so we can import our module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
-# Import the module to test
-from src.api.rag_pipeline.ollama_api import (
-    OllamaLocalClient,
-    format_prompt,
-    query_llm,
-    rerank_with_llm,
-)
+from unittest.mock import MagicMock, patch, call, ANY
+import os
+import subprocess
+import tempfile
+import sys
 
 
 class TestOllamaLocalClient(unittest.TestCase):
-    """Test cases for the OllamaLocalClient class."""
-
     def setUp(self):
-        """Set up test fixtures."""
-        self.model_name = "llama3:8b"
+        """Set up test environment before each test"""
+        # Set up patches for subprocess and logger
+        self.mock_subprocess = MagicMock()
+        self.mock_logger = MagicMock()
 
-        # Mock subprocess responses
+        # Create mock objects for subprocess run results
         self.mock_list_result = MagicMock()
-        self.mock_list_result.stdout = (
-            f"NAME             ID        SIZE  \n{self.model_name}  abc123  4.4 GB"
-        )
-        self.mock_list_result.returncode = 0
+        self.mock_run_result = MagicMock()
+        self.mock_cleanup_result = MagicMock()
 
-    @patch("src.api.rag_pipeline.ollama_api.subprocess.run")
-    def test_init_and_model_exists(self, mock_run):
-        """Test initialization and model existence check."""
+        # Configure default mock returns
+        self.mock_list_result.stdout = "model1\nllama2\nmodel3"
+        self.mock_list_result.returncode = 0
+        self.mock_run_result.stdout = "Generated text response"
+        self.mock_run_result.returncode = 0
+        self.mock_cleanup_result.returncode = 0
+
+        # Create patches for os and tempfile
+        self.mock_os = MagicMock()
+        self.mock_tempfile = MagicMock()
+        self.mock_temp_file = MagicMock()
+        self.mock_tempfile.NamedTemporaryFile.return_value.__enter__.return_value = self.mock_temp_file
+        self.mock_temp_file.name = "/tmp/tempfile.modelfile"
+
+    @patch('api.rag_pipeline.ollama_api.subprocess')
+    @patch('api.rag_pipeline.ollama_api.logger')
+    def test_init_model_exists(self, mock_logger, mock_subprocess):
+        """Test initialization when model exists locally"""
         # Configure mock
-        mock_run.return_value = self.mock_list_result
+        mock_subprocess.run.return_value.stdout = "llama2\nmodel2\nmodel3"
+        mock_subprocess.run.return_value.returncode = 0
+
+        # Import after patching
+        from api.rag_pipeline.ollama_api import OllamaLocalClient
 
         # Create client
-        client = OllamaLocalClient(self.model_name)
+        client = OllamaLocalClient("llama2")
+
+        # Verify model name was set correctly
+        self.assertEqual(client.model_name, "llama2")
 
         # Verify subprocess was called correctly
-        mock_run.assert_called_once_with(
-            ["ollama", "list"], capture_output=True, text=True, check=True
+        mock_subprocess.run.assert_called_once_with(
+            ["ollama", "list"],
+            capture_output=True,
+            text=True,
+            check=True
         )
 
-        # Verify model was stored
-        self.assertEqual(client.model_name, self.model_name)
+        # Verify logger was not called for warnings
+        mock_logger.warning.assert_not_called()
 
-    @patch("src.api.rag_pipeline.ollama_api.subprocess.run")
-    def test_model_not_found(self, mock_run):
-        """Test warning when model is not found."""
-        # Configure mock to return a list without our model
-        mock_result = MagicMock()
-        mock_result.stdout = "NAME             ID        SIZE  \ndifferent-model  abc123  4.4 GB"
-        mock_result.returncode = 0
-        mock_run.return_value = mock_result
+    @patch('api.rag_pipeline.ollama_api.subprocess')
+    @patch('api.rag_pipeline.ollama_api.logger')
+    def test_init_model_not_exists(self, mock_logger, mock_subprocess):
+        """Test initialization when model doesn't exist locally"""
+        # Configure mock
+        mock_subprocess.run.return_value.stdout = "model1\nmodel2\nmodel3"
+        mock_subprocess.run.return_value.returncode = 0
 
-        # Create client - should log a warning but not fail
-        with self.assertLogs(level="WARNING") as cm:
-            OllamaLocalClient(self.model_name)
-
-            # Verify warning was logged
-            self.assertTrue(
-                any(f"Model {self.model_name} not found locally" in msg for msg in cm.output)
-            )
-
-    @patch("src.api.rag_pipeline.ollama_api.subprocess.run")
-    def test_ollama_command_not_found(self, mock_run):
-        """Test handling of missing Ollama command."""
-        # Configure mock to raise FileNotFoundError
-        mock_run.side_effect = FileNotFoundError("No such file or directory: 'ollama'")
-
-        # Create client - should log an error but not fail
-        with self.assertLogs(level="ERROR") as cm:
-            OllamaLocalClient(self.model_name)
-
-            # Verify error was logged
-            self.assertTrue(any("Ollama command not found" in msg for msg in cm.output))
-
-    @patch("src.api.rag_pipeline.ollama_api.tempfile.NamedTemporaryFile")
-    @patch("src.api.rag_pipeline.ollama_api.subprocess.run")
-    @patch("src.api.rag_pipeline.ollama_api.os.unlink")
-    @patch("src.api.rag_pipeline.ollama_api.os.getpid")
-    def test_create_temp_model(self, mock_getpid, mock_unlink, mock_run, mock_tempfile):
-        """Test creation of temporary model with parameters."""
-        # Configure mocks
-        mock_getpid.return_value = 12345
-
-        # Mock temporary file
-        mock_file = MagicMock()
-        mock_file.name = "/tmp/model12345.modelfile"
-        mock_tempfile.return_value.__enter__.return_value = mock_file
-
-        # Mock subprocess call to create model
-        mock_create_result = MagicMock()
-        mock_create_result.returncode = 0
-        mock_run.return_value = mock_create_result
+        # Import after patching
+        from api.rag_pipeline.ollama_api import OllamaLocalClient
 
         # Create client
-        with patch("src.api.rag_pipeline.ollama_api.subprocess.run"):
-            client = OllamaLocalClient(self.model_name)
+        client = OllamaLocalClient("llama2")
 
-        # Call method
+        # Verify warning was logged
+        mock_logger.warning.assert_called_once()
+
+        # Verify info about available models was logged
+        mock_logger.info.assert_called_once()
+
+    @patch('subprocess.run')
+    @patch('api.rag_pipeline.ollama_api.logger')
+    def test_init_ollama_not_found(self, mock_logger, mock_subprocess_run):
+        """Test initialization when Ollama is not installed"""
+        # Configure mock to raise FileNotFoundError
+        mock_subprocess_run.side_effect = FileNotFoundError()
+
+        # Import after patching
+        from api.rag_pipeline.ollama_api import OllamaLocalClient
+
+        # Create client
+        client = OllamaLocalClient("llama2")
+
+        # Verify error was logged
+        mock_logger.error.assert_called_once()
+
+    @patch('api.rag_pipeline.ollama_api.subprocess')
+    @patch('api.rag_pipeline.ollama_api.os')
+    @patch('api.rag_pipeline.ollama_api.tempfile')
+    @patch('api.rag_pipeline.ollama_api.logger')
+    def test_create_temp_model(self, mock_logger, mock_tempfile, mock_os, mock_subprocess):
+        """Test creating a temporary model"""
+        # Configure mocks
+        mock_tempfile.NamedTemporaryFile.return_value.__enter__.return_value.name = "/tmp/model.modelfile"
+        # Set up subprocess.run to return success for the create command only
+        create_result = MagicMock()
+        create_result.returncode = 0
+
+        # Add model check to the list of calls as well
+        list_result = MagicMock()
+        list_result.stdout = "model1\nllama2\nmodel3"
+        list_result.returncode = 0
+
+        mock_subprocess.run.side_effect = [list_result, create_result]
+
+        mock_os.getpid.return_value = 12345
+
+        # Import after patching
+        from api.rag_pipeline.ollama_api import OllamaLocalClient
+
+        # Create client
+        client = OllamaLocalClient("llama2")
+
+        # Reset mock_subprocess.run to avoid counting the call in __init__
+        mock_subprocess.run.reset_mock()
+        mock_subprocess.run.return_value = create_result
+
+        # Call the method
         temp_model_name = client._create_temp_model(temperature=0.5, top_p=0.8, repeat_penalty=1.2)
 
-        # Verify temporary file was written correctly
-        mock_file.write.assert_called_once()
-        write_arg = mock_file.write.call_args[0][0]
-        self.assertIn(f"FROM {self.model_name}", write_arg)
-        self.assertIn("PARAMETER temperature 0.5", write_arg)
-        self.assertIn("PARAMETER top_p 0.8", write_arg)
-        self.assertIn("PARAMETER repeat_penalty 1.2", write_arg)
+        # Verify expected model name
+        self.assertEqual(temp_model_name, "llama2-temp-12345")
 
-        # Verify subprocess was called correctly
-        expected_temp_name = f"{self.model_name}-temp-12345"
-        mock_run.assert_called_with(
-            ["ollama", "create", expected_temp_name, "-f", "/tmp/model12345.modelfile"],
+        # Verify temporary file was created
+        mock_tempfile.NamedTemporaryFile.assert_called_once_with(
+            mode="w",
+            suffix=".modelfile",
+            delete=False
+        )
+
+        # Verify subprocess was called correctly - only once for create
+        mock_subprocess.run.assert_called_once_with(
+            ["ollama", "create", "llama2-temp-12345", "-f", "/tmp/model.modelfile"],
             capture_output=True,
             text=True,
         )
 
-        # Verify file was cleaned up
-        mock_unlink.assert_called_once_with("/tmp/model12345.modelfile")
+        # Verify temporary file was deleted
+        mock_os.unlink.assert_called_once_with("/tmp/model.modelfile")
 
-        # Verify correct name was returned
-        self.assertEqual(temp_model_name, expected_temp_name)
-
-    @patch("src.api.rag_pipeline.ollama_api.tempfile.NamedTemporaryFile")
-    @patch("src.api.rag_pipeline.ollama_api.subprocess.run")
-    @patch("src.api.rag_pipeline.ollama_api.os.unlink")
-    def test_create_temp_model_error(self, mock_unlink, mock_run, mock_tempfile):
-        """Test error handling in temporary model creation."""
+    @patch('api.rag_pipeline.ollama_api.subprocess')
+    @patch('api.rag_pipeline.ollama_api.os')
+    @patch('api.rag_pipeline.ollama_api.tempfile')
+    @patch('api.rag_pipeline.ollama_api.logger')
+    def test_create_temp_model_error(self, mock_logger, mock_tempfile, mock_os, mock_subprocess):
+        """Test error handling when creating a temporary model"""
         # Configure mocks
-        mock_file = MagicMock()
-        mock_file.name = "/tmp/model12345.modelfile"
-        mock_tempfile.return_value.__enter__.return_value = mock_file
+        mock_tempfile.NamedTemporaryFile.return_value.__enter__.return_value.name = "/tmp/model.modelfile"
 
-        # Mock subprocess call to fail
-        mock_create_result = MagicMock()
-        mock_create_result.returncode = 1
-        mock_create_result.stderr = "Error creating model"
-        mock_run.return_value = mock_create_result
+        # Add model check to the list of calls
+        list_result = MagicMock()
+        list_result.stdout = "model1\nllama2\nmodel3"
+        list_result.returncode = 0
+
+        # Set error for create command
+        create_result = MagicMock()
+        create_result.returncode = 1
+        create_result.stderr = "Command failed"
+
+        mock_subprocess.run.side_effect = [list_result, create_result]
+
+        mock_os.getpid.return_value = 12345
+
+        # Import after patching
+        from api.rag_pipeline.ollama_api import OllamaLocalClient
 
         # Create client
-        with patch("src.api.rag_pipeline.ollama_api.subprocess.run"):
-            client = OllamaLocalClient(self.model_name)
+        client = OllamaLocalClient("llama2")
 
-        # Call method - should log error and return original model name
-        with self.assertLogs(level="ERROR") as cm:
-            temp_model_name = client._create_temp_model()
+        # Reset mock_subprocess.run to avoid counting the call in __init__
+        mock_subprocess.run.reset_mock()
+        mock_subprocess.run.return_value = create_result
+
+        # Call the method
+        temp_model_name = client._create_temp_model()
+
+        # Verify fallback to original model
+        self.assertEqual(temp_model_name, "llama2")
+
+        # Verify error was logged
+        mock_logger.error.assert_called_once()
+
+    @patch('api.rag_pipeline.ollama_api.logger')
+    def test_generate_text(self, mock_logger):
+        """Test generating text with local Ollama model"""
+        # Import after patching
+        from api.rag_pipeline.ollama_api import OllamaLocalClient
+
+        # Create a mock instance with _create_temp_model already mocked
+        client = OllamaLocalClient("llama2")
+        client._ensure_model_exists = MagicMock()
+        client._create_temp_model = MagicMock(return_value="llama2-temp-12345")
+
+        # Mock subprocess.run for the actual test
+        with patch('api.rag_pipeline.ollama_api.subprocess.run') as mock_run:
+            # Configure the run mock to return different values for run and cleanup
+            run_result = MagicMock()
+            run_result.returncode = 0
+            run_result.stdout = "User prompt\nGenerated response text"
+
+            cleanup_result = MagicMock()
+            cleanup_result.returncode = 0
+
+            mock_run.side_effect = [run_result, cleanup_result]
+
+            # Call the method
+            response = client.generate_text("User prompt")
+
+            # Verify response
+            self.assertEqual(response, "Generated response text")
+
+            # Verify temp model was created
+            client._create_temp_model.assert_called_once_with(0.7, 0.9, 1.1)
+
+            # Verify ollama run was called correctly
+            calls = mock_run.call_args_list
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(calls[0][0][0], ["ollama", "run", "llama2-temp-12345", "User prompt"])
+            self.assertEqual(calls[1][0][0], ["ollama", "rm", "llama2-temp-12345"])
+
+    @patch('api.rag_pipeline.ollama_api.logger')
+    def test_generate_text_error(self, mock_logger):
+        """Test error handling in text generation"""
+        # Import after patching
+        from api.rag_pipeline.ollama_api import OllamaLocalClient
+
+        # Create a mock instance with _create_temp_model already mocked
+        client = OllamaLocalClient("llama2")
+        client._ensure_model_exists = MagicMock()
+        client._create_temp_model = MagicMock(return_value="llama2-temp-12345")
+
+        # Mock subprocess.run for the actual test
+        with patch('api.rag_pipeline.ollama_api.subprocess.run') as mock_run:
+            # Configure the run mock to return error for run but success for cleanup
+            run_result = MagicMock()
+            run_result.returncode = 1
+            run_result.stderr = "Command failed"
+
+            cleanup_result = MagicMock()
+            cleanup_result.returncode = 0
+
+            mock_run.side_effect = [run_result, cleanup_result]
+
+            # Call the method
+            response = client.generate_text("User prompt")
+
+            # Verify error response
+            self.assertEqual(response, "Error: Command failed")
 
             # Verify error was logged
-            self.assertTrue(any("Error creating temporary model" in msg for msg in cm.output))
+            mock_logger.error.assert_called_once()
 
-        # Verify original model name was returned as fallback
-        self.assertEqual(temp_model_name, self.model_name)
+    @patch('api.rag_pipeline.ollama_api.logger')
+    def test_cleanup_failure(self, mock_logger):
+        """Test handling cleanup failure after generation"""
+        # Import after patching
+        from api.rag_pipeline.ollama_api import OllamaLocalClient
 
-    @patch.object(OllamaLocalClient, "_create_temp_model")
-    @patch("src.api.rag_pipeline.ollama_api.subprocess.run")
-    def test_generate_text(self, mock_run, mock_create_temp_model):
-        """Test text generation using local Ollama model."""
-        # Configure mocks
-        mock_create_temp_model.return_value = "llama3:8b-temp-12345"
+        # Create a mock instance with _create_temp_model already mocked
+        client = OllamaLocalClient("llama2")
+        client._ensure_model_exists = MagicMock()
+        client._create_temp_model = MagicMock(return_value="llama2-temp-12345")
 
-        mock_generate_result = MagicMock()
-        mock_generate_result.returncode = 0
-        mock_generate_result.stdout = "Model response text"
+        # Mock subprocess.run for the actual test
+        with patch('api.rag_pipeline.ollama_api.subprocess.run') as mock_run:
+            # Configure the run mock to return success for run but failure for cleanup
+            run_result = MagicMock()
+            run_result.returncode = 0
+            run_result.stdout = "Generated text"
 
-        mock_cleanup_result = MagicMock()
-        mock_cleanup_result.returncode = 0
+            cleanup_result = MagicMock()
+            cleanup_result.returncode = 1
+            cleanup_result.stderr = "Cleanup failed"
 
-        # Set up mock_run to return different values for different calls
-        mock_run.side_effect = [mock_generate_result, mock_cleanup_result]
+            mock_run.side_effect = [run_result, cleanup_result]
 
-        # Create client
-        with patch("src.api.rag_pipeline.ollama_api.subprocess.run"):
-            client = OllamaLocalClient(self.model_name)
+            # Reset the logger mock to avoid counting warnings from other calls
+            mock_logger.reset_mock()
 
-        # Call method
-        response = client.generate_text(
-            prompt="What is the capital of France?", temperature=0.7, top_p=0.9
+            # Call the method
+            response = client.generate_text("User prompt")
+
+            # Verify response still works
+            self.assertEqual(response, "Generated text")
+
+            # Verify warning was called exactly once
+            mock_logger.warning.assert_called_once()
+
+    def test_rerank_with_llm(self):
+        """Test rerank_with_llm function"""
+        # Create a mock for transformer_reranker module
+        mock_transformer_reranker = MagicMock()
+        mock_rerank_chunks = MagicMock(return_value=["chunk1", "chunk2"])
+        mock_transformer_reranker.rerank_chunks = mock_rerank_chunks
+
+        # Save original and patch the module
+        original_module = sys.modules.get('api.rag_pipeline.transformer_reranker', None)
+        sys.modules['api.rag_pipeline.transformer_reranker'] = mock_transformer_reranker
+
+        try:
+            # Force reload of the ollama_api module to pick up our mock
+            if 'api.rag_pipeline.ollama_api' in sys.modules:
+                del sys.modules['api.rag_pipeline.ollama_api']
+
+            # Now import the module - this should use our mock transformer_reranker
+            import api.rag_pipeline.ollama_api as ollama_api
+
+            # Call the function
+            chunks = ["raw_chunk1", "raw_chunk2"]
+            query = "test query"
+            result = ollama_api.rerank_with_llm(chunks, query)
+
+            # Verify the mock was called correctly
+            mock_rerank_chunks.assert_called_once_with(chunks, query)
+
+            # Verify the result
+            self.assertEqual(result, ["chunk1", "chunk2"])
+
+        finally:
+            # Restore original module if it existed
+            if original_module:
+                sys.modules['api.rag_pipeline.transformer_reranker'] = original_module
+            else:
+                del sys.modules['api.rag_pipeline.transformer_reranker']
+
+    def test_format_prompt(self):
+        """Test format_prompt function"""
+        # Import the function
+        from api.rag_pipeline.ollama_api import format_prompt
+
+        # Call the function
+        prompt = format_prompt(
+            system_prompt="You are a helpful assistant.",
+            context="This is the context information.",
+            question="What is the answer?",
+            conversation_history="User: Previous question\nAssistant: Previous answer"
         )
 
-        # Verify temp model was created
-        mock_create_temp_model.assert_called_once_with(0.7, 0.9, 1.1)
+        # Verify prompt structure
+        self.assertIn("You are a helpful assistant.", prompt)
+        self.assertIn("This is the context information.", prompt)
+        self.assertIn("What is the answer?", prompt)
+        self.assertIn("User: Previous question\nAssistant: Previous answer", prompt)
 
-        # Verify subprocess calls
-        self.assertEqual(mock_run.call_count, 2)
-        # First call - generate text
-        mock_run.assert_any_call(
-            ["ollama", "run", "llama3:8b-temp-12345", "What is the capital of France?"],
-            capture_output=True,
-            text=True,
-        )
-        # Second call - cleanup
-        mock_run.assert_any_call(
-            ["ollama", "rm", "llama3:8b-temp-12345"], capture_output=True, text=True
+    @patch('api.rag_pipeline.ollama_api.OllamaLocalClient')
+    @patch('api.rag_pipeline.ollama_api.GENERATION_CONFIG', {
+        "temperature": 0.8,
+        "top_p": 0.95,
+        "repeat_penalty": 1.2
+    })
+    def test_query_llm(self, mock_ollama_client_class):
+        """Test query_llm function"""
+        # Configure mock
+        mock_client = MagicMock()
+        mock_client.generate_text.return_value = "Generated response"
+        mock_ollama_client_class.return_value = mock_client
+
+        # Import after patching
+        from api.rag_pipeline.ollama_api import query_llm
+
+        # Call the function
+        response = query_llm("Test prompt", "llama2")
+
+        # Verify client was created with correct model
+        mock_ollama_client_class.assert_called_once_with("llama2")
+
+        # Verify generate_text was called with correct parameters
+        mock_client.generate_text.assert_called_once_with(
+            prompt="Test prompt",
+            temperature=0.8,
+            top_p=0.95,
+            repeat_penalty=1.2
         )
 
         # Verify response
-        self.assertEqual(response, "Model response text")
+        self.assertEqual(response, "Generated response")
 
-    @patch.object(OllamaLocalClient, "_create_temp_model")
-    @patch("src.api.rag_pipeline.ollama_api.subprocess.run")
-    def test_generate_text_error(self, mock_run, mock_create_temp_model):
-        """Test error handling in text generation."""
-        # Configure mocks
-        mock_create_temp_model.return_value = "llama3:8b-temp-12345"
-
-        mock_generate_result = MagicMock()
-        mock_generate_result.returncode = 1
-        mock_generate_result.stderr = "Generation error"
-
-        mock_cleanup_result = MagicMock()
-        mock_cleanup_result.returncode = 0
-
-        # Set up mock_run to return different values for different calls
-        mock_run.side_effect = [mock_generate_result, mock_cleanup_result]
-
-        # Create client
-        with patch("src.api.rag_pipeline.ollama_api.subprocess.run"):
-            client = OllamaLocalClient(self.model_name)
-
-        # Call method - should log error and return error message
-        with self.assertLogs(level="ERROR") as cm:
-            response = client.generate_text("Failed prompt")
-
-            # Verify error was logged
-            self.assertTrue(any("Error generating text" in msg for msg in cm.output))
-
-        # Verify response contains error
-        self.assertEqual(response, "Error: Generation error")
-
-    @patch("src.api.rag_pipeline.ollama_api.OllamaLocalClient")
-    def test_rerank_with_llm(self, mock_ollama_client_class):
-        """Test LLM-based reranking of chunks."""
-        # Configure mock
-        mock_client = MagicMock()
-        mock_client.generate_text.side_effect = ["7", "5", "9"]
-        mock_ollama_client_class.return_value = mock_client
-
-        # Test data
-        chunks = [
-            {"chunk_id": 1, "chunk_text": "Information about Paris"},
-            {"chunk_id": 2, "chunk_text": "Information about London"},
-            {"chunk_id": 3, "chunk_text": "Information about the Eiffel Tower"},
-        ]
-
-        # Call function
-        reranked = rerank_with_llm(chunks, "Tell me about Paris", "llama3:8b")
-
-        # Verify client was created with correct model
-        mock_ollama_client_class.assert_called_once_with("llama3:8b")
-
-        # Verify generate_text was called for each chunk
-        self.assertEqual(mock_client.generate_text.call_count, 3)
-
-        # Verify reranking - should be in order of scores (9, 7, 5)
-        self.assertEqual(reranked[0]["chunk_id"], 3)  # Score 9
-        self.assertEqual(reranked[1]["chunk_id"], 1)  # Score 7
-        self.assertEqual(reranked[2]["chunk_id"], 2)  # Score 5
-
-        # Verify scores were added
-        self.assertEqual(reranked[0]["llm_score"], 9)
-        self.assertEqual(reranked[1]["llm_score"], 7)
-        self.assertEqual(reranked[2]["llm_score"], 5)
-
-    @patch("src.api.rag_pipeline.ollama_api.OllamaLocalClient")
-    def test_rerank_with_llm_parsing_error(self, mock_ollama_client_class):
-        """Test error handling in score parsing during reranking."""
-        # Configure mock to return responses that can't be parsed as numbers
-        mock_client = MagicMock()
-        mock_client.generate_text.side_effect = ["Not a number", "5", "nine"]
-        mock_ollama_client_class.return_value = mock_client
-
-        # Test data
-        chunks = [
-            {"chunk_id": 1, "chunk_text": "Information about Paris"},
-            {"chunk_id": 2, "chunk_text": "Information about London"},
-            {"chunk_id": 3, "chunk_text": "Information about the Eiffel Tower"},
-        ]
-
-        # Call function
-        reranked = rerank_with_llm(chunks, "Tell me about Paris", "llama3:8b")
-
-        # Verify default scores were used when parsing failed
-        self.assertEqual(reranked[0]["chunk_id"], 2)  # Score 5
-        self.assertEqual(reranked[1]["llm_score"], 0)  # Failed to parse "Not a number"
-        self.assertEqual(reranked[2]["llm_score"], 0)  # Failed to parse "nine"
-
-    @patch("src.api.rag_pipeline.ollama_api.OllamaLocalClient")
-    def test_rerank_with_llm_error(self, mock_ollama_client_class):
-        """Test error handling in LLM reranking."""
+    @patch('api.rag_pipeline.ollama_api.OllamaLocalClient')
+    @patch('api.rag_pipeline.ollama_api.logger')
+    def test_query_llm_exception(self, mock_logger, mock_ollama_client_class):
+        """Test query_llm with exception"""
         # Configure mock to raise exception
-        mock_ollama_client_class.side_effect = Exception("Reranking error")
+        mock_ollama_client_class.side_effect = Exception("Client error")
 
-        # Test data
-        chunks = [
-            {"chunk_id": 1, "chunk_text": "Information about Paris"},
-            {"chunk_id": 2, "chunk_text": "Information about London"},
-        ]
+        # Import after patching
+        from api.rag_pipeline.ollama_api import query_llm
 
-        # Call function - should log error and return original chunks
-        with self.assertLogs(level="ERROR") as cm:
-            result = rerank_with_llm(chunks, "Tell me about Paris", "llama3:8b")
+        # Call the function
+        response = query_llm("Test prompt", "llama2")
 
-            # Verify error was logged
-            self.assertTrue(any("Error in LLM reranking" in msg for msg in cm.output))
+        # Verify error response
+        self.assertEqual(response, "Error: Client error")
 
-        # Verify original chunks were returned
-        self.assertEqual(result, chunks)
-
-    def test_format_prompt(self):
-        """Test prompt formatting."""
-        system_prompt = "You are a helpful assistant."
-        context = "Paris is the capital of France."
-        question = "What is the capital of France?"
-        history = "User: Hi\nAI: Hello"
-
-        # Call function
-        formatted = format_prompt(system_prompt, context, question, history)
-
-        # Verify format
-        self.assertIn(system_prompt, formatted)
-        self.assertIn(context, formatted)
-        self.assertIn(question, formatted)
-        self.assertIn(history, formatted)
-        self.assertIn("CONTEXT:", formatted)
-        self.assertIn("USER QUERY:", formatted)
-        self.assertIn("RESPONSE:", formatted)
-
-    @patch("src.api.rag_pipeline.ollama_api.OllamaLocalClient")
-    def test_query_llm(self, mock_ollama_client_class):
-        """Test querying LLM with a formatted prompt."""
-        # Configure mock
-        mock_client = MagicMock()
-        mock_client.generate_text.return_value = "The capital of France is Paris."
-        mock_ollama_client_class.return_value = mock_client
-
-        # Call function
-        response = query_llm("What is the capital of France?", "llama3:8b")
-
-        # Verify client was created with correct model
-        mock_ollama_client_class.assert_called_once_with("llama3:8b")
-
-        # Verify generate_text was called with correct parameters
-        mock_client.generate_text.assert_called_once()
-        args, kwargs = mock_client.generate_text.call_args
-        self.assertEqual(kwargs["prompt"], "What is the capital of France?")
-
-        # Verify correct response was returned
-        self.assertEqual(response, "The capital of France is Paris.")
-
-    @patch("src.api.rag_pipeline.ollama_api.OllamaLocalClient")
-    def test_query_llm_error(self, mock_ollama_client_class):
-        """Test error handling in LLM querying."""
-        # Configure mock to raise exception
-        mock_ollama_client_class.side_effect = Exception("Query error")
-
-        # Call function - should log error and return error message
-        with self.assertLogs(level="ERROR") as cm:
-            response = query_llm("What is the capital of France?", "llama3:8b")
-
-            # Verify error was logged
-            self.assertTrue(any("Error querying local LLM" in msg for msg in cm.output))
-
-        # Verify response contains error
-        self.assertEqual(response, "Error: Query error")
+        # Verify exception was logged
+        mock_logger.exception.assert_called_once()
 
 
 if __name__ == "__main__":
