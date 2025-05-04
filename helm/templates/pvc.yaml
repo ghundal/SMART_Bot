@@ -1,15 +1,27 @@
+# -----------------------------------------------------------------------------
+# PersistentVolumeClaims (PVCs) for the "smart" application.
+#
+# This template defines two PVCs:
+# 1. Postgres PVC - Allocates persistent storage for the PostgreSQL database.
+#    - The size is configurable via `.Values.postgresql.storageSize`.
+# 2. Models PVC - Allocates 50Gi storage for Ollama models or other large files.
+#    - Size is hardcoded, but can be parameterized if needed.
+# -----------------------------------------------------------------------------
+
+# PVC for PostgreSQL database
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ include "smart.fullname" . }}-postgres-pvc
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteOnce # Mounted by a single node for writing
   resources:
     requests:
       storage: {{ .Values.postgresql.storageSize }}
 ---
 
+# PVC for model storage (e.g., Ollama)
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

@@ -1,0 +1,53 @@
+# E115_SMART helm set up
+The project uses Helm deployment tool to set up deployment to Kubernetes.
+
+## Prerequisites
+
+**Install helm**
+```
+snap install helm
+```
+
+**Generate template**
+```
+helm create smart
+```
+
+### Rendering the chart
+```
+helm template smart ./helm
+```
+
+### Check running pods
+```
+kubectl get pods
+```
+### Check Logs
+```
+kubectl logs <pod name>
+```
+
+### Access postgres database in Kubernetes with shell
+```
+kubectl exec -it < postgres pod name>  -- /bin/bash
+root: psql -U postgres
+\c smart
+\d
+```
+### Get deployments
+```
+kubectl get deployments
+```
+
+### Manually Scale up or down (check with get pods or deplyments)
+```
+kubectl scale deployment <artifact> --replicas= <number>
+
+kubectl scale deployment smart-frontend --replicas=0
+kubectl scale deployment smart-frontend --replicas=3
+```
+
+### Describe (Check status)
+```
+kubectl describe pod <pod name>
+```

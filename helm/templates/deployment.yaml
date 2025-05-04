@@ -1,3 +1,14 @@
+# -----------------------------------------------------------------------------
+# Kubernetes Deployment definitions for the "smart" Helm chart.
+#
+# This template defines three deployments:
+# 1. Frontend Deployment - Deploys the frontend app (e.g., React) on port 3000.
+# 2. API Deployment - Deploys the backend service with model loading and secrets.
+# 3. Postgres Deployment - Deploys a single-instance PostgreSQL database.
+#
+# All configurations use values from the Helm values.yaml file to support customization.
+# -----------------------------------------------------------------------------
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:

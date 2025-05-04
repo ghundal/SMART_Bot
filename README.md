@@ -1,4 +1,4 @@
-# E115_SMART Milestone 2
+# E115_SMART
 
 This repository contains a **Retrieval-Augmented Generation (RAG)** system that integrates a **vector database** with a **Large Language Model (LLM)**. The system:
 
@@ -115,3 +115,25 @@ docker-compose stop
 docker system prune
 sudo rm -rf ../persistent-folder/
 ```
+## **Deployment**
+
+### Preqrequsites
+- Add the secrets in th github in settings -> action
+
+### Steps
+The workflows are set up in Github actions to run on commit with following steps:
+- run linters
+- run tests
+- build images
+- push the images to GCR
+<need ansible step here>
+- deploy to kubernetes
+
+- **Commit**
+```
+git add .
+git commit -m "<message>"
+git push
+```
+
+## **Manual Deployment**

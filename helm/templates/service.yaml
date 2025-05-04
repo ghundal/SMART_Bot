@@ -1,3 +1,14 @@
+# -----------------------------------------------------------------------------
+# Kubernetes Service definitions for the "smart" application, templated via Helm.
+#
+# This file defines three services:
+# 1. Frontend service: Exposes the frontend application on port 3000.
+# 2. API service: Exposes the backend API service on port 9000.
+# 3. Postgres service: Internal ClusterIP service to expose the Postgres DB on port 5432.
+#
+# Service types and frontend/backend ports are parameterized via Helm values.
+# -----------------------------------------------------------------------------
+
 apiVersion: v1
 kind: Service
 metadata:
