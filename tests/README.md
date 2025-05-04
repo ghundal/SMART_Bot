@@ -97,24 +97,10 @@ You can exclude specific lines or functions from coverage by adding `# pragma: n
 
 ## Continuous Integration
 
-If you're using CI/CD pipelines, add the following commands to your workflow:
+Add the following commands to your workflow:
 
 ```bash
 python -m pytest --cov=src.datapipeline --cov-report=xml
 ```
 
-This will generate a coverage.xml file that can be used by services like Codecov or SonarQube.
-
 ## Troubleshooting
-
-### Module Not Found Errors
-
-If you encounter module not found errors, make sure your Python path includes the project root:
-
-```bash
-export PYTHONPATH=$PYTHONPATH:$(pwd)
-```
-
-### Coverage Not Working
-
-If coverage isn't working correctly, check that your package structure is correct and that you're using the right import paths. The `--cov` parameter should match your actual module structure.

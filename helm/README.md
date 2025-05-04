@@ -54,13 +54,24 @@ kubectl describe pod <pod name>
 
 
 
+### Deployment
 
+**Transfer secret Google OAuth**
+```
 kubectl create secret generic oauth-secret --from-file=client_secrets.json=client_secrets2.json
+```
 
-
+**Transfer data to api pod**
+Get data from docker
+```
 docker exec -it postgres /bin/bash
 pg_dump -U postgres -d smart -f /var/lib/postgresql/data/dump.sql
 sudo cp ../persistent-folder/postgres/dump.sql ../E115_SMART/
+```
+
+Push data to postgres pod
+```
 kubectl cp dump.sql smart-postgres-65d584dfd4-lcx57:/var/lib/postgresql/data
 kubectl exec -it smart-postgres-65d584dfd4-lcx57 -- /bin/bash
 psql -U postgres -d smart -f /var/lib/postgresql/data/dump.sql
+```

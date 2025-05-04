@@ -62,7 +62,7 @@ class TestAuthMiddleware(unittest.TestCase):
     def import_auth_middleware(self):
         """Import the auth_middleware module directly from file"""
         # Add src to the Python path
-        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src")))
+        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
         # Import the module directly using its file path
         import importlib.util
@@ -70,7 +70,7 @@ class TestAuthMiddleware(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "auth_middleware",
             os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "../../src/api/routers/auth_middleware.py")
+                os.path.join(os.path.dirname(__file__), "../src/api/routers/auth_middleware.py")
             ),
         )
         auth_middleware = importlib.util.module_from_spec(spec)

@@ -5,12 +5,10 @@ Client for local Ollama model interactions without API calls.
 import os
 import subprocess
 import tempfile
+import re
 from typing import List, Dict, Any
 
-from .config import GENERATION_CONFIG, logger
-
-# Import the reranker from the new module
-from .transformer_reranker import rerank_chunks
+from .config import GENERATION_CONFIG, RERANKER_MODEL, logger
 
 
 class OllamaLocalClient:
@@ -146,27 +144,27 @@ PARAMETER repeat_penalty {repeat_penalty}
 
 
 def rerank_with_llm(
-    chunks: List[Dict[str, Any]], query: str, model_name: str
+    chunks: List[Dict[str, Any]], query: str, model_name: str = None
 ) -> List[Dict[str, Any]]:
     """
     Use a local Ollama model to rerank chunks based on relevance to the query.
 
-    This function detects if the model_name is a reranker model and uses the appropriate method:
-    - For reranker models (like qllama/bge-reranker-large): Uses direct comparison
-    - For LLM models: Uses prompt-based scoring
+    Args:
+        chunks: List of document chunks to rerank
+        query: The user's query
+        model_name: Optional model name to override the RERANKER_MODEL from config
     """
     try:
-        # Check if the model is a reranker model
-        reranker_model_names = ["bge-reranker", "rerank", "colbert", "msmarco"]
+        # Use RERANKER_MODEL if no specific model provided
+        if model_name is None:
+            model_name = RERANKER_MODEL
 
-        # If the model name contains any reranker keywords, use direct reranking
-        if any(reranker_term in model_name.lower() for reranker_term in reranker_model_names):
-            logger.info(f"Using direct transformer reranking with model: {model_name}")
-            return rerank_chunks(chunks, query, model_name)
+        logger.info(f"Reranking using model: {model_name}")
 
-        # Otherwise use the original prompt-based approach
+        # Always use prompt-based reranking
         logger.info(f"Using prompt-based reranking with model: {model_name}")
         reranking_results = []
+
         # Initialize local Ollama client
         model_client = OllamaLocalClient(model_name)
 
@@ -189,8 +187,6 @@ Respond with only a number from 0 to 10.
             # Try to get a numerical score, default to 0 if parsing fails
             try:
                 # Extract the first number from the response
-                import re
-
                 numbers = re.findall(r"\d+(?:\.\d+)?", score_text)
                 relevance_score = float(numbers[0]) if numbers else 0
                 # Ensure score is in valid range
@@ -205,7 +201,7 @@ Respond with only a number from 0 to 10.
 
         # Sort by LLM score in descending order
         reranked_chunks = sorted(reranking_results, key=lambda x: x["llm_score"], reverse=True)
-        logger.info(f"Reranked {len(reranked_chunks)} chunks using local Ollama model")
+        logger.info(f"Reranked {len(reranked_chunks)} chunks using Ollama model: {model_name}")
         return reranked_chunks
     except Exception as e:
         logger.exception(f"Error in LLM reranking: {str(e)}")
