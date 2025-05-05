@@ -382,7 +382,7 @@ function ChatContent() {
             <div className={styles.suggestionContainer}>
               <button
                 className={styles.suggestionButton}
-                onClick={() => handleSuggestionClick('give me its assumptions')}
+                onClick={() => handleSuggestionClick('also give me its assumptions')}
                 disabled={isTyping}
               >
                 give me assumptions

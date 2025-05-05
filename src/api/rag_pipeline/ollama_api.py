@@ -1,28 +1,33 @@
 """
-Async client for Ollama model interactions via API server.
+Async client for Ollama model interactions via API server with extended timeouts.
 """
 
 import re
 import aiohttp
+import asyncio
 from typing import List, Dict, Any
 
-from .config import GENERATION_CONFIG, OLLAMA_URL, logger
+from .config import GENERATION_CONFIG, OLLAMA_URL, RERANKER_MODEL, logger
 
-# Override the RERANKER_MODEL to use llama3:8b
-RERANKER_MODEL = "llama3:8b"
+# Configure longer timeouts (10 minutes = 600 seconds)
+DEFAULT_TIMEOUT = 600  # 10 minutes in seconds
 
 
 class AsyncOllamaAPIClient:
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str, timeout: int = DEFAULT_TIMEOUT):
         """
         Initialize an async client for Ollama model interactions via API.
 
         Args:
             model_name: Name of the Ollama model
+            timeout: Timeout in seconds for API requests (default: 10 minutes)
         """
         self.model_name = model_name
         self.api_base = OLLAMA_URL
-        logger.info(f"Initialized AsyncOllamaAPIClient for model: {model_name}")
+        self.timeout = timeout
+        logger.info(
+            f"Initialized AsyncOllamaAPIClient for model: {model_name} with {timeout}s timeout"
+        )
 
     async def generate_text(
         self,
@@ -31,6 +36,7 @@ class AsyncOllamaAPIClient:
         top_p: float = 0.9,
         repeat_penalty: float = 1.1,
         max_tokens: int = 2048,
+        timeout: int = None,
     ) -> str:
         """
         Generate text using Ollama model via API.
@@ -41,11 +47,15 @@ class AsyncOllamaAPIClient:
             top_p: Top-p sampling parameter
             repeat_penalty: Penalty for repeating tokens
             max_tokens: Maximum number of tokens to generate
+            timeout: Optional request-specific timeout in seconds (overrides default)
 
         Returns:
             Generated text response
         """
         try:
+            # Use provided timeout or fall back to instance default
+            request_timeout = timeout if timeout is not None else self.timeout
+
             # Prepare the payload for the API request
             payload = {
                 "model": self.model_name,
@@ -58,16 +68,16 @@ class AsyncOllamaAPIClient:
             }
 
             # Make the API request
-            logger.info(f"Sending generate request to API for model: {self.model_name}")
+            logger.info(
+                f"Sending generate request to API for model: {self.model_name} with {request_timeout}s timeout"
+            )
 
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     self.api_base,
                     json=payload,
                     headers={"Content-Type": "application/json"},
-                    timeout=aiohttp.ClientTimeout(
-                        total=30
-                    ),  # Add timeout to prevent hanging requests
+                    timeout=aiohttp.ClientTimeout(total=request_timeout),  # Extended timeout
                 ) as response:
                     if response.status != 200:
                         error_msg = (
@@ -88,6 +98,14 @@ class AsyncOllamaAPIClient:
 
                     return api_response
 
+        except aiohttp.ClientError as ce:
+            error_message = f"Network error in generate_text: {str(ce)}"
+            logger.exception(error_message)
+            return f"Error: {error_message}"
+        except asyncio.TimeoutError:
+            error_message = f"Request timed out after {request_timeout} seconds"
+            logger.exception(error_message)
+            return f"Error: {error_message}"
         except Exception as e:
             error_message = f"Error in generate_text: {str(e)}"
             logger.exception(error_message)
@@ -95,7 +113,7 @@ class AsyncOllamaAPIClient:
 
 
 async def rerank_with_llm(
-    chunks: List[Dict[str, Any]], query: str, model_name: str = None
+    chunks: List[Dict[str, Any]], query: str, model_name: str = None, timeout: int = DEFAULT_TIMEOUT
 ) -> List[Dict[str, Any]]:
     """
     Use an Ollama model to rerank chunks based on relevance to the query.
@@ -105,17 +123,18 @@ async def rerank_with_llm(
         chunks: List of document chunks to rerank
         query: The user's query
         model_name: Optional model name to override the RERANKER_MODEL from config
+        timeout: Timeout in seconds for API requests (default: 10 minutes)
     """
     try:
         # Use RERANKER_MODEL if no specific model provided
         if model_name is None:
             model_name = RERANKER_MODEL
 
-        logger.info(f"Reranking using model: {model_name}")
+        logger.info(f"Reranking using model: {model_name} with {timeout}s timeout")
         logger.info(f"Using prompt-based reranking with model: {model_name}")
 
-        # Initialize API client
-        model_client = AsyncOllamaAPIClient(model_name)
+        # Initialize API client with extended timeout
+        model_client = AsyncOllamaAPIClient(model_name, timeout=timeout)
 
         # Try a test call to see if the model is working
         test_prompt = "This is a test."
@@ -218,13 +237,18 @@ RESPONSE:
 """
 
 
-async def query_llm(prompt: str, model_name: str) -> str:
+async def query_llm(prompt: str, model_name: str, timeout: int = DEFAULT_TIMEOUT) -> str:
     """
     Query the Ollama model with a formatted prompt.
+
+    Args:
+        prompt: The formatted prompt to send to the model
+        model_name: Name of the Ollama model to use
+        timeout: Timeout in seconds for API request (default: 10 minutes)
     """
     try:
-        # Initialize Ollama API client
-        model_client = AsyncOllamaAPIClient(model_name)
+        # Initialize Ollama API client with extended timeout
+        model_client = AsyncOllamaAPIClient(model_name, timeout=timeout)
 
         # Generate response using API model
         response = await model_client.generate_text(

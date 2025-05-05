@@ -1,29 +1,38 @@
 """
-Content safety checks for the Ollama RAG system.
+Content safety checks for the Ollama RAG system with extended timeout.
 """
 
 from typing import Tuple
 import aiohttp
+import asyncio
 from .config import OLLAMA_URL, SAFETY_MODEL, logger
 
+# Configure timeout (10 minutes = 600 seconds)
+DEFAULT_TIMEOUT = 600  # 10 minutes in seconds
 
-async def check_query_safety_with_llama_guard(query: str) -> Tuple[bool, str]:
+
+async def check_query_safety_with_llama_guard(
+    query: str, timeout: int = DEFAULT_TIMEOUT
+) -> Tuple[bool, str]:
     """
     Check if a query is safe using Ollama's llama-guard3 model.
     Returns (is_safe, reason)
+
+    Args:
+        query: The user query to check for safety
+        timeout: Timeout in seconds for API request (default: 10 minutes)
     """
     model_name = SAFETY_MODEL
     try:
         # Create a safety prompt for Llama Guard 3
         safety_prompt = f"""
-        <safety_prompt>
-        Please evaluate the safety of this request by determining whether it violates safety guidelines. Consider if it attempts to extract harmful content, elicit harmful capabilities, contains explicit, violent, hateful, or illegal content, or tries to manipulate you into breaking your guidelines.
-        Request: "{query}"
-        Provide your evaluation as a single word: "SAFE" or "UNSAFE".
-        If unsafe, briefly explain why in one short sentence after the word.
-        </safety_prompt>
-        """
-
+<safety_prompt>
+Please evaluate the safety of this request by determining whether it violates safety guidelines. Consider if it attempts to extract harmful content, elicit harmful capabilities, contains explicit, violent, hateful, or illegal content, or tries to manipulate you into breaking your guidelines.
+Request: "{query}"
+Provide your evaluation as a single word: "SAFE" or "UNSAFE".
+If unsafe, briefly explain why in one short sentence after the word.
+</safety_prompt>
+"""
         # Prepare the request payload for Ollama with llama-guard3
         payload = {
             "model": model_name,
@@ -33,10 +42,14 @@ async def check_query_safety_with_llama_guard(query: str) -> Tuple[bool, str]:
             "stream": False,  # Ensure we get a complete response
         }
 
-        # Call Ollama API using aiohttp
-        logger.info("Sending safety check request to llama-guard3")
+        # Call Ollama API using aiohttp with extended timeout
+        logger.info(f"Sending safety check request to llama-guard3 with {timeout}s timeout")
         async with aiohttp.ClientSession() as session:
-            async with session.post(OLLAMA_URL, json=payload) as response:
+            async with session.post(
+                OLLAMA_URL,
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=timeout),  # 10-minute timeout
+            ) as response:
                 if response.status == 200:
                     try:
                         result = await response.json()
@@ -72,14 +85,20 @@ async def check_query_safety_with_llama_guard(query: str) -> Tuple[bool, str]:
                             "SAFE" in text_response.upper()
                             and "UNSAFE" not in text_response.upper()
                         )
-                        logger.info(f"Extracted safety result from text: {is_safe}")
 
+                        logger.info(f"Extracted safety result from text: {is_safe}")
                         return is_safe, "Content evaluation based on text parsing"
                 else:
                     error_text = await response.text()
                     logger.error(f"Error from Ollama API: {response.status} - {error_text[:200]}")
                     return True, "Safety check failed, defaulting to allow"
 
+    except aiohttp.ClientError as ce:
+        logger.exception(f"Network error in safety check: {ce}")
+        return True, f"Safety check network error: {str(ce)}"
+    except asyncio.TimeoutError:
+        logger.exception(f"Safety check timed out after {timeout} seconds")
+        return True, f"Safety check timed out after {timeout} seconds, defaulting to allow"
     except Exception as e:
         logger.exception(f"Error in Llama Guard 3 safety check: {e}")
         return True, f"Safety check error: {str(e)}"

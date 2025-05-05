@@ -1,5 +1,5 @@
 """
-Main RAG functionality for the Ollama system.
+Main RAG functionality for the Ollama system with extended timeouts.
 """
 
 from utils.database import log_audit
@@ -11,6 +11,11 @@ from .ollama_api import format_prompt, query_llm, rerank_with_llm
 from .safety import check_query_safety_with_llama_guard
 from .search import hybrid_search, retrieve_document_metadata
 
+# Define default timeouts (in seconds)
+DEFAULT_SAFETY_TIMEOUT = 600  # 10 minutes
+DEFAULT_RERANKER_TIMEOUT = 600  # 10 minutes
+DEFAULT_QUERY_TIMEOUT = 600  # 10 minutes
+
 
 async def query_ollama_with_hybrid_search_multilingual(
     session,
@@ -21,14 +26,32 @@ async def query_ollama_with_hybrid_search_multilingual(
     vector_k=DEFAULT_VECTOR_K,
     bm25_k=DEFAULT_BM25_K,
     chat_history=None,
+    safety_timeout=DEFAULT_SAFETY_TIMEOUT,
+    reranker_timeout=DEFAULT_RERANKER_TIMEOUT,
+    query_timeout=DEFAULT_QUERY_TIMEOUT,
 ):
     """
     Query the Ollama model using hybrid search with multilingual support.
-    Now includes chat history for conversational memory.
+    Now includes chat history for conversational memory and configurable timeouts.
+
+    Args:
+        session: Database session
+        question: User's original question in any language
+        embedding_model: Model to use for embedding generation
+        user_email: User's email for document access control
+        model_name: Name of the Ollama model to query
+        vector_k: Number of results to retrieve from vector search
+        bm25_k: Number of results to retrieve from BM25 search
+        chat_history: List of previous conversation messages
+        safety_timeout: Timeout in seconds for safety check calls (default: 10 minutes)
+        reranker_timeout: Timeout in seconds for reranking calls (default: 10 minutes)
+        query_timeout: Timeout in seconds for LLM query calls (default: 10 minutes)
     """
     try:
-        # First safety check on original query (any language)
-        is_safe_original, reason_original = await check_query_safety_with_llama_guard(question)
+        # First safety check on original query (any language) with timeout
+        is_safe_original, reason_original = await check_query_safety_with_llama_guard(
+            question, timeout=safety_timeout
+        )
         if not is_safe_original:
             logger.warning(f"Original query failed safety check: {reason_original}")
             return {
@@ -49,9 +72,9 @@ async def query_ollama_with_hybrid_search_multilingual(
             )
             logger.info(f"Translated question to English: {english_question}")
 
-            # Second safety check on translated English question
+            # Second safety check on translated English question with timeout
             is_safe_translated, reason_translated = await check_query_safety_with_llama_guard(
-                english_question
+                english_question, timeout=safety_timeout
             )
             if not is_safe_translated:
                 logger.warning(f"Translated query failed safety check: {reason_translated}")
@@ -79,11 +102,12 @@ async def query_ollama_with_hybrid_search_multilingual(
             session, english_question, query_embedding, vector_k, bm25_k, user_email
         )
 
-        # Apply LLM reranking to combined results
+        # Apply LLM reranking to combined results with timeout
         reranked_chunks = await rerank_with_llm(
             [item["chunk"] for item in sorted_results[:15]],
             english_question,
             RERANKER_MODEL,
+            timeout=reranker_timeout,
         )
 
         # Get top 3 unique document IDs from reranked chunks
@@ -149,8 +173,8 @@ async def query_ollama_with_hybrid_search_multilingual(
         # Format the prompt with English question
         prompt = format_prompt(system_prompt, context, english_question, conversation_context)
 
-        # Query the LLM
-        english_response = await query_llm(prompt, model_name)
+        # Query the LLM with timeout
+        english_response = await query_llm(prompt, model_name, timeout=query_timeout)
         logger.info("Successfully generated English response")
 
         # Create the sources section with document metadata
