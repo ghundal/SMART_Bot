@@ -58,3 +58,11 @@ spec:
           {{- end }}
     {{- end }}
 {{- end }}
+---
+apiVersion: cloud.google.com/v1beta1
+kind: BackendConfig
+metadata:
+  name: smart-api-backend-config
+spec:
+  timeoutSec: 600
+---
