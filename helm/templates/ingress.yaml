@@ -64,5 +64,5 @@ kind: BackendConfig
 metadata:
   name: smart-api-backend-config
 spec:
-  timeoutSec: 600
+  timeoutSec: 1500
 ---
