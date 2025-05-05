@@ -82,7 +82,7 @@ async def start_chat_with_llm(
         raise HTTPException(status_code=400, detail="Message content is required")
 
     # Generate response using Ollama
-    result = query_ollama_with_hybrid_search_multilingual(
+    result = await query_ollama_with_hybrid_search_multilingual(
         session=SessionLocal(),
         question=question,
         embedding_model=embedding_model,
@@ -165,7 +165,7 @@ async def continue_chat_with_llm(
     chat["messages"].append(user_message)
 
     # Generate response using Ollama
-    result = query_ollama_with_hybrid_search_multilingual(
+    result = await query_ollama_with_hybrid_search_multilingual(
         session=SessionLocal(),
         question=question,
         embedding_model=embedding_model,
@@ -266,7 +266,7 @@ async def process_query(request: QueryRequest, user_email: str = Depends(verify_
         chat["messages"].append(message)
 
         # Generate response from Ollama
-        result = query_ollama_with_hybrid_search_multilingual(
+        result = await query_ollama_with_hybrid_search_multilingual(
             session=SessionLocal(),
             question=question,
             embedding_model=embedding_model,
@@ -306,7 +306,7 @@ async def process_query(request: QueryRequest, user_email: str = Depends(verify_
         chat_sessions[new_chat_id] = chat_session
 
         # Generate response from Ollama
-        result = query_ollama_with_hybrid_search_multilingual(
+        result = await query_ollama_with_hybrid_search_multilingual(
             session=SessionLocal(),
             question=question,
             embedding_model=embedding_model,

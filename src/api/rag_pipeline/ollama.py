@@ -12,7 +12,7 @@ from .safety import check_query_safety_with_llama_guard
 from .search import hybrid_search, retrieve_document_metadata
 
 
-def query_ollama_with_hybrid_search_multilingual(
+async def query_ollama_with_hybrid_search_multilingual(
     session,
     question,
     embedding_model,
@@ -80,7 +80,7 @@ def query_ollama_with_hybrid_search_multilingual(
         )
 
         # Apply LLM reranking to combined results
-        reranked_chunks = rerank_with_llm(
+        reranked_chunks = await rerank_with_llm(
             [item["chunk"] for item in sorted_results[:15]],
             english_question,
             RERANKER_MODEL,
@@ -150,7 +150,7 @@ def query_ollama_with_hybrid_search_multilingual(
         prompt = format_prompt(system_prompt, context, english_question, conversation_context)
 
         # Query the LLM
-        english_response = query_llm(prompt, model_name)
+        english_response = await query_llm(prompt, model_name)
         logger.info("Successfully generated English response")
 
         # Create the sources section with document metadata

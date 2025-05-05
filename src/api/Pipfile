@@ -25,6 +25,7 @@ python-dotenv = "*"
 itsdangerous = "*"
 hf_xet = "*"
 fast-langdetect = "*"
+aiohttp = "*"
 
 [dev-packages]
 

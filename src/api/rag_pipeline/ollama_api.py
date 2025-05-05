@@ -1,10 +1,9 @@
 """
-Client for Ollama model interactions via API server.
+Async client for Ollama model interactions via API server.
 """
 
 import re
-import requests
-import time
+import aiohttp
 from typing import List, Dict, Any
 
 from .config import GENERATION_CONFIG, OLLAMA_URL, logger
@@ -13,29 +12,28 @@ from .config import GENERATION_CONFIG, OLLAMA_URL, logger
 RERANKER_MODEL = "llama3:8b"
 
 
-class OllamaAPIClient:
+class AsyncOllamaAPIClient:
     def __init__(self, model_name: str):
         """
-        Initialize a client for Ollama model interactions via API.
+        Initialize an async client for Ollama model interactions via API.
 
         Args:
             model_name: Name of the Ollama model
         """
         self.model_name = model_name
         self.api_base = OLLAMA_URL
-        logger.info(f"Initialized OllamaAPIClient for model: {model_name}")
+        logger.info(f"Initialized AsyncOllamaAPIClient for model: {model_name}")
 
-    def generate_text(
+    async def generate_text(
         self,
         prompt: str,
         temperature: float = 0.7,
         top_p: float = 0.9,
         repeat_penalty: float = 1.1,
         max_tokens: int = 2048,
-        max_retries: int = 2,  # Add max_retries parameter with a default of 2
     ) -> str:
         """
-        Generate text using Ollama model via API with retry mechanism.
+        Generate text using Ollama model via API.
 
         Args:
             prompt: Input text prompt
@@ -43,74 +41,60 @@ class OllamaAPIClient:
             top_p: Top-p sampling parameter
             repeat_penalty: Penalty for repeating tokens
             max_tokens: Maximum number of tokens to generate
-            max_retries: Maximum number of retry attempts
 
         Returns:
             Generated text response
         """
-        last_error = None
+        try:
+            # Prepare the payload for the API request
+            payload = {
+                "model": self.model_name,
+                "prompt": prompt,
+                "temperature": temperature,
+                "top_p": top_p,
+                "repeat_penalty": repeat_penalty,
+                "max_tokens": max_tokens,
+                "stream": False,  # We want the full response at once
+            }
 
-        for attempt in range(max_retries):
-            try:
-                # Prepare the payload for the API request
-                payload = {
-                    "model": self.model_name,
-                    "prompt": prompt,
-                    "temperature": temperature,
-                    "top_p": top_p,
-                    "repeat_penalty": repeat_penalty,
-                    "max_tokens": max_tokens,
-                    "stream": False,  # We want the full response at once
-                }
+            # Make the API request
+            logger.info(f"Sending generate request to API for model: {self.model_name}")
 
-                # Make the API request
-                logger.info(f"Sending generate request to API for model: {self.model_name}")
-                response = requests.post(
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
                     self.api_base,
                     json=payload,
                     headers={"Content-Type": "application/json"},
-                    timeout=30,  # Add timeout to prevent hanging requests
-                )
+                    timeout=aiohttp.ClientTimeout(
+                        total=30
+                    ),  # Add timeout to prevent hanging requests
+                ) as response:
+                    if response.status != 200:
+                        error_msg = (
+                            f"Error generating text: {response.status} - {await response.text()}"
+                        )
+                        logger.error(error_msg)
+                        return f"Error: {error_msg}"
 
-                if response.status_code != 200:
-                    error_msg = (
-                        f"Error generating text: {response.status_code} - {response.text[:200]}"
-                    )
-                    logger.error(error_msg)
-                    last_error = error_msg
+                    # Extract the generated text from the response
+                    response_data = await response.json()
+                    api_response = response_data.get("response", "")
 
-                    # If we got a 404, don't retry - the model doesn't exist
-                    if response.status_code == 404:
-                        break
+                    # Clean the output to match the CLI behavior
+                    if prompt in api_response:
+                        api_response = api_response[
+                            api_response.find(prompt) + len(prompt) :
+                        ].strip()
 
-                    # Wait before retrying
-                    time.sleep(1)
-                    continue
+                    return api_response
 
-                # Extract the generated text from the response
-                response_data = response.json()
-                api_response = response_data.get("response", "")
-
-                # Clean the output to match the CLI behavior
-                if prompt in api_response:
-                    api_response = api_response[api_response.find(prompt) + len(prompt) :].strip()
-
-                return api_response
-
-            except Exception as e:
-                last_error = str(e)
-                logger.warning(
-                    f"Attempt {attempt+1} failed: {str(e)}. {'Retrying...' if attempt < max_retries-1 else 'Giving up.'}"
-                )
-                time.sleep(1)  # Brief delay before retry
-
-        # If we get here, all attempts failed
-        error_message = f"Error after {max_retries} attempts: {last_error}"
-        logger.exception(error_message)
-        return f"Error: {last_error}"
+        except Exception as e:
+            error_message = f"Error in generate_text: {str(e)}"
+            logger.exception(error_message)
+            return f"Error: {str(e)}"
 
 
-def rerank_with_llm(
+async def rerank_with_llm(
     chunks: List[Dict[str, Any]], query: str, model_name: str = None
 ) -> List[Dict[str, Any]]:
     """
@@ -131,16 +115,15 @@ def rerank_with_llm(
         logger.info(f"Using prompt-based reranking with model: {model_name}")
 
         # Initialize API client
-        model_client = OllamaAPIClient(model_name)
+        model_client = AsyncOllamaAPIClient(model_name)
 
         # Try a test call to see if the model is working
         test_prompt = "This is a test."
         try:
-            test_response = model_client.generate_text(
+            test_response = await model_client.generate_text(
                 prompt=test_prompt,
                 temperature=0.1,
                 max_tokens=10,
-                max_retries=1,  # Only try once for the test
             )
             # Check if we got an error response
             if test_response.startswith("Error:"):
@@ -154,50 +137,53 @@ def rerank_with_llm(
 
         # If we got here, the test was successful - proceed with reranking
         reranking_results = []
-        max_failures = 3  # Maximum number of consecutive failures before giving up
-        failures = 0
 
-        # Create a scoring prompt for each chunk
-        for chunk in chunks:
-            if failures >= max_failures:
-                logger.warning(f"Too many consecutive failures ({failures}). Stopping reranking.")
-                break
-
-            prompt = f"""
+        # Process chunks one at a time sequentially
+        for i, chunk in enumerate(chunks):
+            try:
+                prompt = f"""
 Task: Evaluate the relevance of the following text to the query.
 Query: {query}
 Text: {chunk['chunk_text']}
 On a scale of 0 to 10, how relevant is the text to the query?
 Respond with only a number from 0 to 10.
 """
-            # Generate score using API model
-            score_text = model_client.generate_text(
-                prompt=prompt,
-                temperature=0.1,  # Low temperature for consistent scoring
-                max_tokens=50,  # We only need a short response
-            )
+                # Process each chunk individually
+                score_text = await model_client.generate_text(
+                    prompt=prompt,
+                    temperature=0.1,  # Low temperature for consistent scoring
+                    max_tokens=50,  # We only need a short response
+                )
 
-            # Check if we got an error
-            if score_text.startswith("Error:"):
-                failures += 1
-                # Assign a default score to keep the process going
-                relevance_score = 5.0  # Neutral score
-            else:
-                failures = 0  # Reset failure counter on success
-                # Try to get a numerical score, default to 5 if parsing fails
-                try:
-                    # Extract the first number from the response
-                    numbers = re.findall(r"\d+(?:\.\d+)?", score_text)
-                    relevance_score = float(numbers[0]) if numbers else 5.0
-                    # Ensure score is in valid range
-                    relevance_score = max(0, min(10, relevance_score))
-                except (ValueError, IndexError):
-                    relevance_score = 5.0
+                # Create a copy of the chunk to add the score
+                chunk_with_score = chunk.copy()
 
-            # Add to results with the LLM-assigned score
-            chunk_with_score = chunk.copy()
-            chunk_with_score["llm_score"] = relevance_score
-            reranking_results.append(chunk_with_score)
+                # Check if we got an error
+                if score_text.startswith("Error:"):
+                    logger.error(f"Error response for chunk {i}: {score_text}")
+                    relevance_score = 5.0  # Default score on error
+                else:
+                    # Try to get a numerical score, default to 5 if parsing fails
+                    try:
+                        # Extract the first number from the response
+                        numbers = re.findall(r"\d+(?:\.\d+)?", score_text)
+                        relevance_score = float(numbers[0]) if numbers else 5.0
+                        # Ensure score is in valid range
+                        relevance_score = max(0, min(10, relevance_score))
+                    except (ValueError, IndexError) as e:
+                        logger.error(f"Failed to parse score for chunk {i}: {str(e)}")
+                        relevance_score = 5.0  # Default on parsing error
+
+                # Add score to the chunk
+                chunk_with_score["llm_score"] = relevance_score
+                reranking_results.append(chunk_with_score)
+
+            except Exception as e:
+                logger.error(f"Error processing chunk {i}: {str(e)}")
+                # Add the original chunk with a neutral score on error
+                chunk_with_score = chunk.copy()
+                chunk_with_score["llm_score"] = 5.0
+                reranking_results.append(chunk_with_score)
 
         # If we have results, sort them
         if reranking_results:
@@ -232,21 +218,20 @@ RESPONSE:
 """
 
 
-def query_llm(prompt: str, model_name: str) -> str:
+async def query_llm(prompt: str, model_name: str) -> str:
     """
     Query the Ollama model with a formatted prompt.
     """
     try:
         # Initialize Ollama API client
-        model_client = OllamaAPIClient(model_name)
+        model_client = AsyncOllamaAPIClient(model_name)
 
         # Generate response using API model
-        response = model_client.generate_text(
+        response = await model_client.generate_text(
             prompt=prompt,
             temperature=GENERATION_CONFIG["temperature"],
             top_p=GENERATION_CONFIG["top_p"],
             repeat_penalty=GENERATION_CONFIG["repeat_penalty"],
-            max_retries=2,  # Add retries to make it more robust
         )
 
         return response
