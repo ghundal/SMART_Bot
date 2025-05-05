@@ -28,7 +28,7 @@ async def query_ollama_with_hybrid_search_multilingual(
     """
     try:
         # First safety check on original query (any language)
-        is_safe_original, reason_original = check_query_safety_with_llama_guard(question)
+        is_safe_original, reason_original = await check_query_safety_with_llama_guard(question)
         if not is_safe_original:
             logger.warning(f"Original query failed safety check: {reason_original}")
             return {
@@ -50,7 +50,7 @@ async def query_ollama_with_hybrid_search_multilingual(
             logger.info(f"Translated question to English: {english_question}")
 
             # Second safety check on translated English question
-            is_safe_translated, reason_translated = check_query_safety_with_llama_guard(
+            is_safe_translated, reason_translated = await check_query_safety_with_llama_guard(
                 english_question
             )
             if not is_safe_translated:

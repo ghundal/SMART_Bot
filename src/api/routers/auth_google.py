@@ -19,6 +19,7 @@ router = APIRouter()
 # DB session
 engine = connect_to_postgres()
 SessionLocal = sessionmaker(bind=engine)
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:9000")
 
 # Load Google credentials from the JSON file in your secrets folder.
 credentials_file = os.getenv("GOOGLE_CREDENTIALS_FILE", "../../secrets/client_secrets.json")
@@ -47,7 +48,7 @@ oauth.register(
 
 @router.get("/login")
 async def login(request: Request):
-    redirect_uri = os.getenv("FRONTEND_URL", "http://localhost:9000") + "/auth/auth"
+    redirect_uri = FRONTEND_URL + "/auth/auth"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
@@ -97,7 +98,7 @@ async def auth_callback(request: Request):
         db.commit()
 
         # Create response with redirect to frontend
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000/about")
+        frontend_url = FRONTEND_URL + "/about"
         response = RedirectResponse(url=frontend_url)
 
         # Set secure HTTP-only cookie with the token
