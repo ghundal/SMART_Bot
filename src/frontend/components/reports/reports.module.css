@@ -207,32 +207,50 @@
   margin-bottom: 40px;
 }
 
-.chartGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 30px;
-  margin-top: 30px;
-}
-
-.chartBox {
-  background: #f7fafc;
-  border-radius: 8px;
-  padding: 20px;
-  border: 1px solid #e2e8f0;
-}
-
-.barIndicator {
+/* Activity Chart */
+.activityChart {
   display: flex;
-  align-items: center;
-  height: 24px;
-  gap: 10px;
+  align-items: flex-end;
+  height: 200px;
+  gap: 5px;
+  padding: 20px 0;
 }
 
-.barIndicator .bar {
-  height: 16px;
-  background: #4299e1;
-  border-radius: 2px;
-  transition: width 0.3s ease;
+.barContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.bar {
+  position: relative;
+  width: 100%;
+  max-width: 40px;
+  background-color: #4299e1;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+  min-height: 4px;
+  /* Ensures bars are always visible, even for very small values */
+}
+
+.barValue {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.barLabel {
+  font-size: 12px;
+  color: #718096;
+  margin-top: 8px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
 }
 
 .noDataMessage {
@@ -288,6 +306,21 @@
   background: #f7fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+}
+
+.keywordCloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 15px;
+}
+
+.keywordTag {
+  background-color: #ebf8ff;
+  color: #2b6cb0;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
 }
 
 /* Phrase Section */
@@ -405,10 +438,6 @@
   }
 
   .statsGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .chartGrid {
     grid-template-columns: 1fr;
   }
 

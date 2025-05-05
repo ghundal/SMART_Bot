@@ -36,9 +36,7 @@ async def check_query_safety_with_llama_guard(query: str) -> Tuple[bool, str]:
         # Call Ollama API using aiohttp
         logger.info("Sending safety check request to llama-guard3")
         async with aiohttp.ClientSession() as session:
-            async with session.post(
-                OLLAMA_URL, json=payload, timeout=aiohttp.ClientTimeout(total=30)
-            ) as response:
+            async with session.post(OLLAMA_URL, json=payload) as response:
                 if response.status == 200:
                     try:
                         result = await response.json()

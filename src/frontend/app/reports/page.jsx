@@ -1,3 +1,4 @@
+// page.jsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -208,11 +209,14 @@ function ReportsContent() {
                       style={{
                         height: `${Math.min(
                           100,
-                          (day.query_count / Math.max(...queryActivity.map((d) => d.query_count))) *
+                          (day.query_count /
+                            Math.max(...queryActivity.map((d) => d.query_count || 1))) *
                             100,
                         )}%`,
                       }}
-                    ></div>
+                    >
+                      <span className={styles.barValue}>{day.query_count}</span>
+                    </div>
                     <span className={styles.barLabel}>
                       {new Date(day.date).toLocaleDateString(undefined, {
                         month: 'short',
@@ -323,11 +327,14 @@ function ReportsContent() {
                       style={{
                         height: `${Math.min(
                           100,
-                          (day.query_count / Math.max(...queryActivity.map((d) => d.query_count))) *
+                          (day.query_count /
+                            Math.max(...queryActivity.map((d) => d.query_count || 1))) *
                             100,
                         )}%`,
                       }}
-                    ></div>
+                    >
+                      <span className={styles.barValue}>{day.query_count}</span>
+                    </div>
                     <span className={styles.barLabel}>
                       {new Date(day.date).toLocaleDateString(undefined, {
                         month: 'short',
@@ -393,11 +400,13 @@ function ReportsContent() {
                         height: `${Math.min(
                           100,
                           (day.user_count /
-                            Math.max(...dailyActiveUsers.map((d) => d.user_count))) *
+                            Math.max(...dailyActiveUsers.map((d) => d.user_count || 1))) *
                             100,
                         )}%`,
                       }}
-                    ></div>
+                    >
+                      <span className={styles.barValue}>{day.user_count}</span>
+                    </div>
                     <span className={styles.barLabel}>
                       {new Date(day.date).toLocaleDateString(undefined, {
                         month: 'short',

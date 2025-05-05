@@ -382,21 +382,21 @@ function ChatContent() {
             <div className={styles.suggestionContainer}>
               <button
                 className={styles.suggestionButton}
-                onClick={() => handleSuggestionClick('give me assumptions')}
+                onClick={() => handleSuggestionClick('give me its assumptions')}
                 disabled={isTyping}
               >
                 give me assumptions
               </button>
               <button
                 className={styles.suggestionButton}
-                onClick={() => handleSuggestionClick('explain in more detail')}
+                onClick={() => handleSuggestionClick('explain it in more detail')}
                 disabled={isTyping}
               >
                 explain in more detail
               </button>
               <button
                 className={styles.suggestionButton}
-                onClick={() => handleSuggestionClick('provide an example')}
+                onClick={() => handleSuggestionClick('provide me with an example of it')}
                 disabled={isTyping}
               >
                 provide an example
