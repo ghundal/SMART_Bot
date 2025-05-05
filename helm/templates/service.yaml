@@ -30,7 +30,7 @@ kind: Service
 metadata:
   name: {{ include "smart.fullname" . }}-api
   annotations:
-    beta.cloud.google.com/backend-config: '{"name": "smart-api-backend-config"}'
+    beta.cloud.google.com/backend-config: '{"default": "smart-api-backend-config"}'
 spec:
   type: {{ .Values.service.type }}
   ports:
