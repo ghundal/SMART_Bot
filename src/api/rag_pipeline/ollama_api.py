@@ -1,5 +1,17 @@
 """
-Async client for Ollama model interactions via API server with extended timeouts.
+Async Ollama API Client for Text Generation and Reranking (RAG System)
+
+This module defines an asynchronous client (`AsyncOllamaAPIClient`) for interacting with
+the Ollama API to perform:
+
+- Text generation using LLMs via async HTTP requests.
+- Prompt-based reranking of document chunks for query relevance scoring.
+- Prompt formatting for conversational query responses.
+
+Key Features:
+- Extended timeout handling (default 10 minutes) for long LLM operations.
+- Graceful error recovery and fallback behavior.
+- Designed for integration into RAG (retrieval-augmented generation) pipelines.
 """
 
 import re

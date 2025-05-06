@@ -1,5 +1,9 @@
 """
-Embedding model functionality for the Ollama RAG system.
+Embedding model utilities for the Ollama RAG system.
+
+This module provides functions to load a sentence-transformer embedding model and generate
+vector embeddings for user queries. These embeddings are used for semantic search and
+retrieval-augmented generation (RAG) workflows.
 """
 
 import torch

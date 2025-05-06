@@ -1,6 +1,18 @@
 """
-Implements a ChatHistoryManager class that handles saving, retrieving, and
-deleting chat records in a PostgreSQL database.
+Chat History Manager for SMART RAG System
+
+This module defines the `ChatHistoryManager` class for managing user chat sessions stored in a PostgreSQL database.
+It supports saving, retrieving, listing, and deleting chat records, including message history and metadata.
+
+Requirements:
+- PostgreSQL database with a `chat_history` table (fields: chat_id, session_id, user_email, model, title, messages, timestamps).
+- JSON-serializable `messages` field storing user/assistant messages.
+
+Functions:
+- `save_chat`: Inserts or updates a chat session with user messages and metadata.
+- `get_chat`: Retrieves a single chat session by chat ID.
+- `get_recent_chats`: Lists recent chats by user, optionally limiting the number of results.
+- `delete_chat`: Deletes a chat session by ID.
 """
 
 import json

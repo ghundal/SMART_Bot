@@ -1,0 +1,102 @@
+---
+# main.yml - Playbook to create a GKE cluster
+- name: Create GKE Smart Cluster
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - vars/gke_vars.yml
+
+  tasks:
+    - name: Create VPC Network
+      google.cloud.gcp_compute_network:
+        name: '{{ network_name }}'
+        auto_create_subnetworks: false
+        project: '{{ gcp_project }}'
+        auth_kind: '{{ auth_kind }}'
+        service_account_file: '{{ service_account_file }}'
+        state: present
+      register: network
+
+    - name: Create Subnet
+      google.cloud.gcp_compute_subnetwork:
+        name: '{{ subnet_name }}'
+        region: '{{ region }}'
+        network: '{{ network }}'
+        ip_cidr_range: '{{ subnet_cidr }}'
+        secondary_ip_ranges:
+          - range_name: '{{ pod_subnet_name }}'
+            ip_cidr_range: '{{ pod_subnet_cidr }}'
+          - range_name: '{{ service_subnet_name }}'
+            ip_cidr_range: '{{ service_subnet_cidr }}'
+        project: '{{ gcp_project }}'
+        auth_kind: '{{ auth_kind }}'
+        service_account_file: '{{ service_account_file }}'
+        state: present
+      register: subnet
+
+    # Create the GKE cluster with current configuration
+    - name: Create GKE cluster
+      google.cloud.gcp_container_cluster:
+        name: '{{ cluster_name }}'
+        description: 'Smart Cluster deployed with Ansible'
+        location: '{{ region }}'
+        network: '{{ network.name }}'
+        subnetwork: '{{ subnet.name }}'
+        initial_node_count: 0 # We'll use node pools instead
+        ip_allocation_policy:
+          cluster_secondary_range_name: '{{ pod_subnet_name }}'
+          services_secondary_range_name: '{{ service_subnet_name }}'
+        release_channel:
+          channel: REGULAR
+        networking_mode: VPC_NATIVE
+        project: '{{ gcp_project }}'
+        auth_kind: '{{ auth_kind }}'
+        service_account_file: '{{ service_account_file }}'
+        state: present
+      register: cluster
+
+    # Create node pool with same config as your current cluster
+    - name: Create regional node pool
+      google.cloud.gcp_container_node_pool:
+        name: 'default-pool'
+        location: '{{ region }}'
+        cluster: '{{ cluster }}'
+        initial_node_count: 1 # 1 node per zone
+        node_locations:
+          - '{{ region }}-f'
+          - '{{ region }}-b'
+          - '{{ region }}-c'
+        management:
+          auto_repair: true
+          auto_upgrade: true
+        node_config:
+          machine_type: '{{ machine_type }}' # e2-highmem-4
+          disk_size_gb: '{{ disk_size_gb }}'
+          disk_type: '{{ disk_type }}'
+          oauth_scopes:
+            - https://www.googleapis.com/auth/devstorage.read_only
+            - https://www.googleapis.com/auth/logging.write
+            - https://www.googleapis.com/auth/monitoring
+            - https://www.googleapis.com/auth/compute
+          service_account: '{{ node_service_account }}'
+          metadata:
+            disable-legacy-endpoints: 'true'
+          tags:
+            - gke-node
+          labels:
+            env: production
+        project: '{{ gcp_project }}'
+        auth_kind: '{{ auth_kind }}'
+        service_account_file: '{{ service_account_file }}'
+        state: present
+      register: node_pool
+
+    - name: Configure kubectl to use the new cluster
+      shell: >
+        gcloud container clusters get-credentials {{ cluster_name }}
+        --region {{ region }}
+        --project {{ gcp_project }}
+      environment:
+        KUBECONFIG: '{{ kubeconfig_path }}'

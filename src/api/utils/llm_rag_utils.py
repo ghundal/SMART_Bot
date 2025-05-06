@@ -1,7 +1,19 @@
 """
-Provides utility functions for creating and managing chat sessions,
-including functions for generating responses through the Ollama RAG system
-and rebuilding chat context from history.
+Chat Session Utilities for SMART RAG System
+
+This module provides helper functions for managing in-memory chat sessions within
+the SMART system's Retrieval-Augmented Generation (RAG) pipeline. It supports:
+
+1. Creating isolated chat sessions to track multi-turn user interactions.
+2. Rebuilding chat context from historical messages for follow-up queries.
+3. Maintaining consistent in-memory state using the `chat_sessions` dictionary.
+
+Functions:
+- `create_chat_session`: Initializes an empty session with message history and metadata.
+- `rebuild_chat_session`: Reconstructs session context from past chat message records.
+
+Global State:
+- `chat_sessions`: Dictionary to track active sessions keyed by chat ID.
 """
 
 import logging

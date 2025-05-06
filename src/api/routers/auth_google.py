@@ -1,7 +1,29 @@
 """
-Implements a FastAPI router for Google OAuth authentication
-Verifies user access permissions in a database before setting secure cookies
-with authentication tokens.
+Google OAuth2 Authentication Router for SMART System
+
+This FastAPI router implements Google OAuth 2.0 login and authorization for the SMART web application.
+It performs the following key functions:
+
+1. Initiates OAuth login via Google's authorization endpoint.
+2. Handles the OAuth callback to retrieve access tokens and user profile information.
+3. Verifies the user's email address against an `access` table in the PostgreSQL database.
+4. Stores a valid access token into the `user_tokens` table for session tracking.
+5. Sets secure, HTTP-only cookies for backend authentication and frontend access.
+6. Redirects authenticated users to the main frontend application (e.g., `/about`).
+
+Requirements:
+- Google OAuth client credentials JSON file via `GOOGLE_CREDENTIALS_FILE` environment variable.
+- PostgreSQL database with `access` and `user_tokens` tables configured.
+- Environment variables for `FRONTEND_URL` and `BACKEND_URL`.
+
+Security:
+- Tokens are stored securely in the database.
+- Cookies are marked `secure` and `httponly` to mitigate XSS/CSRF.
+- Unauthorized users are blocked based on access control.
+
+Routes:
+- `/login`: Redirects the user to Google for login
+- `/auth`: Handles OAuth callback, performs access check, sets cookies, and redirects to frontend
 """
 
 import json

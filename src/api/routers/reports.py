@@ -1,6 +1,24 @@
 """
-Reports API for the Ollama RAG system.
-This module provides endpoints for retrieving usage statistics and analytics.
+Reports API for SMART RAG System
+
+This FastAPI router provides authenticated endpoints for usage analytics, user engagement,
+query patterns, and system-level statistics from the `audit` logs and related tables.
+
+Requirements:
+- PostgreSQL database with populated `audit`, `document`, `chunk`, `class`, and `user_tokens` tables.
+- Valid OAuth-based authentication token (via `verify_token` dependency).
+- NLTK `stopwords` resource installed for keyword filtering.
+
+Routes:
+- `/reports/users`: Count of distinct users who have submitted queries.
+- `/reports/queries`: Number of queries in the last X days (default 30).
+- `/reports/top_documents`: Most frequently cited documents in RAG responses.
+- `/reports/query_activity`: Daily query counts over a rolling X-day window.
+- `/reports/top_keywords`: Most common keywords in user queries, excluding stopwords.
+- `/reports/top_phrases`: Most frequent complete user queries (multi-word).
+- `/reports/user_activity`: Most active users ranked by query count and activity span.
+- `/reports/daily_active_users`: Unique users submitting queries per day.
+- `/reports/system_stats`: Aggregated system-level metrics (total queries, chunks, classes, users, etc.).
 """
 
 from typing import Optional

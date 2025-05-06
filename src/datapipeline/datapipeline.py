@@ -1,3 +1,30 @@
+"""
+Document Chunking and Embedding Ingestion Pipeline for GCS and PostgreSQL
+
+This script orchestrates an end-to-end document processing pipeline that:
+
+1. Connects to a Google Cloud Storage (GCS) bucket to download PDF documents.
+2. Validates metadata consistency between `meta.csv`, `access.csv`, and document folder names.
+3. Loads and cleans PDF content using `PyPDFLoader`.
+4. Chunks the cleaned text using either:
+   - Recursive chunking (`RecursiveCharacterTextSplitter`), or
+   - Semantic chunking (`AdvancedSemanticChunker`) with sentence-transformer embeddings.
+5. Creates dense vector embeddings for each chunk using a sentence-transformer model.
+6. Inserts metadata and chunk embeddings into a PostgreSQL database using `pgvector`.
+
+Key Features:
+- Optional semantic chunking with cosine-similarity-based sentence segmentation.
+- Embedding caching and CUDA acceleration for efficient processing.
+- Built-in GCS and SQL error handling and logging.
+- Designed for integration in Retrieval-Augmented Generation (RAG) systems.
+
+Usage:
+Run the script with `--chunk-method semantic` or `--chunk-method recursive` depending on the desired chunking strategy.
+
+Example:
+    python run_pipeline.py --chunk-method semantic
+"""
+
 import logging
 import os
 import tempfile

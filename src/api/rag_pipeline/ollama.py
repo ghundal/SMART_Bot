@@ -1,5 +1,22 @@
 """
-Main RAG functionality for the Ollama system with extended timeouts.
+Main RAG Orchestration Module for Ollama with Multilingual Support and Extended Timeouts.
+
+This module defines the primary function `query_ollama_with_hybrid_search_multilingual`, which:
+- Detects the language of the user query
+- Translates non-English queries to English
+- Performs a hybrid search over vector and BM25 indexes
+- Reranks results using an Ollama LLM
+- Queries an Ollama model to generate a response using retrieved context
+- Translates the final answer back to the user's original language (if necessary)
+- Logs all critical steps for auditability
+
+Key Features:
+- Integrated multilingual support with automatic language detection and translation
+- Configurable timeout handling for long-running safety checks, reranking, and generation
+- Contextual conversation memory support via `chat_history`
+- Fine-grained metadata injection and source attribution in responses
+
+Designed for use in secure, production-grade, conversational RAG systems.
 """
 
 from utils.database import log_audit
@@ -208,7 +225,6 @@ async def query_ollama_with_hybrid_search_multilingual(
         )
 
         # Don't close the session here - let the calling function handle it
-
         return {
             "original_question": question,
             "detected_language": original_language,

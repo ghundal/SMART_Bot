@@ -1,7 +1,27 @@
 """
-Initializes the FastAPI application, sets up CORS and session middleware
-for authentication, and includes both authentication and chat API routers
-under their respective URL prefixes.
+Main Application Entry Point for SMART RAG System (FastAPI)
+
+This module initializes the FastAPI server for the SMART system, setting up:
+- CORS middleware for cross-origin frontend/backend interaction.
+- Session middleware required by Google OAuth.
+- Mounted route handlers for authentication, chat, reporting, and health checks.
+
+Features:
+- Enables secure Google OAuth 2.0 login via `/auth`
+- Provides chat-based RAG interface via `/api`
+- Offers usage analytics and query reports under `/api/reports`
+- Supports cookie-based session persistence and CORS headers
+- Includes a lightweight health check endpoint at `/health`
+
+Environment Variables:
+- `SESSION_SECRET_KEY`: Key for encrypting session cookies
+- `FRONTEND_URL`: Allowed origin(s) for CORS requests
+
+Routers:
+- `/auth`: Handles Google OAuth login and callbacks
+- `/api`: Manages chat sessions and RAG queries
+- `/api/reports`: Exposes reporting and analytics data
+- `/health`: Health check for deployment monitoring
 """
 
 import os

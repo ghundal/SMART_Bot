@@ -1,7 +1,18 @@
 """
-Establishes a PostgreSQL database connection and provides a logging function
-that records detailed query information in an audit table for tracking
-and compliance purposes.
+PostgreSQL Connection and Audit Logger for SMART RAG System
+
+This module handles PostgreSQL database connectivity and provides audit logging functionality
+for tracking user queries and associated LLM responses in the SMART system.
+
+Requirements:
+- Environment variables for database credentials (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`)
+- PostgreSQL database with `audit` table (with fields for query metadata and vector embeddings)
+- pgvector extension installed to support vector storage
+
+Functions:
+- `connect_to_postgres`: Establishes and returns a SQLAlchemy database engine.
+- `SessionLocal`: Reusable session factory bound to the active engine.
+- `log_audit`: Logs detailed query metadata (e.g., query, embedding, chunks, language) into the audit table.
 """
 
 import os

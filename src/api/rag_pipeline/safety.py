@@ -1,5 +1,14 @@
 """
-Content safety checks for the Ollama RAG system with extended timeout.
+Safety Check Module for Ollama RAG System (Llama Guard 3)
+
+This module performs content moderation for user queries using Ollama's Llama Guard 3 model.
+It uses a custom prompt to classify user input as either "SAFE" or "UNSAFE", with optional reasoning.
+
+Key Features:
+- Asynchronous HTTP request with aiohttp and extended timeout (default: 10 minutes)
+- Graceful fallback behavior on network failure, timeouts, or malformed responses
+- Structured return type: (is_safe: bool, reason: str)
+- Designed to integrate directly with safety-first RAG pipelines
 """
 
 from typing import Tuple

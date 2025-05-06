@@ -1,6 +1,20 @@
 """
-Language detection module for the Ollama RAG pipeline.
-Combines FastText with pattern matching for efficient, accurate language detection.
+Language Detection and Translation Utilities for Ollama RAG
+
+This module provides robust and efficient language detection and translation capabilities
+for the Ollama Retrieval-Augmented Generation (RAG) pipeline. It combines:
+
+- FastText-based language detection for general multilingual support.
+- Rule-based pattern matching for short commands and phrases.
+- Common phrase heuristics to correct frequent misclassifications (e.g., short English queries).
+- GoogleTranslator integration (via `deep_translator`) for automatic language translation.
+
+Functions:
+- `detect_language()`: Detects the language of a string using a hybrid model.
+- `detect_language_with_details()`: Returns detailed detection metadata (method, confidence, etc).
+- `translate_text()`: Translates text to a target language (default is English).
+
+The module uses a singleton pattern to reuse the `LanguageDetector` class across calls.
 """
 
 import re

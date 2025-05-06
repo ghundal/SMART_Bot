@@ -1,3 +1,21 @@
+"""
+Semantic Chunker Module for Document Splitting
+
+This module defines an advanced semantic-based document chunker using cosine similarity
+between sentence embeddings. It provides the `AdvancedSemanticChunker` class, which is
+a LangChain-compatible document transformer that:
+
+- Splits raw text into semantically coherent chunks using configurable similarity thresholds
+- Supports various distance-based breakpoint methods (percentile, stddev, IQR, gradient)
+- Utilizes SentenceTransformers for local embedding generation (cached)
+- Combines context from neighboring sentences via a configurable buffer size
+- Optionally controls the number of output chunks or uses automatic thresholding
+- Is compatible with LangChain's `Document` structure and transformation pipeline
+
+Intended for preprocessing large textual documents to improve downstream performance
+in retrieval-augmented generation (RAG) pipelines or chunk-based semantic search systems.
+"""
+
 import copy
 import logging
 import re

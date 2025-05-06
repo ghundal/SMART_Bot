@@ -1,12 +1,21 @@
 """
-Search functionality for the Ollama RAG system.
+Search Layer for the Ollama RAG System
+
+This module implements core search functionality, including:
+
+- BM25 full-text search using PGroonga
+- Vector similarity search using pgvector
+- Hybrid search combining BM25 and vector results
+- Robust deduplication and scoring for hybrid ranking
+- Access-controlled filtering using user_email
+- Metadata retrieval for document attribution
+
+All search functions require a SQLAlchemy session and support structured chunk scoring.
 """
 
 import re
-
 from nltk.corpus import stopwords
 from sqlalchemy import text
-
 from .config import VECTOR_SIMILARITY_THRESHOLD, logger
 
 

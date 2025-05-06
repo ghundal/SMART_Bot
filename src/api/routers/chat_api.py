@@ -1,7 +1,28 @@
 """
-Implements a FastAPI router for an Ollama-based RAG chatbot with
-endpoints for creating, updating, retrieving, and deleting chat sessions,
-including hybrid vector search functionality.
+RAG Chat API Router for SMART System
+
+This FastAPI router implements an authenticated conversational interface for the SMART system
+powered by Ollama-based Retrieval-Augmented Generation (RAG). It supports multi-turn dialogue,
+chat session tracking, and hybrid search (BM25 + vector) for contextual document retrieval.
+
+Features:
+- Create, retrieve, update, and delete chat sessions linked to authenticated users.
+- Supports multilingual, context-aware hybrid retrieval using Ollama models.
+- Integrates with persistent storage for chat history and access control.
+- Works with frontend session tracking and user tokens via secure cookies.
+
+Requirements:
+- PostgreSQL database for session persistence and access control.
+- Ollama API endpoint for LLM-based response generation.
+- Vector and BM25 search indices for document chunks.
+
+Routes:
+- `GET /chats`: List recent chat sessions for a user (with optional limit).
+- `GET /chats/{chat_id}`: Retrieve a specific chat session by ID.
+- `POST /chats`: Start a new chat with an initial user message.
+- `POST /chats/{chat_id}`: Continue an existing chat session with a new user message.
+- `DELETE /chats/{chat_id}`: Delete a chat session by ID.
+- `POST /query`: Alternate unified endpoint for initiating or continuing chat sessions via structured payload.
 """
 
 import time

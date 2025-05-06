@@ -1,5 +1,25 @@
 """
-CLI interface for the Ollama RAG system with database-backed conversation memory.
+Command-Line Interface Tester for SMART Multilingual RAG Chatbot
+
+This script runs an interactive chatbot session powered by Ollama models with support for:
+- Hybrid document retrieval (BM25 + vector search)
+- Query reranking and safety checks
+- Persistent chat history saved in PostgreSQL
+- Multilingual support with automatic language detection and translation
+
+Key Features:
+- Saves and retrieves past conversations with unique `chat_id`s.
+- Supports interactive commands: `new`, `list`, `load <chat_id>`, and `exit`.
+- Shows recent messages and sources for context-rich interaction.
+- Logs queries and responses in the database for auditing and reuse.
+
+Requirements:
+- PostgreSQL database with relevant schema (`chat_history`, `document`, etc.).
+- Ollama and embedding models available locally.
+- Environment variables and dependencies configured (e.g., `rag_pipeline`).
+
+Entry Point:
+- Run directly as a Python script: `python cli.py`
 """
 
 import time

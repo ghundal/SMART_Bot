@@ -1,6 +1,23 @@
 """
-Implements FastAPI dependency functions to verify authentication tokens
-from either cookies or headers(docs) by checking them against a database.
+Authentication Dependencies for SMART System
+
+This module defines FastAPI dependencies to support secure user authentication
+via access tokens stored in cookies or passed via HTTP Authorization headers.
+It is used to protect API endpoints and verify user identity.
+
+Key Functions:
+1. Extracts tokens from either secure cookies or `Authorization: Bearer` headers.
+2. Verifies token validity by checking the `user_tokens` table in PostgreSQL.
+3. Returns the authenticated user's email if the token is valid.
+
+Requirements:
+- PostgreSQL database with a `user_tokens` table containing valid tokens.
+- OAuth-based token issuance during login.
+
+Functions:
+- `get_db`: Provides a database session.
+- `get_token_from_request`: Retrieves a token from cookies or headers.
+- `verify_token`: Confirms token validity and retrieves associated user email.
 """
 
 from typing import Optional
