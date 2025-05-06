@@ -1,27 +1,14 @@
 ---
 # vars/gke_vars.yml - Variables for Smart Cluster deployment
 
+cluster_name: "smart2"
+machine_type: "e2-highmem-4"
+machine_disk_size: 40
+initial_node_count: 1
+
 # Google Cloud authentication
 gcp_project: 'smart-452816'
-auth_kind: 'serviceaccount'
-service_account_file: 'smart_input_key.json'
-region: 'us-central1'
-
-# Network configuration
-network_name: 'smart-vpc'
-subnet_name: 'smart-subnet'
-subnet_cidr: '10.0.0.0/20'
-pod_subnet_name: 'smart-pod-subnet'
-pod_subnet_cidr: '10.16.0.0/14'
-service_subnet_name: 'smart-service-subnet'
-service_subnet_cidr: '10.20.0.0/20'
-
-# Cluster configuration
-cluster_name: 'smart-cluster2'
-kubeconfig_path: '~/.kube/config'
-
-# Node configuration
-machine_type: 'e2-highmem-4'
-disk_size_gb: 40
-disk_type: 'pd-balanced'
-node_service_account: 'default'
+gcp_auth_kind: 'serviceaccount'
+gcp_service_account_file: 'smart_input_key.json'
+gcp_region: "us-east1"
+gcp_zone: "us-east1-c"

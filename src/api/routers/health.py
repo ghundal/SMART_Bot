@@ -16,3 +16,12 @@ router = APIRouter()
 @router.get("/")
 async def health(_: Request):
     return Response(status_code=HTTP_200_OK)
+
+
+@router.get("/eat-mem")
+async def health(_: Request):
+    if not router.garbage:
+        router.garbage = []
+    else:
+        router.garbage.append([b"0" * 1024 * 1024 * 10])
+    return Response(status_code=HTTP_200_OK)
