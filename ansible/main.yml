@@ -50,7 +50,6 @@
           services_secondary_range_name: '{{ service_subnet_name }}'
         release_channel:
           channel: REGULAR
-        networking_mode: VPC_NATIVE
         project: '{{ gcp_project }}'
         auth_kind: '{{ auth_kind }}'
         service_account_file: '{{ service_account_file }}'
