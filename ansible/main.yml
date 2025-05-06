@@ -21,7 +21,7 @@
         use_ip_aliases: "yes"
       auth_kind: "{{ gcp_auth_kind }}"
       service_account_file: "{{ gcp_service_account_file }}"
-      state: "{{ cluster_state }}"
+      state: present
     register: cluster
 
   - name: "Create a Node Pool"
@@ -51,4 +51,4 @@
         auto_upgrade: "yes"
       auth_kind: "{{ gcp_auth_kind }}"
       service_account_file: "{{ gcp_service_account_file }}"
-      state: "{{ cluster_state }}"
+      state: present
