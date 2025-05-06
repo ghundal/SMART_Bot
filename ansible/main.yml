@@ -44,7 +44,7 @@
         location: '{{ region }}'
         network: '{{ network.name }}'
         subnetwork: '{{ subnet.name }}'
-        initial_node_count: 0 # We'll use node pools instead
+        initial_node_count: 1
         ip_allocation_policy:
           cluster_secondary_range_name: '{{ pod_subnet_name }}'
           services_secondary_range_name: '{{ service_subnet_name }}'
