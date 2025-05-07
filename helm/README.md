@@ -29,7 +29,7 @@ kubectl logs <pod name>
 
 ### Access postgres database in Kubernetes with shell
 ```
-kubectl exec -it < postgres pod name>  -- /bin/bash
+kubectl exec -it <postgres pod name>  -- /bin/bash
 root: psql -U postgres
 \c smart
 \d
@@ -41,7 +41,7 @@ kubectl get deployments
 
 ### Manually Scale up or down (check with get pods or deplyments)
 ```
-kubectl scale deployment <artifact> --replicas= <number>
+kubectl scale deployment <artifact> --replicas=<number>
 
 kubectl scale deployment smart-frontend --replicas=0
 kubectl scale deployment smart-frontend --replicas=3
@@ -57,11 +57,18 @@ kubectl describe pod <pod name>
 ### Deployment
 
 **Transfer secret Google OAuth**
+
+This would ideally be done with the SOPS plugin for helm, but was done mannually for simplicity.
+
 ```
 kubectl create secret generic oauth-secret --from-file=client_secrets.json=client_secrets2.json
 ```
 
 **Transfer data to api pod**
+
+This is necessary because the datapipeline cannot run in the cluster itself without a GPU.
+As a workaround the datapipeline was run locally and the database was populated by hand.
+
 Get data from docker
 ```
 docker exec -it postgres /bin/bash
