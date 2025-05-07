@@ -22,7 +22,7 @@ from typing import List, Dict, Any
 from .config import GENERATION_CONFIG, OLLAMA_URL, RERANKER_MODEL, logger
 
 # Configure longer timeouts (10 minutes = 600 seconds)
-DEFAULT_TIMEOUT = 600  # 10 minutes in seconds
+DEFAULT_TIMEOUT = 3600
 
 
 class AsyncOllamaAPIClient:
@@ -147,24 +147,6 @@ async def rerank_with_llm(
 
         # Initialize API client with extended timeout
         model_client = AsyncOllamaAPIClient(model_name, timeout=timeout)
-
-        # Try a test call to see if the model is working
-        test_prompt = "This is a test."
-        try:
-            test_response = await model_client.generate_text(
-                prompt=test_prompt,
-                temperature=0.1,
-                max_tokens=10,
-            )
-            # Check if we got an error response
-            if test_response.startswith("Error:"):
-                logger.warning(
-                    f"Reranking model test failed: {test_response}. Using original chunk order."
-                )
-                return chunks
-        except Exception as e:
-            logger.warning(f"Reranking model not available: {str(e)}. Using original chunk order.")
-            return chunks
 
         # If we got here, the test was successful - proceed with reranking
         reranking_results = []

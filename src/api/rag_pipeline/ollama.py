@@ -29,9 +29,9 @@ from .safety import check_query_safety_with_llama_guard
 from .search import hybrid_search, retrieve_document_metadata
 
 # Define default timeouts (in seconds)
-DEFAULT_SAFETY_TIMEOUT = 600  # 10 minutes
-DEFAULT_RERANKER_TIMEOUT = 600  # 10 minutes
-DEFAULT_QUERY_TIMEOUT = 600  # 10 minutes
+DEFAULT_SAFETY_TIMEOUT = 3600
+DEFAULT_RERANKER_TIMEOUT = 3600
+DEFAULT_QUERY_TIMEOUT = 3600
 
 
 async def query_ollama_with_hybrid_search_multilingual(

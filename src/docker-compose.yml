@@ -58,8 +58,18 @@ services:
       GOOGLE_CREDENTIALS_FILE: $GOOGLE_CREDENTIALS_FILE
       DEV: 1
       OLLAMA_HOST: ollama
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
     networks:
       - smart-network
+    # Dev Only
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     tty: true
   ollama:
     image: ollama/ollama

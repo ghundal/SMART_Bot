@@ -23,6 +23,7 @@ if [ "$1" = "$DP_IMAGE_NAME" ] || [ -z "$1" ]; then
 fi
 if [ "$1" = "$API_IMAGE_NAME" ] || [ -z "$1" ]; then
     docker build -t $API_IMAGE_NAME ./api
+
 fi
 if [ "$1" = "$FRONTEND_IMAGE_NAME" ] || [ -z "$1" ]; then
     docker build -t $FRONTEND_IMAGE_NAME ./frontend
