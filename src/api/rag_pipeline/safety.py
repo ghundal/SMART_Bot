@@ -16,8 +16,8 @@ import aiohttp
 import asyncio
 from .config import OLLAMA_URL, SAFETY_MODEL, logger
 
-# Configure timeout (10 minutes = 600 seconds)
-DEFAULT_TIMEOUT = 600  # 10 minutes in seconds
+# Configure timeout
+DEFAULT_TIMEOUT = 3600
 
 
 async def check_query_safety_with_llama_guard(
