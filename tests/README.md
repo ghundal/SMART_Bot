@@ -1,13 +1,16 @@
 # Testing and Code Coverage Guide
 
-This guide explains how to run the test suite for the data pipeline project and generate code coverage reports.
+This guide explains how to run all tests for the E115_SMART project with a single command, including Python tests, JavaScript tests, and DataService validation.
 
 ## Prerequisites
 
 Make sure you have the required packages installed:
 
 ```bash
+pip install pre-commit
 pip install pytest pytest-cov
+
+npm install --save-dev jest jest-environment-jsdom @babel/core @babel/preset-env @babel/plugin-transform-modules-commonjs babel-jest
 ```
 
 ## Project Structure
@@ -21,14 +24,33 @@ E115_SMART/
 │   ├── __init__.py
 │   ├── test_data_pipeline.py
 │   └── test_advanced_semantic-chunker.py
+|   └── frontend/
+|           └── DataService.test.js
 └── pytest.ini
 ```
 
 ## Running Tests
 
-### Basic Test Execution
+### Make the test runner executable
+```
+chmod +x run-all-tests.sh
+```
 
-To run all tests:
+### Run all test with one command
+Just run in root:
+```
+./run-tests.sh
+```
+This script will run:
+
+- Python tests (using pytest)
+- JavaScript unit tests
+- JavaScript integration tests
+- DataService validation script
+
+### Running Tests Separately (Python)
+
+To run all python tests:
 
 ```bash
 python -m pytest
@@ -103,4 +125,34 @@ Add the following commands to your workflow:
 python -m pytest --cov=src.datapipeline --cov-report=xml
 ```
 
-## Troubleshooting
+## Running Tests Separately(Frontend)
+
+### Run only JavaScript DataService tests
+```
+npx jest tests/frontend/DataService.test.js
+```
+
+### JavaScript Integration Tests
+```
+npx jest tests/frontend/DataService.integration.test.js
+```
+
+### Data Service Validation
+```
+node tests/frontend/validateDataService.js
+```
+
+### JavaScript Unit tests ReportsService
+```
+npx jest tests/frontend/ReportsService.test.js
+```
+
+###  JavaScript Integration tests ReportsService
+```
+npx jest tests/frontend/ReportsService.integration.test.js
+```
+
+###  JavaScript Validation ReportsService
+```
+node tests/frontend/validateReportsService.js
+```

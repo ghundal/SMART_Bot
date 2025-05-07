@@ -17,7 +17,7 @@ async def health(_: Request):
     return Response(status_code=HTTP_200_OK)
 
 
-# Initialize garbage collection list for memory test
+# Initialize garbage list for memory test
 router.garbage = []
 
 

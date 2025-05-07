@@ -7,6 +7,7 @@ This guide covers how to set up and use linters and formatters to maintain code 
 Run the setup script to install all linters and formatters:
 
 ```bash
+pip install pre-commit
 chmod +x linter/setup.sh
 ./linter/setup.sh
 ```

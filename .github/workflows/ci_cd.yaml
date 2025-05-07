@@ -11,13 +11,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pipenv
           pipenv sync
-      - name: Test with pytest
-        run: pipenv run python -m pytest
+      - name: Install JavaScript dependencies
+        run: |
+          npm install --save-dev jest jest-environment-jsdom @babel/core @babel/preset-env @babel/plugin-transform-modules-commonjs babel-jest
+      - name: Tests
+        run: pipenv run ./run-tests.sh
 
   ensure-cluster:
     runs-on: ubuntu-latest
