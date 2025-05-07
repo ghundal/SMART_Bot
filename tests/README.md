@@ -32,15 +32,19 @@ E115_SMART/
 ## Running Tests
 
 ### Make the test runner executable
+
 ```
 chmod +x run-all-tests.sh
 ```
 
 ### Run all test with one command
+
 Just run in root:
+
 ```
 ./run-tests.sh
 ```
+
 This script will run:
 
 - Python tests (using pytest)
@@ -128,31 +132,37 @@ python -m pytest --cov=src.datapipeline --cov-report=xml
 ## Running Tests Separately(Frontend)
 
 ### Run only JavaScript DataService tests
+
 ```
 npx jest tests/frontend/DataService.test.js
 ```
 
 ### JavaScript Integration Tests
+
 ```
 npx jest tests/frontend/DataService.integration.test.js
 ```
 
 ### Data Service Validation
+
 ```
 node tests/frontend/validateDataService.js
 ```
 
 ### JavaScript Unit tests ReportsService
+
 ```
 npx jest tests/frontend/ReportsService.test.js
 ```
 
-###  JavaScript Integration tests ReportsService
+### JavaScript Integration tests ReportsService
+
 ```
 npx jest tests/frontend/ReportsService.integration.test.js
 ```
 
-###  JavaScript Validation ReportsService
+### JavaScript Validation ReportsService
+
 ```
 node tests/frontend/validateReportsService.js
 ```

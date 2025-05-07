@@ -9,6 +9,7 @@ module.exports = [
       '**/frontend/.next/**',
       '**/E115_SMART/src/frontend/.next/**',
       '/next/home/gurpreet/Desktop/Spring2025/CSCI115/Project/E115_SMART/src/frontend/.next/**',
+      '**tests/**',
 
       // Code coverage reports - generated files that shouldn't be linted
       '**/htmlcov/**',

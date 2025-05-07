@@ -18,7 +18,10 @@ async function validateReportsService() {
   console.log('🔍 Starting ReportsService validation tests...');
 
   // Path to ReportsService.js
-  const reportsServicePath = path.resolve(__dirname, '../../src/frontend/services/ReportsService.js');
+  const reportsServicePath = path.resolve(
+    __dirname,
+    '../../src/frontend/services/ReportsService.js',
+  );
 
   try {
     // Check if the file exists
@@ -35,7 +38,7 @@ async function validateReportsService() {
     const results = {
       passed: 0,
       failed: 0,
-      errors: []
+      errors: [],
     };
 
     // Test Helper
@@ -64,23 +67,23 @@ async function validateReportsService() {
         'getTopKeywords',
         'getTopPhrases',
         'getUserActivity',
-        'getDailyActiveUsers'
+        'getDailyActiveUsers',
       ];
 
       let foundFunctions = 0;
 
-      expectedFunctions.forEach(funcName => {
+      expectedFunctions.forEach((funcName) => {
         // Check for function definition or export
         const functionPatterns = [
-          new RegExp(`function\\s+${funcName}\\s*\\(`),              // function declaration
+          new RegExp(`function\\s+${funcName}\\s*\\(`), // function declaration
           new RegExp(`const\\s+${funcName}\\s*=\\s*\\(?.*\\)\\s*=>`), // arrow function
-          new RegExp(`export\\s+const\\s+${funcName}\\s*=`),          // exported const
-          new RegExp(`export\\s+function\\s+${funcName}\\s*\\(`),     // exported function
-          new RegExp(`export\\s+\\{.*\\b${funcName}\\b.*\\}`),        // named export
-          new RegExp(`${funcName}\\s*:\\s*function`)                  // object method
+          new RegExp(`export\\s+const\\s+${funcName}\\s*=`), // exported const
+          new RegExp(`export\\s+function\\s+${funcName}\\s*\\(`), // exported function
+          new RegExp(`export\\s+\\{.*\\b${funcName}\\b.*\\}`), // named export
+          new RegExp(`${funcName}\\s*:\\s*function`), // object method
         ];
 
-        const found = functionPatterns.some(pattern => pattern.test(fileContents));
+        const found = functionPatterns.some((pattern) => pattern.test(fileContents));
 
         if (found) {
           foundFunctions++;
@@ -97,7 +100,9 @@ async function validateReportsService() {
       console.log(`  Found ${foundFunctions}/${expectedFunctions.length} expected functions`);
 
       if (foundFunctions < expectedFunctions.length / 2) {
-        throw new Error(`Only found ${foundFunctions}/${expectedFunctions.length} expected functions`);
+        throw new Error(
+          `Only found ${foundFunctions}/${expectedFunctions.length} expected functions`,
+        );
       }
     });
 
@@ -115,7 +120,8 @@ async function validateReportsService() {
 
     // 3. Test for error handling
     test('Error Handling', () => {
-      const errorHandlingPattern = /if\s*\(\s*!\s*response\.ok\s*\)\s*\{[\s\S]*?throw\s+new\s+Error/;
+      const errorHandlingPattern =
+        /if\s*\(\s*!\s*response\.ok\s*\)\s*\{[\s\S]*?throw\s+new\s+Error/;
       const foundErrorHandling = errorHandlingPattern.test(fileContents);
 
       if (!foundErrorHandling) {
@@ -166,13 +172,15 @@ async function validateReportsService() {
 
 // Execute validation if called directly
 if (require.main === module) {
-  validateReportsService().then(success => {
-    console.log('\n🏁 Validation complete!');
-    process.exit(success ? 0 : 1);
-  }).catch(error => {
-    console.error('❌ Unexpected error:', error);
-    process.exit(1);
-  });
+  validateReportsService()
+    .then((success) => {
+      console.log('\n🏁 Validation complete!');
+      process.exit(success ? 0 : 1);
+    })
+    .catch((error) => {
+      console.error('❌ Unexpected error:', error);
+      process.exit(1);
+    });
 }
 
 module.exports = validateReportsService;

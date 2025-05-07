@@ -10,14 +10,14 @@ global.fetch = jest.fn(() =>
     status: 200,
     statusText: 'OK',
     json: () => Promise.resolve({ success: true }),
-    text: () => Promise.resolve('Success')
-  })
+    text: () => Promise.resolve('Success'),
+  }),
 );
 
 // Mock localStorage
 global.localStorage = {
   _data: {},
-  getItem: jest.fn(key => {
+  getItem: jest.fn((key) => {
     return global.localStorage._data[key];
   }),
   setItem: jest.fn((key, value) => {
@@ -25,7 +25,7 @@ global.localStorage = {
   }),
   clear: jest.fn(() => {
     global.localStorage._data = {};
-  })
+  }),
 };
 
 // Mock process.env

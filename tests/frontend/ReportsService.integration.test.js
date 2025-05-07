@@ -16,44 +16,44 @@ const mockSystemStats = {
   disk_usage: 72.3,
   uptime_days: 42,
   total_queries: 15423,
-  active_users_today: 27
+  active_users_today: 27,
 };
 
 const mockUserCount = {
   total: 157,
   active_last_7_days: 89,
-  active_last_30_days: 132
+  active_last_30_days: 132,
 };
 
 const mockQueryCount = {
   total: 15423,
   last_24h: 127,
   last_7_days: 843,
-  last_30_days: 3621
+  last_30_days: 3621,
 };
 
 const mockTopDocuments = {
   documents: [
     { id: 'doc1', title: 'API Documentation', access_count: 423 },
     { id: 'doc2', title: 'User Guide', access_count: 387 },
-    { id: 'doc3', title: 'System Architecture', access_count: 298 }
-  ]
+    { id: 'doc3', title: 'System Architecture', access_count: 298 },
+  ],
 };
 
 const mockQueryActivity = {
   data: [
     { date: '2024-04-01', count: 132 },
     { date: '2024-04-02', count: 145 },
-    { date: '2024-04-03', count: 128 }
-  ]
+    { date: '2024-04-03', count: 128 },
+  ],
 };
 
 const mockTopKeywords = {
   keywords: [
     { keyword: 'documentation', count: 342 },
     { keyword: 'system', count: 289 },
-    { keyword: 'architecture', count: 201 }
-  ]
+    { keyword: 'architecture', count: 201 },
+  ],
 };
 
 describe('ReportsService Integration Tests', () => {
@@ -69,12 +69,13 @@ describe('ReportsService Integration Tests', () => {
     // Configure mock fetch to return different responses based on URL
     fetch.mockImplementation((url) => {
       // Set up a successful response object with the appropriate mock data
-      const createSuccessResponse = (data) => Promise.resolve({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        json: () => Promise.resolve(data)
-      });
+      const createSuccessResponse = (data) =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          json: () => Promise.resolve(data),
+        });
 
       // Match URLs to return appropriate mock data
       if (url.includes('/api/reports/system_stats')) {
@@ -96,7 +97,7 @@ describe('ReportsService Integration Tests', () => {
         ok: false,
         status: 404,
         statusText: 'Not Found',
-        json: () => Promise.resolve({ error: 'Not found' })
+        json: () => Promise.resolve({ error: 'Not found' }),
       });
     });
   });
@@ -113,7 +114,7 @@ describe('ReportsService Integration Tests', () => {
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(
         'http://localhost:9000/api/reports/system_stats',
-        expect.any(Object)
+        expect.any(Object),
       );
     } catch (error) {
       console.error('Error importing ReportsService:', error.message);
@@ -134,7 +135,7 @@ describe('ReportsService Integration Tests', () => {
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(
         'http://localhost:9000/api/reports/users',
-        expect.any(Object)
+        expect.any(Object),
       );
     } catch (error) {
       console.error('Error importing ReportsService:', error.message);
@@ -154,7 +155,7 @@ describe('ReportsService Integration Tests', () => {
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenCalledWith(
         'http://localhost:9000/api/reports/queries?days=30',
-        expect.any(Object)
+        expect.any(Object),
       );
     } catch (error) {
       console.error('Error importing ReportsService:', error.message);
@@ -174,12 +175,11 @@ describe('ReportsService Integration Tests', () => {
           ok: false,
           status: 500,
           statusText: 'Internal Server Error',
-          json: () => Promise.resolve({ error: 'Server error' })
-        })
+          json: () => Promise.resolve({ error: 'Server error' }),
+        }),
       );
 
       await expect(getSystemStats()).rejects.toThrow('Error fetching system stats');
-
     } catch (error) {
       console.error('Error importing ReportsService:', error.message);
       expect(true).toBe(true);

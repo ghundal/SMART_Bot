@@ -10,8 +10,8 @@ global.fetch = jest.fn(() =>
     ok: true,
     status: 200,
     statusText: 'OK',
-    json: () => Promise.resolve({ success: true })
-  })
+    json: () => Promise.resolve({ success: true }),
+  }),
 );
 
 // Mock process.env
@@ -42,8 +42,8 @@ describe('ReportsService API Endpoints', () => {
         ok: true,
         status: 200,
         statusText: 'OK',
-        json: () => Promise.resolve({ success: true, data: {} })
-      })
+        json: () => Promise.resolve({ success: true, data: {} }),
+      }),
     );
   });
 
@@ -65,9 +65,9 @@ describe('ReportsService API Endpoints', () => {
           method: 'GET',
           credentials: 'include',
           headers: expect.objectContaining({
-            'Content-Type': 'application/json'
-          })
-        })
+            'Content-Type': 'application/json',
+          }),
+        }),
       );
     } catch (error) {
       console.error('Error importing ReportsService:', error.message);
@@ -89,8 +89,8 @@ describe('ReportsService API Endpoints', () => {
         'http://localhost:9000/api/reports/users',
         expect.objectContaining({
           method: 'GET',
-          credentials: 'include'
-        })
+          credentials: 'include',
+        }),
       );
     } catch (error) {
       console.error('Error importing ReportsService:', error.message);
@@ -108,7 +108,7 @@ describe('ReportsService API Endpoints', () => {
       await getQueryCount();
       expect(fetch).toHaveBeenCalledWith(
         'http://localhost:9000/api/reports/queries?days=30',
-        expect.any(Object)
+        expect.any(Object),
       );
 
       fetch.mockClear();
@@ -117,9 +117,8 @@ describe('ReportsService API Endpoints', () => {
       await getQueryCount(90);
       expect(fetch).toHaveBeenCalledWith(
         'http://localhost:9000/api/reports/queries?days=90',
-        expect.any(Object)
+        expect.any(Object),
       );
-
     } catch (error) {
       console.error('Error importing ReportsService:', error.message);
       expect(true).toBe(true);
@@ -138,13 +137,12 @@ describe('ReportsService API Endpoints', () => {
           ok: false,
           status: 500,
           statusText: 'Internal Server Error',
-          json: () => Promise.resolve({ error: 'Server error' })
-        })
+          json: () => Promise.resolve({ error: 'Server error' }),
+        }),
       );
 
       // Test that the function throws an error
       await expect(getSystemStats()).rejects.toThrow('Error fetching system stats');
-
     } catch (error) {
       console.error('Error importing ReportsService:', error.message);
       expect(true).toBe(true);

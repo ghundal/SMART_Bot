@@ -12,7 +12,7 @@ global.fetch = function mockFetch() {
   return Promise.resolve({
     ok: true,
     json: () => Promise.resolve({}),
-    text: () => Promise.resolve('')
+    text: () => Promise.resolve(''),
   });
 };
 
@@ -30,7 +30,7 @@ global.localStorage = {
   },
   clear() {
     this._data = {};
-  }
+  },
 };
 
 // Set environment variables
@@ -62,7 +62,7 @@ async function validateDataServiceFile() {
     const results = {
       passed: 0,
       failed: 0,
-      errors: []
+      errors: [],
     };
 
     // Test Helper
@@ -90,23 +90,23 @@ async function validateDataServiceFile() {
         'DeleteChat',
         'SubmitQuery',
         'uuid',
-        'getSessionId'
+        'getSessionId',
       ];
 
       let foundFunctions = 0;
 
-      expectedFunctions.forEach(funcName => {
+      expectedFunctions.forEach((funcName) => {
         // Check for function definition or export
         const functionPatterns = [
-          new RegExp(`function\\s+${funcName}\\s*\\(`),              // function declaration
+          new RegExp(`function\\s+${funcName}\\s*\\(`), // function declaration
           new RegExp(`const\\s+${funcName}\\s*=\\s*\\(?.*\\)\\s*=>`), // arrow function
-          new RegExp(`export\\s+const\\s+${funcName}\\s*=`),          // exported const
-          new RegExp(`export\\s+function\\s+${funcName}\\s*\\(`),     // exported function
-          new RegExp(`export\\s+\\{.*\\b${funcName}\\b.*\\}`),        // named export
-          new RegExp(`${funcName}\\s*:\\s*function`)                  // object method
+          new RegExp(`export\\s+const\\s+${funcName}\\s*=`), // exported const
+          new RegExp(`export\\s+function\\s+${funcName}\\s*\\(`), // exported function
+          new RegExp(`export\\s+\\{.*\\b${funcName}\\b.*\\}`), // named export
+          new RegExp(`${funcName}\\s*:\\s*function`), // object method
         ];
 
-        const found = functionPatterns.some(pattern => pattern.test(fileContents));
+        const found = functionPatterns.some((pattern) => pattern.test(fileContents));
 
         if (found) {
           foundFunctions++;
@@ -123,7 +123,9 @@ async function validateDataServiceFile() {
       console.log(`  Found ${foundFunctions}/${expectedFunctions.length} expected functions`);
 
       if (foundFunctions < expectedFunctions.length / 2) {
-        throw new Error(`Only found ${foundFunctions}/${expectedFunctions.length} expected functions`);
+        throw new Error(
+          `Only found ${foundFunctions}/${expectedFunctions.length} expected functions`,
+        );
       }
     });
 
@@ -161,13 +163,15 @@ async function validateDataServiceFile() {
 
 // Execute validation if called directly
 if (require.main === module) {
-  validateDataServiceFile().then(success => {
-    console.log('\n🏁 Validation complete!');
-    process.exit(success ? 0 : 1);
-  }).catch(error => {
-    console.error('❌ Unexpected error:', error);
-    process.exit(1);
-  });
+  validateDataServiceFile()
+    .then((success) => {
+      console.log('\n🏁 Validation complete!');
+      process.exit(success ? 0 : 1);
+    })
+    .catch((error) => {
+      console.error('❌ Unexpected error:', error);
+      process.exit(1);
+    });
 }
 
 module.exports = validateDataServiceFile;

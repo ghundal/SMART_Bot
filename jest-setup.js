@@ -3,8 +3,8 @@ global.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
     json: () => Promise.resolve({}),
-    text: () => Promise.resolve('')
-  })
+    text: () => Promise.resolve(''),
+  }),
 );
 
 // Mock localStorage
@@ -12,7 +12,7 @@ global.localStorage = {
   getItem: jest.fn(),
   setItem: jest.fn(),
   removeItem: jest.fn(),
-  clear: jest.fn()
+  clear: jest.fn(),
 };
 
 // Environment variables
