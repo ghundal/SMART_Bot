@@ -9,46 +9,46 @@
     - vars/gke_vars.yml
 
   tasks:
-  - name: "Create a GKE cluster"
-    google.cloud.gcp_container_cluster:
-      name: "{{cluster_name}}"
-      initial_node_count: "{{ initial_node_count }}"
-      location: "{{ gcp_zone }}"
-      project: "{{ gcp_project }}"
-      release_channel:
-        channel: "UNSPECIFIED"
-      ip_allocation_policy:
-        use_ip_aliases: "yes"
-      auth_kind: "{{ gcp_auth_kind }}"
-      service_account_file: "{{ gcp_service_account_file }}"
-      state: present
-    register: cluster
+    - name: 'Create a GKE cluster'
+      google.cloud.gcp_container_cluster:
+        name: '{{cluster_name}}'
+        initial_node_count: '{{ initial_node_count }}'
+        location: '{{ gcp_zone }}'
+        project: '{{ gcp_project }}'
+        release_channel:
+          channel: 'UNSPECIFIED'
+        ip_allocation_policy:
+          use_ip_aliases: 'yes'
+        auth_kind: '{{ gcp_auth_kind }}'
+        service_account_file: '{{ gcp_service_account_file }}'
+        state: present
+      register: cluster
 
-  - name: "Create a Node Pool"
-    google.cloud.gcp_container_node_pool:
-      name: ai-pool
-      initial_node_count: "{{ initial_node_count }}"
-      cluster: "{{ cluster }}"
-      location: "{{ gcp_zone }}"
-      project: "{{ gcp_project }}"
-      config:
-        machine_type: "{{ machine_type }}"
-        image_type: "cos_containerd"
-        disk_size_gb: "{{ machine_disk_size }}"
-        oauth_scopes:
-          - "https://www.googleapis.com/auth/devstorage.read_only"
-          - "https://www.googleapis.com/auth/logging.write"
-          - "https://www.googleapis.com/auth/monitoring"
-          - "https://www.googleapis.com/auth/servicecontrol"
-          - "https://www.googleapis.com/auth/service.management.readonly"
-          - "https://www.googleapis.com/auth/trace.append"
-      autoscaling:
-        enabled: "yes"
-        min_node_count: "1"
-        max_node_count: "{{ initial_node_count }}"
-      management:
-        auto_repair: "yes"
-        auto_upgrade: "yes"
-      auth_kind: "{{ gcp_auth_kind }}"
-      service_account_file: "{{ gcp_service_account_file }}"
-      state: present
+    - name: 'Create a Node Pool'
+      google.cloud.gcp_container_node_pool:
+        name: ai-pool
+        initial_node_count: '{{ initial_node_count }}'
+        cluster: '{{ cluster }}'
+        location: '{{ gcp_zone }}'
+        project: '{{ gcp_project }}'
+        config:
+          machine_type: '{{ machine_type }}'
+          image_type: 'cos_containerd'
+          disk_size_gb: '{{ machine_disk_size }}'
+          oauth_scopes:
+            - 'https://www.googleapis.com/auth/devstorage.read_only'
+            - 'https://www.googleapis.com/auth/logging.write'
+            - 'https://www.googleapis.com/auth/monitoring'
+            - 'https://www.googleapis.com/auth/servicecontrol'
+            - 'https://www.googleapis.com/auth/service.management.readonly'
+            - 'https://www.googleapis.com/auth/trace.append'
+        autoscaling:
+          enabled: 'yes'
+          min_node_count: '1'
+          max_node_count: '{{ initial_node_count }}'
+        management:
+          auto_repair: 'yes'
+          auto_upgrade: 'yes'
+        auth_kind: '{{ gcp_auth_kind }}'
+        service_account_file: '{{ gcp_service_account_file }}'
+        state: present
