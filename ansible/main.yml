@@ -26,7 +26,7 @@
 
   - name: "Create a Node Pool"
     google.cloud.gcp_container_node_pool:
-      name: default-pool
+      name: ai-pool
       initial_node_count: "{{ initial_node_count }}"
       cluster: "{{ cluster }}"
       location: "{{ gcp_zone }}"
