@@ -208,6 +208,46 @@ spec:
           volumeMounts:
             - name: models-storage
               mountPath: /var/ollama
+      initContainers:
+        - name: pull-gemma3
+          image: ollama/ollama
+          command: ["pull", "gemma3:12b"]
+          env:
+            - name: OLLAMA_MODELS
+              value: /var/ollama
+          volumeMounts:
+            - name: models-storage
+              mountPath: /var/ollama
+      initContainers:
+        - name: pull-llama3
+          image: ollama/ollama
+          command: ["pull", "llama3:8b"]
+          env:
+            - name: OLLAMA_MODELS
+              value: /var/ollama
+          volumeMounts:
+            - name: models-storage
+              mountPath: /var/ollama
+      initContainers:
+        - name: pull-llama-guard
+          image: ollama/ollama
+          command: ["pull", "llama-guard3:8b"]
+          env:
+            - name: OLLAMA_MODELS
+              value: /var/ollama
+          volumeMounts:
+            - name: models-storage
+              mountPath: /var/ollama
+      initContainers:
+        - name: pull-gemma3
+          image: ollama/ollama
+          command: ["pull", "gemma3:12b"]
+          env:
+            - name: OLLAMA_MODELS
+              value: /var/ollama
+          volumeMounts:
+            - name: models-storage
+              mountPath: /var/ollama
       containers:
         - name: ollama
           image: ollama/ollama
