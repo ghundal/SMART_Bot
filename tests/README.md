@@ -213,4 +213,4 @@ node tests/frontend/validateReportsService.js
 
 ![Local Test](/images/local_test2.png)
 
-[Coverage Report](/htmlcov/index.html)
+![Coverage Report](/images/Coverage.png)

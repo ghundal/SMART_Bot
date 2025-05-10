@@ -7,3 +7,5 @@ output.txt
 *.key
 node_modules/
 *.next/
+.vscode
+htmlcov/

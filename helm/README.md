@@ -54,6 +54,31 @@ kubectl scale deployment smart-api --replicas=1
 2. Git Commit + Git Push
 3. Check GitHub Actions for success - deployment is automatic
 
+```
+git add .
+git commit -m "<message>"
+git push
+```
+
+## Evidence of Auto scaling
+Lowered the limit of the api pod in the kubernetes deployment (via helm) to 1Gi to evidence autoscaling.
+
+1. Pre auto scaling image
+```
+watch kubectl top pods
+```
+
+![Pre scale](/images/before_auto_scale.png)
+
+2. Keep clicking on below until it shows autocals
+```
+https://smart.ghundal.com/eat-mem
+```
+
+3. Evidence of autoscaling
+
+![Post scale](/images/after_auto_scale.png)
+
 ## Organization
 ```
 ├── .github/workflows

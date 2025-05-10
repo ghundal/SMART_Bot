@@ -15,6 +15,22 @@ SMART delivers:
 - **Frontend UI:** Chatbot interface, authenticated via Google OAuth with SSL encryption.
   Security + Audit Trail: Logs at every access and retrieval point.
 
+## **Organization**
+```
+E115_SMART/
+├── .github
+├── ansible
+├── helm
+├── images
+├── linter
+├── reports
+├── sql
+├── src
+├── tests
+|
+└── README.md
+```
+
 ## **Overview**
 
 Please reference the [Design Document](./reports/Design_Document.pdf) for full tech stack.
@@ -82,27 +98,6 @@ To run the test locally refer:
 
 ## **Production Deployment**
 
-### Preqrequsites
+Please reference [deployment README.md](/helm/README.md) for the steps and the evidence of autoscaling.
 
-- Add the secrets in th github in settings -> action
-
-### Steps
-
-The workflows are set up in Github actions to run on commit with following steps:
-
-- run linters
-- run tests
-- build images
-- push the images to GCR
-  <need ansible step here>
-- deploy to kubernetes
-
-- **Commit**
-
-```
-git add .
-git commit -m "<message>"
-git push
-```
-
-## **Tests**
+## **Evidence of Deployment**
