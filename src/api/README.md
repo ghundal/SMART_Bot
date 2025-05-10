@@ -1,84 +1,67 @@
 # API
 
-This module is desined to create api endpoints and
+This module is desined to create ollama container with the downloaded models and start the api service.
 
 ## **Prerequisites**
 
-### **1. Install Docker**
+Ensure that datapipeline is set up and running.
 
-Make sure Docker is installed on your machine. You can follow [this guide](https://docs.docker.com/get-docker/) to install Docker.
-
-### 2. Enable GPU on docker
+## **Organization**
 
 ```
-curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-sudo apt update
-sudo apt-get install -y nvidia-container-toolkit
-sudo systemctl restart docker.service
-docker run --rm --gpus all ubuntu nvidia-smi
+── Readme.md
+├── reports
+|      |── MS3_SMART.pdf
+|      |── Design_Document.pdf
+|      └── Milestone1_SMART.pdf
+├── sql
+│   └── init.sql
+|
+└── src
+    ├── api
+    │   ├── rag_pipeline
+    |   |       |── __init__.py
+    |   |       |── config.py
+    |   |       |── embedding.py
+    |   |       |── language.py
+    |   |       |── ollama_api.py
+    |   |       |── safety.py
+    |   |       └── search.py
+    │   ├── routers
+    |   |       |── __init__.py
+    |   |       |── auth_google.py
+    |   |       |── auth_middleware.py
+    |   |       |── chat_api.py
+    |   |       |── health.py
+    |   |       └── reports.py
+    |   ├── utils
+    |   |       |── __init__.py
+    |   |       |── chat_history.py
+    |   |       |── database.py
+    |   |       └── llm_rag_utils.py
+    |   ├── __init__.py
+    |   ├── docker_entrypoint.sh
+    │   ├── Dockerfile
+    │   ├── main_api.py
+    │   ├── Pipfile
+    │   ├── Pipfile.lock
+    │   └── README.md
+    ├── datapipeline
+    ├── docker-compose.yml
+    ├── docker-shell.sh
+    └── Dockerfile.postgres
 ```
 
-### 3. Docker login
+## **Running the api**
 
-```
-docker login
-```
-
-### **4. Clone this repository**
+Execute the below command in /src
 
 ```bash
-git clone https://github.com/ghundal/E115_SMART.git
-cd E115_SMART
+sh docker-shell.sh api
 ```
 
-### **5. Setup GCP Account**
-
-Go to Google console and ensure that you have access to smart_input_data bucket. Download the key as JSON file and rename it `smart_input_key.json`. Your folder structure should look like:
+Run in the container to start the API service:
 
 ```
-|-E115_SMART
-|-secrets
-  |-smart_input_key.json
-```
-
-## **Running the system**
-
-### **1. Run the image smart_input to prepare the input data**
-
-- **Loads** documents from GCP
-- **Validates** to ensure that data is complete
-- **Chunks** text documents using semantic chunking. Change default to recursive/semantic in main to change the chunking method. Current default = recursive.
-- **Embeds** the text into a vector space
-- **Stores** embeddings in a **PostgreSQL + pgvector database**
-
-```bash
-sh docker-shell.sh smart_input
-```
-
-## To access the database container
-
-### Ubuntu
-
-```
-sudo apt update && sudo apt install -y postgresql-client
-psql -U postgres -h localhost
-```
-
-### OS independent
-
-```
-docker exec -it postgres /bin/bash
-psql -U postgres
-\c smart
-```
-
-## For clean reruns
-
-```
-docker-compose stop
-docker system prune
-sudo rm -rf ../persistent-folder/
+uvicorn_server
 ```

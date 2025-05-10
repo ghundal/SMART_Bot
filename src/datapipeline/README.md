@@ -30,7 +30,7 @@ docker login
 ### **4. Clone this repository**
 
 ```bash
-git clone https://github.com/ghundal/E115_SMART.git
+git clone https://github.com/main/E115_SMART.git
 cd E115_SMART
 ```
 
@@ -44,9 +44,30 @@ Go to Google console and ensure that you have access to smart_input_data bucket.
   |-smart_input_key.json
 ```
 
+## **Organization**
+
+```
+├── Readme.md
+├── sql
+│   └── init.sql
+└── src
+    ├── datapipeline
+    |   ├── __init__.py
+    │   ├── Advanced_semantic_chunker.py
+    │   ├── datapipeline.py
+    │   ├── docker_entrypoint.sh
+    │   ├── Dockerfile
+    │   ├── Pipfile
+    │   ├── Pipfile.lock
+    │   └── README.md
+    ├── docker-compose.yml
+    ├── docker-shell.sh
+    └── Dockerfile.postgres
+```
+
 ## **Running the system**
 
-### **1. Run the image smart_input to prepare the input data**
+### **Run the image datapipeline to prepare the input data in /src**
 
 - **Loads** documents from GCP
 - **Validates** to ensure that data is complete
@@ -55,7 +76,7 @@ Go to Google console and ensure that you have access to smart_input_data bucket.
 - **Stores** embeddings in a **PostgreSQL + pgvector database**
 
 ```bash
-sh docker-shell.sh smart_input
+sh docker-shell.sh datapipeline
 ```
 
 ## To access the database container

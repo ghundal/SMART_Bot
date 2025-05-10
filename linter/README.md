@@ -96,3 +96,40 @@ Run pre-commit locally before pushing:
 ```
 pre-commit run --all-files
 ```
+
+## Evidence
+
+![Linter Test](/images/linter_test.png)
+
+## Organization
+
+```
+E115_SMART/
+├── linter
+|      |── docker-lint.sh
+|      |── lint-and-format.sh
+|      |── README.md
+|      |── run-all-linters.sh
+|      |── setup.sh
+|      └── ts-lint-and-format.sh
+|
+├──.babelrc
+├──.coverage
+├──.flake8
+├──.gitignore
+├──.pre-commit-config.yaml
+├──.prettierrc
+├──.yamllint
+├──eslint.config.js
+├──jest-setup.js
+├──jest/config.js
+├──LICENSE
+├──mypy.ini
+├──package-lock.json
+├──package.json
+├──Pipfile
+├──Pipfile.lock
+├──pyproject.toml
+├──pytest.ini
+└── run-test.sh
+```

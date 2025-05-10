@@ -114,10 +114,10 @@ spec:
           resources:
             limits:
               cpu: 2000m
-              memory: 1Gi
+              memory: 3Gi
             requests:
               cpu: 1000m
-              memory: 500Mi
+              memory: 1Gi
           volumeMounts:
             - mountPath: /secrets
               name: secrets
@@ -221,7 +221,7 @@ spec:
               mountPath: /var/ollama
             - name: entrypoint-volume
               mountPath: /run/ollama
-          command: ["/bin/bash", "-c", "/run/ollama/ollama.sh"]
+          command: ["/bin/bash", "/run/ollama/ollama.sh"]
           resources:
             limits:
               cpu: 3500m

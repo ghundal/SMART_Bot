@@ -1,8 +1,9 @@
 data/
 exploration/
 __pycache__/
-node_modules/
 .coverage
 output.txt
 *.crt
 *.key
+node_modules/
+*.next/

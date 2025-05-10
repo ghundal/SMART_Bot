@@ -21,12 +21,52 @@ The project should have the following structure:
 E115_SMART/
 ├── src/
 ├── tests/
+│   ├── frontend/
+|   |       |── DataService.integration.test.js
+|   |       |── DataService.test.js
+|   |       |── ReportsService.integration.test.js
+|   |       |── ReportsService.test.js
+|   |       |── validateDataService.js
+|   |       └── validateReportsService.js
 │   ├── __init__.py
+│   ├── conftest.py
+│   ├── README.md
+│   ├── test_advanced_semantic-chunker.py
+│   ├── test_auth_google.py
+│   ├── test_auth_middleware.py
+│   ├── test_chat_api.py
+│   ├── test_chat_history.py
 │   ├── test_data_pipeline.py
-│   └── test_advanced_semantic-chunker.py
-|   └── frontend/
-|           └── DataService.test.js
-└── pytest.ini
+│   ├── test_database.py
+│   ├── test_embeddings.py
+│   ├── test_language.py
+│   ├── test_llm_rag_utils.py
+│   ├── test_ollama_api.py
+│   ├── test_ollama.py
+│   ├── test_reports.py
+│   ├── test_safetyr.py
+│   └── test_search.py
+|
+├──.babelrc
+├──.coverage
+├──.flake8
+├──.gitignore
+├──.pre-commit-config.yaml
+├──.prettierrc
+├──.yamllint
+├──eslint.config.js
+├──jest-setup.js
+├──jest/config.js
+├──LICENSE
+├──mypy.ini
+├──package-lock.json
+├──package.json
+├──Pipfile
+├──Pipfile.lock
+├──pyproject.toml
+├──pytest.ini
+├──README.md
+└── run-test.sh
 ```
 
 ## Running Tests
@@ -166,3 +206,11 @@ npx jest tests/frontend/ReportsService.integration.test.js
 ```
 node tests/frontend/validateReportsService.js
 ```
+
+### Evidence of Test Run
+
+![Local Test](/images/local_test1.png)
+
+![Local Test](/images/local_test2.png)
+
+[Coverage Report](/htmlcov/index.html)

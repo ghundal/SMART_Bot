@@ -3,7 +3,7 @@ name: cd_ci
 on:
   pull_request:
   push:
-    branches: [gurpreet]
+    branches: [gurpreet, main]
 
 jobs:
   test:

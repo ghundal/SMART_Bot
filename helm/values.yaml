@@ -144,6 +144,8 @@ postgresql:
   password: postgres
   storageSize: 8Gi
 
+
+# Ideally these are secrets and not stored in plain text
 tls:
   enabled: true
   crt: |
