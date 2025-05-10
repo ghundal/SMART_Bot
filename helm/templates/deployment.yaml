@@ -219,6 +219,9 @@ spec:
           volumeMounts:
             - name: models-storage
               mountPath: /var/ollama
+            - name: entrypoint-volume
+              mountPath: /run/ollama
+          command: ["/bin/bash", "-c", "/run/ollama/ollama.sh"]
           resources:
             limits:
               cpu: 3500m
@@ -230,3 +233,9 @@ spec:
         - name: models-storage
           persistentVolumeClaim:
             claimName: {{ include "smart.fullname" . }}-models-pvc
+        - name: entrypoint-volume
+          configMap:
+            name: ollama-entrypoint
+            items:
+            - key: ollama.sh
+              path: ollama.sh

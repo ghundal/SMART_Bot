@@ -70,7 +70,7 @@ ingress:
         - path: /api
           pathType: Prefix
           service: api
-        - path: /docs
+        - path: /eat-mem
           pathType: Prefix
           service: api
         - path: /

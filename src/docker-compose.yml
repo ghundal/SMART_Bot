@@ -38,7 +38,7 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     networks:
       - smart-network
     command: datapipeline.py
@@ -69,14 +69,17 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     tty: true
   ollama:
     image: ollama/ollama
     container_name: ollama
     volumes:
       - ${PERSISTENT_DIR}/models:/var/ollama
+      - ./ollama.sh:/ollama.sh
     restart: unless-stopped
+    entrypoint: [ "/bin/bash", "/ollama.sh" ]
+    command: []
     environment:
       OLLAMA_MODELS: /var/ollama
       NVIDIA_VISIBLE_DEVICES: all
@@ -89,7 +92,7 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
   frontend:
     image: ${FRONTEND_IMAGE_NAME}
     container_name: frontend
