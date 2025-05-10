@@ -1,0 +1,51 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+black = "*"
+flake8 = "*"
+isort = "*"
+pylint = "*"
+mypy = "*"
+pre-commit = "*"
+yamllint = "*"
+google-cloud-storage = "*"
+google-api-core = "*"
+google-auth = "*"
+langchain-community = "*"
+sqlalchemy = "*"
+pandas = "*"
+scipy = "*"
+torch = "*"
+numpy = "*"
+psycopg2-binary = "*"
+pypdfium2 = "*"
+accelerate = "*"
+langchain-ollama = "*"
+fastapi = "*"
+uvicorn = "*"
+deep_translator = "*"
+authlib = "*"
+httpx = "*"
+python-dotenv = "*"
+itsdangerous = "*"
+hf_xet = "*"
+fast-langdetect = "*"
+unstructured = {extras = ["pdf"], version = "*"}
+sentence-transformers = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-asyncio = "*"
+
+[requires]
+python_version = "3.12"
+
+[dev-packages]
+black = "*"
+flake8 = "*"
+isort = "*"
+pylint = "*"
+mypy = "*"
+yamllint = "*"

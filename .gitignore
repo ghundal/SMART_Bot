@@ -1,0 +1,11 @@
+data/
+exploration/
+__pycache__/
+.coverage
+output.txt
+*.crt
+*.key
+node_modules/
+*.next/
+.vscode
+htmlcov/

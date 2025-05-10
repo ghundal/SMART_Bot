@@ -1,0 +1,13 @@
+---
+# vars/gke_vars.yml - Variables for Smart Cluster deployment
+
+cluster_name: 'smart-cluster'
+machine_type: 'e2-highmem-4'
+machine_disk_size: 40
+initial_node_count: 3
+
+# Google Cloud authentication
+gcp_project: 'smart-452816'
+gcp_auth_kind: 'serviceaccount'
+gcp_service_account_file: 'smart_input_key.json'
+gcp_zone: 'us-central1'

@@ -1,0 +1,68 @@
+# -----------------------------------------------------------------------------
+# Kubernetes Ingress resource template for the "smart" Helm chart.
+#
+# This template:
+# - Creates an Ingress resource if `.Values.ingress.enabled` is true.
+# - Applies metadata (name, labels, and optional annotations).
+# - Configures the ingress class if provided via `.Values.ingress.className`.
+# - Optionally sets up TLS using secrets specified in `.Values.ingress.tls`.
+# - Defines routing rules for HTTP hosts and paths as specified in `.Values.ingress.hosts`.
+#   Each rule maps a host and path to a backend Kubernetes service.
+#
+# This is used to expose services via HTTP(S), potentially with a domain
+# and TLS certificate (e.g., for Google OAuth redirect URIs).
+# -----------------------------------------------------------------------------
+
+{{ if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "smart.fullname" . }}
+  labels:
+    {{- include "smart.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            {{- with .pathType }}
+            pathType: {{ . }}
+            {{- end }}
+            {{- with .service }}
+            backend:
+              service:
+                name: {{ include "smart.fullname" $ }}-{{ . }}
+                port:
+                  number: {{ $.Values.service.port }}
+            {{- end }}
+          {{- end }}
+    {{- end }}
+{{- end }}
+---
+apiVersion: cloud.google.com/v1beta1
+kind: BackendConfig
+metadata:
+  name: smart-api-backend-config
+spec:
+  timeoutSec: 3600
+---

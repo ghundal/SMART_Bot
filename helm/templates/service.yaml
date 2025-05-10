@@ -1,0 +1,69 @@
+# -----------------------------------------------------------------------------
+# Kubernetes Service definitions for the "smart" application, templated via Helm.
+#
+# This file defines three services:
+# 1. Frontend service: Exposes the frontend application on port 3000.
+# 2. API service: Exposes the backend API service on port 9000.
+# 3. Postgres service: Internal ClusterIP service to expose the Postgres DB on port 5432.
+# 3. Ollama service: Internal ClusterIP service to expose the Ollama Server on port 11434.
+#
+# Service types and frontend/backend ports are parameterized via Helm values.
+# -----------------------------------------------------------------------------
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "smart.fullname" . }}-frontend
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "smart.name" . }}-frontend
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "smart.fullname" . }}-api
+  annotations:
+    beta.cloud.google.com/backend-config: '{"default": "smart-api-backend-config"}'
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 9000
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "smart.name" . }}-api
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "smart.fullname" . }}-postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: {{ include "smart.name" . }}-postgres
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "smart.fullname" . }}-ollama
+spec:
+  type: ClusterIP
+  ports:
+    - port: 11434
+      targetPort: 11434
+  selector:
+    app: {{ include "smart.name" . }}-ollama

@@ -1,0 +1,44 @@
+# -----------------------------------------------------------------------------
+# Horizontal Pod Autoscalers for the "smart" application (API & Frontend).
+#
+# This template loops over autoscaling components (e.g., api, frontend),
+# and creates an HPA for each if enabled, using their individual thresholds.
+# -----------------------------------------------------------------------------
+
+{{- if and .Values.autoscaling.enabled .Values.autoscaling.components }}
+{{- range $component, $config := .Values.autoscaling.components }}
+{{- if $config.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "smart.fullname" $ }}-{{ $component }}
+  labels:
+    {{- include "smart.labels" $ | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "smart.fullname" $ }}-{{ $component }}
+  minReplicas: {{ $config.minReplicas }}
+  maxReplicas: {{ $config.maxReplicas }}
+  metrics:
+    {{- if $config.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $config.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if $config.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $config.targetMemoryUtilizationPercentage }}
+    {{- end }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e  # Exit immediately if a command exits with a non-zero status
+
+ollama serve &
+PID=$!
+
+echo "Waiting for Ollama server to start..."
+sleep 5
+
+echo "Pulling models..."
+ollama pull gemma3:12b || echo "Failed to pull gemma3:12b"
+ollama pull llama3:8b || echo "Failed to pull llama3:8b"
+ollama pull llama-guard3:8b || echo "Failed to pull llama-guard3:8b"
+
+echo "Stopping Ollama server using ollama kill..."
+kill -9 $PID
+sleep 5
+
+echo "Starting Ollama server..."
+exec ollama serve
