@@ -16,6 +16,7 @@ SMART delivers:
   Security + Audit Trail: Logs at every access and retrieval point.
 
 ## **Organization**
+
 ```
 E115_SMART/
 ├── .github
