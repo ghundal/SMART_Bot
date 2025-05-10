@@ -102,3 +102,25 @@ To run the test locally refer:
 Please reference [deployment README.md](/helm/README.md) for the steps and the evidence of autoscaling.
 
 ## **Evidence of Deployment**
+Below is the evidence of sucessfull test run and CI/CD deployment.
+For latest logs, you can refer to the GitHube Actions.
+
+![Evidence](/images/Evidence_Deployment.png)
+
+
+## **Usage details**
+Please refer to [SMART User Guide](/reports/SMART_UserGuide.pdf) for details on screenshot and usage.
+
+## **Limitations and improvements**
+
+1. **No GPU**
+Despite our best efforts, we were not able to get a quota for a GPU on GCP. Hence the production version is much slower (reponse time: 15-25 min) that local (response time: 10-15 seconds). Ideally, we would like to run the enitre pipeline on kubernetes provided we have a GPU.
+
+2. **Security Enhancements**
+Deploy a service mesh like Istio, Linkerd, or Consul to handle mutual TLS (mTLS) between pods. The service mesh automatically encrypts traffic, manages certificates, and enforces policies. Utilize Kubernetes secrets or a certificate manager (e.g., cert-manager) to generate and distribute TLS certificates to pods. Enable mTLS to verify the identity of communicating pods.
+
+3. **Architecture Enhancements**
+Remove the dependency on third party models and distill our own langauge models. Additionally, implement Reinforcement Learning from Human Feedback (RLHF) and confidence algorithm for LLMs answer.
+
+4. **Frontend Enhancements**
+Include an admin level frontend to load the documents, thus removing dependency on Google Cloud Storage. This requires a GPU.
