@@ -70,6 +70,9 @@ ingress:
         - path: /api
           pathType: Prefix
           service: api
+        - path: /docs
+          pathType: Prefix
+          service: api
         - path: /
           pathType: Prefix
           service: frontend
