@@ -92,7 +92,7 @@ The tests consists of:
 - Integration tests
 
 To run the linter locally refer:
-[Linter Readme](/linters/README.md)
+[Linter Readme](/linter/README.md)
 
 To run the test locally refer:
 [Test Readme](/tests/README.md)
