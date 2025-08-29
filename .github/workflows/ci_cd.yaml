@@ -94,5 +94,9 @@ jobs:
           cluster_name: 'smart-cluster'
           location: 'us-central1'
 
+      - name: Decode and write base64 secret
+        run: echo "${{ secrets.TLS }}" | base64 --decode > ./helm/tls.yaml
+        shell: bash
+
       - name: 'Helm Install'
-        run: 'helm upgrade --install smart ./helm --set image.tag=${GITHUB_SHA::7}'
+        run: 'helm upgrade --install smart ./helm --values ./helm/values.yaml --values ./helm/tls.yaml --set image.tag=${GITHUB_SHA::7}'
